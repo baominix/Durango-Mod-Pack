@@ -1,0 +1,10 @@
+artifacts/
+bin/
+obj/
+*.dll
+*.pdb
+*.mdb
+*.staging.dll
+*.log
+BepInEx/
+LogOutput.log

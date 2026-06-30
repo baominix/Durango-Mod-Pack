@@ -1,0 +1,7 @@
+{
+  "name": "UISizeOptionsPlugin",
+  "displayName": "Durango UI Size Options Plugin",
+  "version": "0.2.0",
+  "dll": "UISizeOptionsPlugin.dll",
+  "description": "Adds Very large and Large UI size options."
+}
