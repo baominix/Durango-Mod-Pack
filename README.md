@@ -17,7 +17,7 @@ or `_combat_system_backup` folders.
 Build one plugin entirely inside this repository:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-Plugin.ps1" -PluginName GatheringPlugin
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-GatheringPlugin.ps1" -PluginName GatheringPlugin
 ```
 
 Build every plugin:
