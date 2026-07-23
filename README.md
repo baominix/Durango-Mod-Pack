@@ -1,17 +1,23 @@
 # Durango Mod Pack
 
-Durango Mod Pack is a BepInEx plugin pack for Durango: Wild Lands PC.
+BepInEx source plugin pack for the Original PC client of Durango: Wild Lands.
 
-## Plugins
+## Layout
 
-- `UISizeOptionsPlugin` - adds `Very large` and `Large` UI size options and keeps the game's original UI size options available.
+- `plugins/<PluginName>` - C# source for each plugin.
+- `refs` - the local .NET/BepInEx/Unity references required by the compiler.
+- `build-output` - compiled plugin DLLs.
+- `build` - repository-local build scripts.
+
+The repository intentionally does not include the source workspace's `disable`
+or `_combat_system_backup` folders.
 
 ## Build
 
-Build one plugin:
+Build one plugin entirely inside this repository:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-Plugin.ps1" -PluginName UISizeOptionsPlugin
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-Plugin.ps1" -PluginName GatheringPlugin
 ```
 
 Build every plugin:
@@ -20,29 +26,20 @@ Build every plugin:
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-All.ps1"
 ```
 
-The default game path is:
+All DLLs are written to `build-output`. The compiler remains:
 
 ```text
-D:\ProgramData\Durango_Ver_PC_Final\Durango_Original
+C:\Windows\Microsoft.NET\Framework\v3.5\csc.exe
 ```
 
-Use `-GameRoot` to build for another Durango install.
+To additionally copy a build into a local game installation, pass `-Deploy`.
+`-GameRoot` can override the default installation path.
 
-## Add A Plugin
+## Included restoration groups
 
-1. Create a folder under `plugins\<PluginName>`.
-2. Add one or more `.cs` files.
-3. Add `plugin.json`.
-4. Run `build\Build-Plugin.ps1 -PluginName <PluginName>`.
-
-Example `plugin.json`:
-
-```json
-{
-  "name": "MyPlugin",
-  "displayName": "My Plugin",
-  "version": "0.1.0",
-  "dll": "MyPlugin.dll",
-  "description": "Short plugin description."
-}
-```
+- `GatheringPlugin` currently restores Date Palm gathering only and is ready for
+  additional gathering resources later.
+- `IslandMapRestorationPlugin` supplies missing physical terrain aliases and the
+  correct simulation templates for restored islands.
+- `HarborSailingMapPlugin` exposes all 24 Original sailing-map destinations and
+  uses Island Map Restoration for terrain packages absent from the PC client.

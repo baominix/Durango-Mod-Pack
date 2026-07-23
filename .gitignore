@@ -2,6 +2,8 @@ artifacts/
 bin/
 obj/
 *.dll
+!refs/*.dll
+!build-output/*.dll
 *.pdb
 *.mdb
 *.staging.dll

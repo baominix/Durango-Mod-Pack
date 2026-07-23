@@ -1,20 +1,26 @@
-param(
-    [string]$GameRoot = "D:\ProgramData\Durango_Ver_PC_Final\Durango_Original",
-    [string]$ProjectRoot = $null
-)
-
 $ErrorActionPreference = "Stop"
 
-if ([string]::IsNullOrEmpty($ProjectRoot)) {
-    $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$PSScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$scripts = Get-ChildItem -Path $PSScriptRoot -Filter "Build-*.ps1" | Where-Object { $_.Name -ne "Build-All.ps1" }
+
+$failed = 0
+$success = 0
+
+foreach ($script in $scripts) {
+    Write-Host "Building $($script.Name)..." -ForegroundColor Cyan
+    try {
+        & $script.FullName
+        $success++
+    }
+    catch {
+        Write-Host "Failed to build $($script.Name): $_" -ForegroundColor Red
+        $failed++
+    }
 }
 
-$pluginsRoot = Join-Path $ProjectRoot "plugins"
-if (-not (Test-Path -LiteralPath $pluginsRoot)) {
-    throw "Plugins folder not found: $pluginsRoot"
-}
-
-$plugins = Get-ChildItem -LiteralPath $pluginsRoot -Directory
-foreach ($plugin in $plugins) {
-    & (Join-Path $PSScriptRoot "Build-Plugin.ps1") -PluginName $plugin.Name -GameRoot $GameRoot -ProjectRoot $ProjectRoot
+Write-Host "--------------------------------"
+Write-Host "Build Complete!" -ForegroundColor Green
+Write-Host "Success: $success" -ForegroundColor Green
+if ($failed -gt 0) {
+    Write-Host "Failed: $failed" -ForegroundColor Red
 }

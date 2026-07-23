@@ -1,0 +1,10 @@
+{
+  "name": "TamedIslandRestorationPlugin",
+  "displayName": "Tamed Island Restoration Plugin",
+  "version": "0.7.0",
+  "dll": "TamedIslandRestorationPlugin.dll",
+  "references": [
+    "HarborSailingMapPlugin.dll"
+  ],
+  "description": "Restores the Original offline Tamed Island flow."
+}
