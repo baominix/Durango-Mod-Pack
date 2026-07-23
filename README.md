@@ -8,6 +8,7 @@ BepInEx plugin source pack for the Original PC client of **Durango: Wild Lands**
 
 ## 📁 Project Structure / โครงสร้างโปรเจกต์
 
+<<<<<<< HEAD
 ```
 Durango Mod Pack/
 ├── plugins/          # C# source code for each plugin / ซอร์สโค้ด C# ของแต่ละ plugin
@@ -15,6 +16,14 @@ Durango Mod Pack/
 ├── build/            # Build scripts (.ps1) / สคริปต์ build
 ├── build-output/     # Compiled plugin DLLs / ไฟล์ DLL ที่ build แล้ว
 └── artifacts/        # Additional assets / ไฟล์เสริมอื่น ๆ
+=======
+## Build
+
+Build one plugin entirely inside this repository:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-GatheringPlugin.ps1"
+>>>>>>> dd33197f2330c4c89d484e48ba79d2d10aad4e48
 ```
 
 > All paths are self-contained within this folder — no external game folder dependencies.
