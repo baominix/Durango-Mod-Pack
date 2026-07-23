@@ -1,45 +1,102 @@
 # Durango Mod Pack
 
-BepInEx source plugin pack for the Original PC client of Durango: Wild Lands.
+BepInEx plugin source pack for the Original PC client of **Durango: Wild Lands**.
 
-## Layout
+ชุด source plugin BepInEx สำหรับ PC client ต้นฉบับของ **Durango: Wild Lands**
 
-- `plugins/<PluginName>` - C# source for each plugin.
-- `refs` - the local .NET/BepInEx/Unity references required by the compiler.
-- `build-output` - compiled plugin DLLs.
-- `build` - repository-local build scripts.
+---
 
-The repository intentionally does not include the source workspace's `disable`
-or `_combat_system_backup` folders.
+## 📁 Project Structure / โครงสร้างโปรเจกต์
 
-## Build
-
-Build one plugin entirely inside this repository:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-Plugin.ps1" -PluginName GatheringPlugin
+```
+Durango Mod Pack/
+├── plugins/          # C# source code for each plugin / ซอร์สโค้ด C# ของแต่ละ plugin
+├── refs/             # Reference DLLs (BepInEx, Unity, etc.) / ไฟล์ DLL อ้างอิง
+├── build/            # Build scripts (.ps1) / สคริปต์ build
+├── build-output/     # Compiled plugin DLLs / ไฟล์ DLL ที่ build แล้ว
+└── artifacts/        # Additional assets / ไฟล์เสริมอื่น ๆ
 ```
 
-Build every plugin:
+> All paths are self-contained within this folder — no external game folder dependencies.
+>
+> ทุก path อยู่ภายในโฟลเดอร์นี้ทั้งหมด ไม่ต้องพึ่งพาโฟลเดอร์เกมภายนอก
+
+---
+
+## 🔨 Build / วิธี Build
+
+### Build All Plugins / Build ทุก Plugin
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-All.ps1"
 ```
 
-All DLLs are written to `build-output`. The compiler remains:
+### Build Single Plugin / Build Plugin เดี่ยว
 
-```text
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-<PluginName>.ps1"
+```
+
+**Example / ตัวอย่าง:**
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-GatheringPlugin.ps1"
+```
+
+> Output DLLs are written to `build-output/`.
+>
+> ไฟล์ DLL ที่ build ได้จะอยู่ในโฟลเดอร์ `build-output/`
+
+### Compiler / คอมไพเลอร์
+
+```
 C:\Windows\Microsoft.NET\Framework\v3.5\csc.exe
 ```
 
-To additionally copy a build into a local game installation, pass `-Deploy`.
-`-GameRoot` can override the default installation path.
+---
 
-## Included restoration groups
+## 📦 Included Plugins / รายชื่อ Plugin ทั้งหมด (28)
 
-- `GatheringPlugin` currently restores Date Palm gathering only and is ready for
-  additional gathering resources later.
-- `IslandMapRestorationPlugin` supplies missing physical terrain aliases and the
-  correct simulation templates for restored islands.
-- `HarborSailingMapPlugin` exposes all 24 Original sailing-map destinations and
-  uses Island Map Restoration for terrain packages absent from the PC client.
+| Category | Plugin | Description |
+|----------|--------|-------------|
+| **Combat / การต่อสู้** | `DurangoCombatSystemPlugin` | Combat system / ระบบการต่อสู้ |
+| **Character / ตัวละคร** | `CharacterCreationFixPlugin` | Character creation fix / แก้ไขการสร้างตัวละคร |
+| | `SelectCharacterPlugin` | Character selection / เลือกตัวละคร |
+| | `PlayerProgressionPlugin` | Player progression / ระบบความก้าวหน้าของผู้เล่น |
+| | `SkillSystemPlugin` | Skill system / ระบบสกิล |
+| **World / โลก** | `IslandMapRestorationPlugin` | Terrain aliases & simulation templates for restored islands / กู้คืนแผนที่เกาะ |
+| | `HarborSailingMapPlugin` | All 24 sailing-map destinations / จุดหมายเดินเรือทั้ง 24 แห่ง |
+| | `TamedIslandRestorationPlugin` | Tamed island restoration / กู้คืนเกาะที่เลี้ยงแล้ว |
+| | `CustomTerrainLoaderPlugin` | Custom terrain loader / โหลด terrain แบบกำหนดเอง |
+| **Gathering & Crafting / เก็บของ & คราฟต์** | `GatheringPlugin` | Resource gathering / ระบบเก็บทรัพยากร |
+| | `CraftBuildPlugin` | Crafting & building / ระบบคราฟต์และก่อสร้าง |
+| | `AnimalHandlingPlugin` | Animal handling / ระบบจัดการสัตว์ |
+| **Economy / เศรษฐกิจ** | `CashShopRestorationPlugin` | Cash shop restoration / กู้คืนร้านค้า Cash Shop |
+| | `IslandMarketEnablePlugin` | Island market / ตลาดเกาะ |
+| | `TradeAvailablePlugin` | Trading system / ระบบการค้า |
+| | `PCCurrencyGroupRestorationPlugin` | PC currency group restoration / กู้คืนกลุ่มสกุลเงิน PC |
+| **Social / สังคม** | `PartySystemPlugin` | Party system / ระบบปาร์ตี้ |
+| | `OfflineClanRestorationPlugin` | Offline clan restoration / กู้คืนแคลนออฟไลน์ |
+| | `SupportOrganizationRestorationPlugin` | Support organization / กู้คืนองค์กรสนับสนุน |
+| | `ChatCommandPlugin` | Chat commands / คำสั่งแชท |
+| **Quest / เควส** | `TaskSystemRestorationPlugin` | Task/quest system / กู้คืนระบบเควส |
+| | `CareerGuideEnablePlugin` | Career guide / ระบบแนะนำอาชีพ |
+| **UI / อินเทอร์เฟซ** | `GameMenuPlugin` | Game menu / เมนูเกม |
+| | `SelectGameMode` | Game mode selection / เลือกโหมดเกม |
+| | `TitleBarMenuDisablePlugin` | Disable title bar menu / ปิดเมนู Title Bar |
+| | `UISizeOptionsPlugin` | UI size options / ตัวเลือกขนาด UI |
+| | `KeybindSettingsPlugin` | Keybind settings / ตั้งค่าปุ่มกด |
+| | `Keybind2` | Additional keybinds / ปุ่มกดเพิ่มเติม |
+
+---
+
+## 📝 Notes / หมายเหตุ
+
+- Each plugin has its own build script in `build/Build-<PluginName>.ps1`.
+  แต่ละ plugin มีสคริปต์ build ของตัวเองใน `build/Build-<PluginName>.ps1`
+
+- Reference DLLs in `refs/` are shared across all plugins.
+  ไฟล์ DLL อ้างอิงใน `refs/` ใช้ร่วมกันทุก plugin
+
+- Build scripts use `$PSScriptRoot` for relative paths — portable and self-contained.
+  สคริปต์ build ใช้ relative path ผ่าน `$PSScriptRoot` — พกพาได้ อยู่ในตัว
