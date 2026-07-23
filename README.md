@@ -87,7 +87,7 @@ C:\Windows\Microsoft.NET\Framework\v3.5\csc.exe
 | **Social / สังคม** | `PartySystemPlugin` | Party system / ระบบปาร์ตี้ |
 | | `OfflineClanRestorationPlugin` | Offline clan restoration / กู้คืนแคลนออฟไลน์ |
 | | `SupportOrganizationRestorationPlugin` | Support organization / กู้คืนองค์กรสนับสนุน |
-| | `ChatCommandPlugin` | Chat commands / คำสั่งแชท |
+| | `ChatCommandPlugin` | Chat commands. try use /help / คำสั่งแชท ลอง /help |
 | **Quest / เควส** | `TaskSystemRestorationPlugin` | Task/quest system / กู้คืนระบบเควส |
 | | `CareerGuideEnablePlugin` | Career guide / ระบบแนะนำอาชีพ |
 | **UI / อินเทอร์เฟซ** | `GameMenuPlugin` | Game menu / เมนูเกม |
