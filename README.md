@@ -17,9 +17,13 @@
 - แนะนำ **BepInEx_win_x64_5.4.23.5**
 - .NET Framework 3.5 C# compiler สำหรับ build source ชุดนี้
 
-BepInEx:
-
+ติดตั้ง BepInEx:
 https://github.com/BepInEx/BepInEx/releases/tag/v5.4.23.5
+[https://github.com/baominix/Durango-Mod-Pack/blob/main/img/bepinex_install.jpg](https://raw.githubusercontent.com/baominix/Durango-Mod-Pack/refs/heads/main/img/bepinex_install.jpg)
+
+
+
+
 
 Compiler default ที่ build scripts ใช้:
 
