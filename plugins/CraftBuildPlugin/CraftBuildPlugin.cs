@@ -7,6 +7,7 @@ using BepInEx.Logging;
 using Durango.Network;
 using Durango.Offline;
 using Durango.Terrain;
+using Durango.Utils;
 using HarmonyLib;
 using InteractionData;
 using Messages;
@@ -17,11 +18,21 @@ using System.Timers;
 
 namespace BaoX.DurangoOriginal.CraftBuildMod
 {
-    [BepInPlugin("baox.durango.original.craftbuild", "CraftBuildPlugin", "0.1.0")]
+    [BepInPlugin("com.baominix.durango.original.craftbuild", "CraftBuildPlugin", "0.4.8")]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class CraftBuildPlugin : BaseUnityPlugin
     {
         internal static ManualLogSource Log;
         private Harmony _harmony;
+        private static readonly object ScheduledSync = new object();
+        private static readonly List<ScheduledAction> ScheduledActions = new List<ScheduledAction>();
+
+        private sealed class ScheduledAction
+        {
+            internal float DueAt;
+            internal Action Action;
+            internal bool Cancelled;
+        }
 
         // Custom storage dictionaries for persistence in offline mode
         public static Dictionary<string, List<Item>> BoxInventories = new Dictionary<string, List<Item>>();
@@ -33,7 +44,7 @@ namespace BaoX.DurangoOriginal.CraftBuildMod
         private void Awake()
         {
             Log = Logger;
-            _harmony = new Harmony("baox.durango.original.craftbuild");
+            _harmony = new Harmony("com.baominix.durango.original.craftbuild");
 
             _boxSavePath = Path.Combine(Paths.PluginPath, "CraftBuildPlugin/box_inventories.json");
             _addonSavePath = Path.Combine(Paths.PluginPath, "CraftBuildPlugin/addons.json");
@@ -73,6 +84,108 @@ namespace BaoX.DurangoOriginal.CraftBuildMod
             else
             {
                 Logger.LogError("HandleTouchMsg method not found!");
+            }
+
+            var handleDumpItemsMsgMethod = playerType.GetMethod("HandleDumpItemsMsg", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            if (handleDumpItemsMsgMethod != null)
+            {
+                _harmony.Patch(handleDumpItemsMsgMethod, new HarmonyMethod(typeof(CraftBuildPatches).GetMethod("HandleDumpItemsMsgPrefix")), null, null, null, null);
+                Logger.LogInfo("Successfully patched HandleDumpItemsMsg.");
+            }
+            else
+            {
+                Logger.LogError("HandleDumpItemsMsg method not found!");
+            }
+
+            var handleDestructMsgMethod = playerType.GetMethod("HandleDestructMsg", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            if (handleDestructMsgMethod != null)
+            {
+                _harmony.Patch(handleDestructMsgMethod, null, new HarmonyMethod(typeof(CraftBuildPatches).GetMethod("HandleDestructMsgPostfix")), null, null, null);
+                Logger.LogInfo("Successfully patched HandleDestructMsg.");
+            }
+            else
+            {
+                Logger.LogError("HandleDestructMsg method not found!");
+            }
+
+            _harmony.PatchAll(Assembly.GetExecutingAssembly());
+        }
+
+        internal static object Schedule(float delaySeconds, Action action)
+        {
+            if (action == null)
+            {
+                return null;
+            }
+
+            ScheduledAction scheduled = new ScheduledAction
+            {
+                DueAt = UnityEngine.Time.realtimeSinceStartup + Math.Max(0f, delaySeconds),
+                Action = action
+            };
+            lock (ScheduledSync)
+            {
+                ScheduledActions.Add(scheduled);
+            }
+            return scheduled;
+        }
+
+        internal static void CancelScheduled(object token)
+        {
+            ScheduledAction scheduled = token as ScheduledAction;
+            if (scheduled == null)
+            {
+                return;
+            }
+            lock (ScheduledSync)
+            {
+                scheduled.Cancelled = true;
+                ScheduledActions.Remove(scheduled);
+            }
+        }
+
+        private void Update()
+        {
+            List<Action> due = null;
+            float now = UnityEngine.Time.realtimeSinceStartup;
+            lock (ScheduledSync)
+            {
+                for (int i = ScheduledActions.Count - 1; i >= 0; i--)
+                {
+                    if (ScheduledActions[i].Cancelled)
+                    {
+                        ScheduledActions.RemoveAt(i);
+                        continue;
+                    }
+                    if (ScheduledActions[i].DueAt > now)
+                    {
+                        continue;
+                    }
+
+                    if (due == null)
+                    {
+                        due = new List<Action>();
+                    }
+                    due.Add(ScheduledActions[i].Action);
+                    ScheduledActions.RemoveAt(i);
+                }
+            }
+
+            if (due == null)
+            {
+                return;
+            }
+
+            for (int i = due.Count - 1; i >= 0; i--)
+            {
+                try
+                {
+                    due[i]();
+                }
+                catch (Exception ex)
+                {
+                    Log.LogError("Scheduled craft/build action failed: " + ex);
+                }
             }
         }
 
@@ -147,13 +260,13 @@ namespace BaoX.DurangoOriginal.CraftBuildMod
                 // 3. EstimateCraft
                 connection.Recv<EstimateCraft>(delegate(EstimateCraft msg, PacketHeader header)
                 {
-                    HandleEstimateCraft(__instance, msg, header.Seq);
+                    CraftBuildBackend.HandleEstimateCraft(__instance, msg, header.Seq);
                 });
 
                 // 4. Craft
                 connection.Recv<Craft>(delegate(Craft msg, PacketHeader header)
                 {
-                    HandleCraft(__instance, msg, header.Seq);
+                    CraftBuildBackend.HandleCraft(__instance, msg, header.Seq);
                 });
 
                 // 5. GetInventory
@@ -174,17 +287,11 @@ namespace BaoX.DurangoOriginal.CraftBuildMod
                     HandleTakeOutItem(__instance, msg, header.Seq);
                 });
 
-                // 8. GetAddOns
-                connection.Recv<GetAddOns>(delegate(GetAddOns msg, PacketHeader header)
-                {
-                    HandleGetAddOns(__instance, msg, header.Seq);
-                });
+                // The stock offline Player already owns GetAddOns/PlaceAddOns and
+                // persists them in WorldContext. Do not shadow those handlers with
+                // a second, disconnected add-on store.
 
-                // 9. PlaceAddOns
-                connection.Recv<PlaceAddOns>(delegate(PlaceAddOns msg, PacketHeader header)
-                {
-                    HandlePlaceAddOns(__instance, msg, header.Seq);
-                });
+                CraftBuildBackend.Register(__instance, connection);
             }
             catch (Exception ex)
             {
@@ -211,49 +318,78 @@ namespace BaoX.DurangoOriginal.CraftBuildMod
                         msg.EntityName = blueprint.Name;
                         List<Interaction> list = new List<Interaction>();
 
-                        // Always allow demolish in offline mode
-                        list.Add(Interaction.DestructArtifact);
+                        // Construction sites need to remain actionable after loading
+                        // a saved world, not only immediately after Occupied is sent.
+                        var buildWorldField = typeof(Durango.Offline.Player).GetField("_world", BindingFlags.NonPublic | BindingFlags.Instance);
+                        Durango.Offline.World buildWorld = buildWorldField == null ? null : buildWorldField.GetValue(__instance) as Durango.Offline.World;
+                        AppearArtifact? buildArtifact = buildWorld == null ? null : buildWorld.ArtifactManager.Get(touch.EntityId);
+                        bool isConstructionSite = buildArtifact != null && buildArtifact.Value.States.BuildingState != Shared.Building.BuildingState.Completed;
+                        bool acceptsBuildAction = buildArtifact != null && buildArtifact.Value.States.BuildingState == Shared.Building.BuildingState.Occupied;
+                        bool acceptsCompleteAction = buildArtifact != null &&
+                            buildArtifact.Value.States.BuildingState == Shared.Building.BuildingState.Built &&
+                            (buildArtifact.Value.States.Postprocess == null ||
+                             buildArtifact.Value.States.Postprocess.Value.EndsAt <= Times.UnixTimeNow());
 
-                        if (Array.IndexOf(blueprint.Components, "Washable") != -1)
+                        bool isDispenser = Array.IndexOf(blueprint.Components, "Dispenser") != -1;
+                        if (!blueprint.Permanent)
+                        {
+                            list.Add(Interaction.DestructArtifact);
+                        }
+                        if (acceptsBuildAction)
+                        {
+                            list.Add(Interaction.BuildArtifact);
+                        }
+                        if (acceptsCompleteAction)
+                        {
+                            list.Add(Interaction.CompleteArtifact);
+                        }
+
+                        // An occupied site is only a material/build target. Do not
+                        // expose the completed artifact's inventory/workbench/etc.
+                        if (!isConstructionSite && Array.IndexOf(blueprint.Components, "Washable") != -1)
                         {
                             list.Add(Interaction.Wash);
                         }
-                        if (Array.IndexOf(blueprint.Components, "Inventory") != -1)
+                        if (!isConstructionSite && Array.IndexOf(blueprint.Components, "Inventory") != -1)
                         {
                             list.Add(Interaction.Inventory);
                             list.Add(Interaction.BrokenInventory);
                             list.Add(Interaction.RenameArtifact);
                         }
-                        if (Array.IndexOf(blueprint.Components, "Shelter") != -1)
+                        if (!isConstructionSite && isDispenser)
+                        {
+                            list.Add(Interaction.Take);
+                        }
+                        if (!isConstructionSite && Array.IndexOf(blueprint.Components, "Shelter") != -1)
                         {
                             list.Add(Interaction.Rest);
                         }
-                        if (Array.IndexOf(blueprint.Components, "Home") != -1)
+                        if (!isConstructionSite && Array.IndexOf(blueprint.Components, "Home") != -1)
                         {
                             list.Add(Interaction.SetAsHome);
                         }
-                        if (Array.IndexOf(blueprint.Components, "Growable") != -1)
+                        if (!isConstructionSite && Array.IndexOf(blueprint.Components, "Growable") != -1)
                         {
                             list.Add(Interaction.Plant);
                             list.Add(Interaction.Fertilize);
                             list.Add(Interaction.Watering);
                             list.Add(Interaction.Uproot);
                         }
-                        if (Array.IndexOf(blueprint.Components, "Modular") != -1)
+                        if (!isConstructionSite && Array.IndexOf(blueprint.Components, "Modular") != -1)
                         {
                             list.Add(Interaction.AddOnManage);
                             list.Add(Interaction.RemodelArtifact);
                         }
-                        if (Array.IndexOf(blueprint.Components, "Scribble") != -1)
+                        if (!isConstructionSite && Array.IndexOf(blueprint.Components, "Scribble") != -1)
                         {
                             list.Add(Interaction.ScribbleDrawing);
                             list.Add(Interaction.ScribbleText);
                         }
-                        if (Array.IndexOf(blueprint.Components, "Workbench") != -1)
+                        if (!isConstructionSite && Array.IndexOf(blueprint.Components, "Workbench") != -1)
                         {
                             list.Add(Interaction.Craft);
                         }
-                        if (Array.IndexOf(blueprint.Components, "Gate") != -1)
+                        if (!isConstructionSite && Array.IndexOf(blueprint.Components, "Gate") != -1)
                         {
                             var worldField = typeof(Durango.Offline.Player).GetField("_world", BindingFlags.NonPublic | BindingFlags.Instance);
                             Durango.Offline.World world = worldField.GetValue(__instance) as Durango.Offline.World;
@@ -263,23 +399,28 @@ namespace BaoX.DurangoOriginal.CraftBuildMod
                                 list.Add((!appearArtifact.Value.States.GateOpened) ? Interaction.OpenGate : Interaction.CloseGate);
                             }
                         }
-                        if (Array.IndexOf(blueprint.Components, "Mannequin") != -1)
+                        if (!isConstructionSite && Array.IndexOf(blueprint.Components, "Mannequin") != -1)
                         {
                             list.Add(Interaction.ChangeMannequinHead);
                             list.Add(Interaction.ChangeMannequinBody);
                         }
 
+                        if (!isConstructionSite && CraftBuildBackend.CanCapsulate(blueprint))
+                        {
+                            list.Add(Interaction.Capsulate);
+                        }
+
                         // The Original client opens Tamed Island Pioneer Rank from the
                         // Personal Communication Station. The offline touch backend did
                         // not restore this blueprint-specific interaction.
-                        if (blueprint.Id == "operating_office_01")
+                        if (!isConstructionSite && blueprint.Id == "operating_office_01")
                         {
                             list.Add(Interaction.ManagePioneerGrade);
                         }
 
-                        if (blueprint.Id.StartsWith("living_tech_", StringComparison.Ordinal) ||
+                        if (!isConstructionSite && (blueprint.Id.StartsWith("living_tech_", StringComparison.Ordinal) ||
                             blueprint.Id.StartsWith("light_tech_", StringComparison.Ordinal) ||
-                            blueprint.Id.StartsWith("heavy_tech_", StringComparison.Ordinal))
+                            blueprint.Id.StartsWith("heavy_tech_", StringComparison.Ordinal)))
                         {
                             list.Add(Interaction.PersonalResearch);
                         }
@@ -296,6 +437,10 @@ namespace BaoX.DurangoOriginal.CraftBuildMod
                         var worldField2 = typeof(Durango.Offline.Player).GetField("_world", BindingFlags.NonPublic | BindingFlags.Instance);
                         Durango.Offline.World world2 = worldField2.GetValue(__instance) as Durango.Offline.World;
                         msg.Mannequin = world2.ArtifactManager.GetMannequin(touch.EntityId);
+                        if (!isConstructionSite && Array.IndexOf(blueprint.Components, "Workbench") != -1)
+                        {
+                            msg.Workbench = CraftBuildBackend.GetWorkbenchSnapshot(touch.EntityId);
+                        }
 
                         __instance.Send<Touched>(msg, seq);
 
@@ -321,23 +466,7 @@ namespace BaoX.DurangoOriginal.CraftBuildMod
         {
             try
             {
-                List<string> recipeIds = new List<string>();
-                var recipeSystem = GameSystem<RecipeSystem>.Instance();
-                if (recipeSystem != null && recipeSystem.RecipeContainer != null)
-                {
-                    foreach (var category in recipeSystem.RecipeContainer.Categories)
-                    {
-                        foreach (var recipe in category.Recipes)
-                        {
-                            recipeIds.Add(recipe.Id);
-                        }
-                    }
-                }
-
-                player.Send<Recipes>(new Recipes
-                {
-                    Ids = recipeIds.ToArray()
-                }, seq);
+                CraftBuildBackend.SendRecipeAvailability(player, seq);
             }
             catch (Exception ex)
             {
@@ -345,144 +474,268 @@ namespace BaoX.DurangoOriginal.CraftBuildMod
             }
         }
 
+        public static bool HandleDumpItemsMsgPrefix(Durango.Offline.Player __instance, DumpItems msg)
+        {
+            try
+            {
+                if (msg.ItemIds == null || msg.ItemIds.Length == 0)
+                {
+                    return false;
+                }
+
+                FieldInfo contextField = typeof(Durango.Offline.Player).GetField("_context", BindingFlags.NonPublic | BindingFlags.Instance);
+                FieldInfo worldField = typeof(Durango.Offline.Player).GetField("_world", BindingFlags.NonPublic | BindingFlags.Instance);
+                PlayerContext context = contextField == null ? null : contextField.GetValue(__instance) as PlayerContext;
+                Durango.Offline.World world = worldField == null ? null : worldField.GetValue(__instance) as Durango.Offline.World;
+                if (context == null || world == null)
+                {
+                    CraftBuildPlugin.Log.LogError("Cannot drop items because the offline player context or world is unavailable.");
+                    return false;
+                }
+
+                List<Item> sourceItems;
+                string sourceEntityId;
+                bool sourceIsPet = !string.IsNullOrEmpty(msg.SourcePetEntityId);
+                if (sourceIsPet)
+                {
+                    sourceEntityId = msg.SourcePetEntityId;
+                    if (!TryGetPetInventory(__instance, sourceEntityId, out sourceItems))
+                    {
+                        CraftBuildPlugin.Log.LogWarning("Pet inventory was not found; no item was removed: " + sourceEntityId);
+                        return false;
+                    }
+                }
+                else if (msg.SourceProp.HasValue)
+                {
+                    sourceEntityId = msg.SourceProp.Value.EntityId;
+                    if (!CraftBuildPlugin.BoxInventories.TryGetValue(sourceEntityId, out sourceItems))
+                    {
+                        CraftBuildPlugin.Log.LogWarning("Drop source inventory was not found: " + sourceEntityId);
+                        return false;
+                    }
+                }
+                else
+                {
+                    sourceEntityId = __instance.EntityId;
+                    sourceItems = context.InventoryItems;
+                }
+
+                HashSet<string> requestedIds = new HashSet<string>(msg.ItemIds, StringComparer.Ordinal);
+                List<Item> removedItems = new List<Item>();
+                for (int i = 0; i < sourceItems.Count; i++)
+                {
+                    if (requestedIds.Contains(sourceItems[i].Id))
+                    {
+                        removedItems.Add(sourceItems[i]);
+                    }
+                }
+                if (removedItems.Count == 0)
+                {
+                    return false;
+                }
+
+                Point2 dropTile;
+                int? dropFloor = msg.Floor;
+                if (msg.Tile.HasValue)
+                {
+                    dropTile = msg.Tile.Value;
+                }
+                else if (!TryGetPlayerLocation(context, out dropTile, out dropFloor))
+                {
+                    CraftBuildPlugin.Log.LogWarning("Player position was unavailable; no item was removed.");
+                    return false;
+                }
+
+                List<Item> recoverableItems = new List<Item>();
+                for (int i = 0; i < removedItems.Count; i++)
+                {
+                    // The original UI warns that non-tradable items cannot be picked
+                    // back up after discarding, so only tradable items enter a package.
+                    if (removedItems[i].Tradable)
+                    {
+                        recoverableItems.Add(removedItems[i]);
+                    }
+                }
+
+                AppearArtifact? package = null;
+                if (recoverableItems.Count > 0)
+                {
+                    foreach (AppearArtifact candidate in world.ArtifactManager.Enumerable(delegate(AppearArtifact artifact)
+                    {
+                        return artifact.EntityType == 8000 &&
+                            artifact.Tile.x == dropTile.x && artifact.Tile.y == dropTile.y &&
+                            artifact.Floor == dropFloor && artifact.EntityId != sourceEntityId;
+                    }))
+                    {
+                        package = candidate;
+                        break;
+                    }
+
+                    if (!package.HasValue)
+                    {
+                        AddOns? addons;
+                        AppearArtifact? made = Cheats.MakeAppearArtifact(new string[]
+                        {
+                            "prop",
+                            "8000",
+                            "position:" + dropTile.x + "," + dropTile.y,
+                            "size:1,1"
+                        }, out addons);
+                        if (!made.HasValue)
+                        {
+                            CraftBuildPlugin.Log.LogError("The package blueprint (entity type 8000) could not be created; no item was removed.");
+                            return false;
+                        }
+
+                        AppearArtifact created = made.Value;
+                        created.Tile = dropTile;
+                        created.Floor = dropFloor;
+                        created.FounderEntityId = __instance.EntityId;
+                        created.IsAlive = true;
+                        created.States.EntityId = created.EntityId;
+                        world.ConstructArtifact(created, null);
+                        CraftBuildPlugin.BoxInventories[created.EntityId] = new List<Item>();
+                        package = created;
+                    }
+
+                    List<Item> packageItems;
+                    if (!CraftBuildPlugin.BoxInventories.TryGetValue(package.Value.EntityId, out packageItems))
+                    {
+                        packageItems = new List<Item>();
+                        CraftBuildPlugin.BoxInventories[package.Value.EntityId] = packageItems;
+                    }
+                    packageItems.AddRange(recoverableItems);
+                }
+
+                HashSet<string> removedIds = new HashSet<string>(removedItems.ConvertAll(delegate(Item item) { return item.Id; }), StringComparer.Ordinal);
+                sourceItems.RemoveAll(delegate(Item item) { return removedIds.Contains(item.Id); });
+
+                if (sourceIsPet)
+                {
+                    SavePetInventory(__instance, sourceEntityId, sourceItems.Count);
+                }
+
+                __instance.Send<InventoryUpdated>(new InventoryUpdated
+                {
+                    EntityId = sourceEntityId,
+                    RemovedItemIds = new List<string>(removedIds).ToArray()
+                }, 0U);
+
+                MethodInfo onContextChanged = typeof(Durango.Offline.Player).GetMethod("OnContextChanged", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                if (onContextChanged != null)
+                {
+                    onContextChanged.Invoke(__instance, null);
+                }
+                context.Save();
+                CraftBuildPlugin.SaveData();
+                CraftBuildPlugin.Log.LogInfo("Dropped " + removedItems.Count + " item(s) at " + dropTile.x + "," + dropTile.y +
+                    (recoverableItems.Count == 0 ? "; all were non-tradable." : "; package=" + package.Value.EntityId + "."));
+            }
+            catch (Exception ex)
+            {
+                CraftBuildPlugin.Log.LogError("Error in HandleDumpItemsMsg: " + ex);
+            }
+            return false;
+        }
+
+        public static void HandleDestructMsgPostfix(DestructArtifact msg)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(msg.EntityId) && CraftBuildPlugin.BoxInventories.Remove(msg.EntityId))
+                {
+                    CraftBuildPlugin.SaveData();
+                }
+            }
+            catch (Exception ex)
+            {
+                CraftBuildPlugin.Log.LogError("Could not remove the destroyed artifact inventory: " + ex);
+            }
+        }
+
+        private static bool TryGetPetInventory(Durango.Offline.Player player, string petId, out List<Item> items)
+        {
+            items = null;
+            try
+            {
+                Type pluginType = AccessTools.TypeByName("AnimalHandlingPlugin.AnimalHandlingPlugin");
+                MethodInfo getData = pluginType == null ? null : pluginType.GetMethod("GetData", BindingFlags.Static | BindingFlags.NonPublic);
+                object data = getData == null ? null : getData.Invoke(null, new object[] { player });
+                FieldInfo inventoriesField = data == null ? null : data.GetType().GetField("PetInventories", BindingFlags.Instance | BindingFlags.Public);
+                Dictionary<string, List<Item>> inventories = inventoriesField == null
+                    ? null
+                    : inventoriesField.GetValue(data) as Dictionary<string, List<Item>>;
+                return inventories != null && inventories.TryGetValue(petId, out items);
+            }
+            catch (Exception ex)
+            {
+                CraftBuildPlugin.Log.LogError("Could not read the pet inventory: " + ex);
+                return false;
+            }
+        }
+
+        private static void SavePetInventory(Durango.Offline.Player player, string petId, int itemCount)
+        {
+            try
+            {
+                Type pluginType = AccessTools.TypeByName("AnimalHandlingPlugin.AnimalHandlingPlugin");
+                if (pluginType == null)
+                {
+                    return;
+                }
+
+                MethodInfo updateUsage = pluginType.GetMethod("UpdatePetInventoryUsage", BindingFlags.Static | BindingFlags.NonPublic);
+                if (updateUsage != null)
+                {
+                    updateUsage.Invoke(null, new object[] { player, petId, itemCount });
+                }
+
+                MethodInfo saveData = pluginType.GetMethod("SaveData", BindingFlags.Static | BindingFlags.NonPublic);
+                if (saveData != null)
+                {
+                    saveData.Invoke(null, new object[] { player });
+                }
+            }
+            catch (Exception ex)
+            {
+                CraftBuildPlugin.Log.LogError("Could not save the pet inventory after dropping items: " + ex);
+            }
+        }
+
+        private static bool TryGetPlayerLocation(PlayerContext context, out Point2 tile, out int? floor)
+        {
+            tile = default(Point2);
+            floor = null;
+            Movement[] movements = context.AppearPlayer.Move.Movements;
+            if (movements == null || movements.Length == 0)
+            {
+                return false;
+            }
+
+            Movement movement = movements[movements.Length - 1];
+            if (movement.Path == null || movement.Path.Length == 0)
+            {
+                return false;
+            }
+
+            Location location = movement.Path[movement.Path.Length - 1];
+            tile = new Point2((int)Math.Floor(location.Position.x / 200f), (int)Math.Floor(location.Position.y / 200f));
+            // Outdoor artifacts use a null floor in the saved WorldContext. The
+            // movement packet reports zero even outdoors, so do not turn that
+            // sentinel into an indoor floor for the ordinary "Discard" action.
+            floor = null;
+            return true;
+        }
+
         private static void HandleGetArtifactBlueprints(Durango.Offline.Player player, GetArtifactBlueprints msg, uint seq)
         {
             try
             {
-                List<string> bpIds = new List<string>();
-                var recipeSystem = GameSystem<RecipeSystem>.Instance();
-                if (recipeSystem != null && recipeSystem.RecipeContainer != null)
-                {
-                    foreach (var bp in recipeSystem.RecipeContainer.GetAllBlueprints())
-                    {
-                        bpIds.Add(bp.Id);
-                    }
-                }
-
-                player.Send<ArtifactBlueprints>(new ArtifactBlueprints
-                {
-                    Ids = bpIds.ToArray()
-                }, seq);
+                CraftBuildBackend.SendBlueprintAvailability(player, seq);
             }
             catch (Exception ex)
             {
                 CraftBuildPlugin.Log.LogError("Error in HandleGetArtifactBlueprints: " + ex);
-            }
-        }
-
-        private static void HandleEstimateCraft(Durango.Offline.Player player, EstimateCraft msg, uint seq)
-        {
-            try
-            {
-                Yaml.Recipe recipe = Yaml.RecipeDict.Get(msg.RecipeId, null);
-                string prototypeId = (recipe != null) ? recipe.prototype_id : "stone_axe";
-                int level = (recipe != null) ? recipe.min_level : 1;
-
-                string name = "Item";
-                Prototype itemProto = PrototypeYaml.GetItemPrototype(prototypeId);
-                if (itemProto != null)
-                {
-                    name = itemProto.Name;
-                }
-
-                CraftEstimation estimation = new CraftEstimation
-                {
-                    PrototypeId = prototypeId,
-                    Level = level,
-                    Name = name,
-                    Durability = new UnityEngine.Vector2(100f, 100f),
-                    Tags = new Dictionary<string, int>(),
-                    UnrevealedRareTagCount = 0,
-                    ModifiableCount = 3,
-                    SuccessRate = 1.0f,
-                    GreatSuccessRate = 0.1f,
-                    RequiredAbilityValue = 0.0f
-                };
-
-                CraftEstimationInfo info = new CraftEstimationInfo
-                {
-                    CraftLevel = level,
-                    CraftEstimation = new CraftEstimation?(estimation)
-                };
-
-                player.Send<CraftEstimationInfo>(info, seq);
-            }
-            catch (Exception ex)
-            {
-                CraftBuildPlugin.Log.LogError("Error in HandleEstimateCraft: " + ex);
-            }
-        }
-
-        private static void HandleCraft(Durango.Offline.Player player, Craft msg, uint seq)
-        {
-            try
-            {
-                Yaml.Recipe recipe = Yaml.RecipeDict.Get(msg.RecipeId, null);
-                string prototypeId = (recipe != null) ? recipe.prototype_id : "stone_axe";
-                int level = (recipe != null) ? recipe.min_level : 1;
-
-                // Send Timer to trigger client-side progress bar
-                player.Send<Messages.Timer>(new Messages.Timer
-                {
-                    Duration = 2f
-                }, seq);
-
-                System.Timers.Timer timer = new System.Timers.Timer(2000.0);
-                timer.AutoReset = false;
-                timer.Enabled = true;
-                timer.Elapsed += delegate(object sender, ElapsedEventArgs e)
-                {
-                    try
-                    {
-                        timer.Stop();
-                        timer.Dispose();
-
-                        Item? craftedItem = Durango.Offline.Cheats.MakeItem(prototypeId, level);
-                        if (craftedItem != null)
-                        {
-                            var contextField = typeof(Durango.Offline.Player).GetField("_context", BindingFlags.NonPublic | BindingFlags.Instance);
-                            Durango.Offline.PlayerContext context = contextField.GetValue(player) as Durango.Offline.PlayerContext;
-
-                            context.InventoryItems.Add(craftedItem.Value);
-
-                            player.Send<InventoryUpdated>(new InventoryUpdated
-                            {
-                                EntityId = player.EntityId,
-                                Items = new Item[] { craftedItem.Value }
-                            }, 0U);
-
-                            player.Send<Crafted>(new Crafted
-                            {
-                                Result = Result.Success,
-                                ActionInfo = default(Messages.ActionInfo),
-                                Items = new Item[] { craftedItem.Value }
-                            }, 0U);
-
-                            player.Send<OK>(default(OK), seq);
-
-                            var onContextChanged = typeof(Durango.Offline.Player).GetMethod("OnContextChanged", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                            if (onContextChanged != null)
-                            {
-                                onContextChanged.Invoke(player, null);
-                            }
-                            context.Save();
-                        }
-                        else
-                        {
-                            player.Send<Abort>(default(Abort), seq);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        CraftBuildPlugin.Log.LogError("Error in HandleCraft timer callback: " + ex);
-                        player.Send<Abort>(default(Abort), seq);
-                    }
-                };
-            }
-            catch (Exception ex)
-            {
-                CraftBuildPlugin.Log.LogError("Error in HandleCraft: " + ex);
-                player.Send<Abort>(default(Abort), seq);
             }
         }
 
@@ -593,6 +846,7 @@ namespace BaoX.DurangoOriginal.CraftBuildMod
                 }
 
                 List<string> removedIds = new List<string>();
+                List<Item> pickedUpItems = new List<Item>();
                 foreach (string itemId in msg.ItemIds)
                 {
                     int foundIdx = boxItems.FindIndex((Item o) => o.Id == itemId);
@@ -602,6 +856,7 @@ namespace BaoX.DurangoOriginal.CraftBuildMod
                         context.InventoryItems.Add(item);
                         boxItems.RemoveAt(foundIdx);
                         removedIds.Add(itemId);
+                        pickedUpItems.Add(item);
                     }
                 }
 
@@ -616,7 +871,9 @@ namespace BaoX.DurangoOriginal.CraftBuildMod
                     player.Send<InventoryUpdated>(new InventoryUpdated
                     {
                         EntityId = player.EntityId,
-                        Items = context.InventoryItems.ToArray()
+                        // InventoryUpdated is a delta message. Sending the complete
+                        // bag makes the client process every existing item again.
+                        Items = pickedUpItems.ToArray()
                     }, 0U);
 
                     var onContextChanged = typeof(Durango.Offline.Player).GetMethod("OnContextChanged", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
@@ -625,6 +882,14 @@ namespace BaoX.DurangoOriginal.CraftBuildMod
                         onContextChanged.Invoke(player, null);
                     }
                     context.Save();
+
+                    FieldInfo worldField = typeof(Durango.Offline.Player).GetField("_world", BindingFlags.NonPublic | BindingFlags.Instance);
+                    Durango.Offline.World world = worldField == null ? null : worldField.GetValue(player) as Durango.Offline.World;
+                    if (boxItems.Count == 0 && IsDispenserPackage(world, msg.EntityId))
+                    {
+                        CraftBuildPlugin.BoxInventories.Remove(msg.EntityId);
+                        world.DestructArtifact(msg.EntityId);
+                    }
                     CraftBuildPlugin.SaveData();
                 }
 
@@ -635,6 +900,23 @@ namespace BaoX.DurangoOriginal.CraftBuildMod
                 CraftBuildPlugin.Log.LogError("Error in HandleTakeOutItem: " + ex);
                 player.Send<Abort>(default(Abort), seq);
             }
+        }
+
+        private static bool IsDispenserPackage(Durango.Offline.World world, string entityId)
+        {
+            if (world == null || string.IsNullOrEmpty(entityId))
+            {
+                return false;
+            }
+
+            AppearArtifact? artifact = world.ArtifactManager.Get(entityId);
+            if (!artifact.HasValue)
+            {
+                return false;
+            }
+
+            Building.Blueprint blueprint = GameSystem<RecipeSystem>.Instance().RecipeContainer.GetBlueprint(artifact.Value.EntityType);
+            return blueprint != null && Array.IndexOf(blueprint.Components, "Dispenser") != -1;
         }
 
         private static void HandleGetAddOns(Durango.Offline.Player player, GetAddOns msg, uint seq)
@@ -715,5 +997,5 @@ namespace BaoX.DurangoOriginal.CraftBuildMod
                 CraftBuildPlugin.Log.LogError("Error in HandlePlaceAddOns: " + ex);
             }
         }
-    }
+}
 }

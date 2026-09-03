@@ -27,11 +27,12 @@ using PacketHeader = Durango.Network.PacketHeader;
 namespace BaoX.DurangoOriginal.CashShopRestoration
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
-    [BepInDependency("com.baox.durango.original.tamedislandrestoration",
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.baominix.durango.original.tamedislandrestoration",
         BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class CashShopRestorationPlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "com.baox.durango.original.cashshoprestoration";
+        public const string PluginGuid = "com.baominix.durango.original.cashshoprestoration";
         public const string PluginName = "Cash Shop Restoration Plugin";
         public const string PluginVersion = "0.2.4";
 

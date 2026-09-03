@@ -19,4 +19,4 @@ Build and install while `Durango.exe` is closed:
 ```
 
 Configuration is created at
-`BepInEx/config/com.baox.durango.original.islandmaprestoration.cfg`.
+`BepInEx/config/com.baominix.durango.original.islandmaprestoration.cfg`.

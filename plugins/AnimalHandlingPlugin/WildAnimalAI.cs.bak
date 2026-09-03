@@ -1,0 +1,986 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Timers;
+using Durango.Model;
+using Durango.Render.Particle;
+using Durango.Terrain;
+using Durango.UI;
+using Durango.Utils;
+using Messages;
+using Shared.Battle;
+using Shared.System;
+using UnityEngine;
+
+public class WildAnimalAI : StateBasedAI<WildAnimalAI.State>
+{
+	protected override void OnAwake()
+	{
+		this.TargetAnimal = base.GetComponent<AnimalBehavior>();
+		this.TargetAnimal.SetActivateRootMotion(false);
+	}
+
+	protected override IEnumerator OnStart()
+	{
+		this.TargetAnimal.EntityId = this.Animal.EntityId;
+		base.GetComponent<BoneLookAtTarget>().AutoChangeTarget = false;
+		this.PinUpRootBone();
+		this.Initialization();
+		yield break;
+	}
+
+	private void Update()
+	{
+		if (this.TargetAnimal.Life.Goal() < this.TargetAnimal.Life.Max())
+		{
+			this._isCanHeal = true;
+		}
+		else
+		{
+			this._isCanHeal = false;
+		}
+		Vector3 currentPosition = this.TargetAnimal.CurrentPosition;
+		currentPosition.y = this.TargetAnimal.ProcessWaterDepth(currentPosition);
+		this.TargetAnimal.CurrentPosition = currentPosition;
+	}
+
+	protected override void DefineStates()
+	{
+		base.AddState(WildAnimalAI.State.Idle, new StateBasedAI<WildAnimalAI.State>.StateElem
+		{
+			Doing = new Func<IEnumerator>(this.OnIdle)
+		});
+		base.AddState(WildAnimalAI.State.Roaming, new StateBasedAI<WildAnimalAI.State>.StateElem
+		{
+			Doing = new Func<IEnumerator>(this.OnRoaming)
+		});
+		base.AddState(WildAnimalAI.State.BattleBegin, new StateBasedAI<WildAnimalAI.State>.StateElem
+		{
+			Entered = new Action(this.BattleBeginEntered),
+			Doing = new Func<IEnumerator>(this.BattleBeginDoing),
+			Exited = new Action(this.BattleBeginExited)
+		});
+		base.AddState(WildAnimalAI.State.Normal, new StateBasedAI<WildAnimalAI.State>.StateElem
+		{
+			Entered = new Action(this.NormalEntered),
+			Doing = new Func<IEnumerator>(this.NormalDoing),
+			Exited = new Action(this.NormalExited)
+		});
+		base.AddState(WildAnimalAI.State.WaitForBattleBegin, new StateBasedAI<WildAnimalAI.State>.StateElem
+		{
+			Doing = new Func<IEnumerator>(this.WaitForBattleBeginDoing)
+		});
+		base.AddState(WildAnimalAI.State.Attack, new StateBasedAI<WildAnimalAI.State>.StateElem
+		{
+			Entered = new Action(this.AttackEntered),
+			Doing = new Func<IEnumerator>(this.AttackDoing),
+			Exited = new Action(this.AttackExited)
+		});
+		base.AddState(WildAnimalAI.State.Chase, new StateBasedAI<WildAnimalAI.State>.StateElem
+		{
+			Entered = new Action(this.ChaseEntered),
+			Doing = new Func<IEnumerator>(this.ChaseDoing),
+			Exited = new Action(this.ChaseExited)
+		});
+		base.AddState(WildAnimalAI.State.Damaged, new StateBasedAI<WildAnimalAI.State>.StateElem
+		{
+			Entered = new Action(this.DamagedEntered),
+			Doing = new Func<IEnumerator>(this.DamagedDoing),
+			Exited = new Action(this.DamagedExited)
+		});
+		base.AddState(WildAnimalAI.State.Collapse, new StateBasedAI<WildAnimalAI.State>.StateElem
+		{
+			Entered = new Action(this.CollapseEntered),
+			Doing = new Func<IEnumerator>(this.CollapseDoing),
+			Exited = new Action(this.CollapseExited)
+		});
+		base.AddState(WildAnimalAI.State.Groggy, new StateBasedAI<WildAnimalAI.State>.StateElem
+		{
+			Entered = new Action(this.GroggyEntered),
+			Doing = new Func<IEnumerator>(this.GroggyDoing),
+			Exited = new Action(this.GroggyExited)
+		});
+		base.AddState(WildAnimalAI.State.Blow, new StateBasedAI<WildAnimalAI.State>.StateElem
+		{
+			Entered = new Action(this.BlowEntered),
+			Doing = new Func<IEnumerator>(this.BlowDoing),
+			Exited = new Action(this.BlowExited)
+		});
+		base.AddState(WildAnimalAI.State.Dead, new StateBasedAI<WildAnimalAI.State>.StateElem
+		{
+			Entered = new Action(this.DeadEntered),
+			Doing = new Func<IEnumerator>(this.DeadDoing),
+			Exited = new Action(this.DeadExited)
+		});
+	}
+
+	private IEnumerator OnIdle()
+	{
+		for (;;)
+		{
+			float value = UnityEngine.Random.value;
+			if (value > 0.2f)
+			{
+				break;
+			}
+			float seconds = 1f;
+			if (value < 0.2f)
+			{
+				AnimationElem animationElem = this.TargetAnimal.AnimalFrameworkResource.GetAnimationElements("idle") as AnimationElem;
+				if (animationElem != null)
+				{
+					this.TargetAnimal.Play(animationElem.motion, true, 0f, this.PlaybackRate);
+					seconds = animationElem.Clip.length / this.PlaybackRate;
+				}
+			}
+			else
+			{
+				AnimationElem animationElem2 = this.TargetAnimal.AnimalFrameworkResource.GetAnimationElements("stand") as AnimationElem;
+				if (animationElem2 != null)
+				{
+					this.TargetAnimal.Play(animationElem2.motion, true, 0f, this.PlaybackRate);
+					float num = animationElem2.Clip.length / this.PlaybackRate;
+					seconds = UnityEngine.Random.Range(num, num * 3f);
+				}
+			}
+			yield return new WaitForSeconds(seconds);
+		}
+		base.CurState = WildAnimalAI.State.Roaming;
+		yield break;
+	}
+
+	private Vector3 ProcessCollisionWithSliding(Vector3 beginPos, Vector3 delta)
+	{
+		if (delta == Vector3.zero)
+		{
+			return beginPos;
+		}
+		delta = Collisions.ProcessSimpleSliding(Collisions.CreateCollisionParam(beginPos, delta));
+		return beginPos + delta;
+	}
+
+	protected override bool IsAIEnded()
+	{
+		return false;
+	}
+
+	protected override bool IsTerminalState(WildAnimalAI.State state)
+	{
+		return false;
+	}
+
+	public AnimalBehavior TargetAnimal { get; private set; }
+
+	protected override WildAnimalAI.State InvalidState
+	{
+		get
+		{
+			return WildAnimalAI.State.Invalid;
+		}
+	}
+
+	protected override int StateEnumCount
+	{
+		get
+		{
+			return 12;
+		}
+	}
+
+	public AppearAnimal Animal { get; set; }
+
+	private float PlaybackRate
+	{
+		get
+		{
+			return 1f;
+		}
+	}
+
+	private Vector3 ClampPos(Vector3 destPos)
+	{
+		destPos.x = Mathf.Clamp(destPos.x, this._minArea.x, this._maxArea.x);
+		destPos.z = Mathf.Clamp(destPos.z, this._minArea.z, this._maxArea.z);
+		return destPos;
+	}
+
+	private void PinUpRootBone()
+	{
+		this.TargetAnimal.SetActivateRootMotion(true);
+	}
+
+	private void UnPinUpRootBone()
+	{
+		this.TargetAnimal.SetActivateRootMotion(false);
+		this.TargetAnimal.MeshObjectTransform.localPosition = Vector3.zero;
+	}
+
+	public void SetAiActivated()
+	{
+		base.CurState = WildAnimalAI.State.WaitForBattleBegin;
+	}
+
+	private IEnumerator OnRoaming()
+	{
+		while (UnityEngine.Random.value <= 0.85f)
+		{
+			AnimationElemMoveSet animationElemMoveSet = this.TargetAnimal.AnimalFrameworkResource.GetAnimationElements("move_motion_sets") as AnimationElemMoveSet;
+			MoveSet moveSet = (animationElemMoveSet != null) ? animationElemMoveSet.elems.FirstOrDefault<MoveSet>() : null;
+			if (moveSet != null)
+			{
+				MoveMotionInfo moveMotion = moveSet.GetMoveMotion(0f);
+				this.TargetAnimal.SetRotateSpeed(moveMotion.rot_speed);
+				this.TargetAnimal.Play(moveMotion.motion, true, 0f, this.PlaybackRate);
+				float moveSpeed = moveMotion.base_move_speed;
+				float yaw = UnityEngine.Random.value * 360f;
+				float timer = UnityEngine.Random.Range(2f, 7f);
+				this.TargetAnimal.TurnToYaw(yaw, false);
+				while (timer > 0f)
+				{
+					float currentYaw = this.TargetAnimal.CurrentYaw;
+					Vector3 delta = new Vector3(Mathf.Sin(currentYaw * 0.017453292f), 0f, Mathf.Cos(currentYaw * 0.017453292f)) * moveSpeed * Time.deltaTime;
+					Vector3 currentPosition = this.TargetAnimal.CurrentPosition;
+					Vector3 vector = this.ProcessCollisionWithSliding(this.TargetAnimal.CurrentPosition, delta);
+					Vector2 floatTile = Util.ClientPositionToTilePosition(vector);
+					if (TerrainWater.IsTooDeepToSwim(Singleton<TerrainBase>.Instance().GetTileDepth(floatTile), 0f))
+					{
+						base.CurState = WildAnimalAI.State.Idle;
+						yield break;
+					}
+					if ((vector - currentPosition).magnitude / Time.deltaTime / moveSpeed < 0.7f)
+					{
+						base.CurState = WildAnimalAI.State.Idle;
+						yield break;
+					}
+					this.TargetAnimal.CurrentPosition = vector;
+					timer -= Time.deltaTime;
+					yield return null;
+				}
+			}
+			yield return null;
+		}
+		base.CurState = WildAnimalAI.State.Idle;
+		yield break;
+	}
+
+	public void RemoveActivatedAi()
+	{
+		if (base.CurState != WildAnimalAI.State.Dead)
+		{
+			base.CurState = WildAnimalAI.State.WaitForBattleBegin;
+		}
+	}
+
+	private void Initialization()
+	{
+		this._minArea = Vector3.zero;
+		this._maxArea = Vector3.zero;
+		this._blowDistance = 500f;
+		this._maxLeapDist = 500f;
+		this._deadDestPosOriginOffset = new Vector3(0f, 0f, 3000f);
+		this._maxAttackDist = 500f;
+		this._deadDistance = 500f;
+		this._walkDistance = 750f;
+		this._attackMotions = new List<string>();
+		this._damagedMotions = new List<string>();
+		switch (WildAnimalAI.CurType)
+		{
+		case WildAnimalAI.Type.TRex:
+			this._defenseValue = 0.6f;
+			this._standMotion = "TRex_Stand";
+			this._turnMotion = "";
+			this._walkMotion = "TRex_Walk";
+			this._walkSpeed = 420f;
+			this._runMotion = "TRex_Run";
+			this._runStopMotion = "TRex_Run_Stop";
+			this._runSpeed = 580f;
+			this._eatMotion = "TRex_Eat";
+			this._sleepMotion = "TRex_Sleep_Begin";
+			this._sleepLoopMotion = "TRex_Sleep_Looping";
+			this._sleepEndMotion = "TRex_Sleep_End";
+			this._battleIdleMotion = "Trex_Battle_Idle";
+			this._battleStandMotion = "";
+			this._threatMotion = "TRex_Attack_Roar";
+			this._blowMotion = "Trex_Damage_Blow_Begin";
+			this._blowEndMotion = "Trex_Damage_Blow_End";
+			this._limpMotion = "TRex_Limp";
+			this._groggyMotion = "TRex_Groggy";
+			this._attackMotions.AddRange(new string[]
+			{
+				"TRex_Attack03_Wounded_Tail",
+				"TRex_Attack02_Bite",
+				"TRex_Attack01_Tail",
+				"TRex_Attack_Turn_Tail",
+				"TRex_Attack_Tail_Back",
+				"TRex_Attack_Stamp_Right",
+				"TRex_Attack_Stamp_Left",
+				"TRex_Attack_Stamp_Foot",
+				"TRex_Attack_Stamp",
+				"TRex_Attack_Roar",
+				"TRex_Attack_Head",
+				"TRex_Attack_Bite_Normal"
+			});
+			this._evadeMotion = "";
+			this._damagedMotions.AddRange(new string[]
+			{
+				"Trex_Damage_W",
+				"Trex_Damage_N",
+				"Trex_Damage_E",
+				"Trex_Damage_S"
+			});
+			this._deadMotion = "TRex_Die";
+			this._healCooltime = 0.075f;
+			break;
+		case WildAnimalAI.Type.Allo:
+			this._defenseValue = 0.8f;
+			this._standMotion = "Allo_Stand";
+			this._turnMotion = "Allo_Turn";
+			this._walkMotion = "Allo_Walk";
+			this._walkSpeed = 480f;
+			this._runMotion = "Allo_Run";
+			this._runStopMotion = "";
+			this._runSpeed = 650f;
+			this._eatMotion = "Allo_Eat";
+			this._sleepMotion = "Allo_Sleep_Begin";
+			this._sleepLoopMotion = "Allo_Sleep_Looping";
+			this._sleepEndMotion = "Allo_Sleep_End";
+			this._battleIdleMotion = "Allo_Battle_Idle";
+			this._battleStandMotion = "Allo_BattleStand";
+			this._threatMotion = "TRex_Attack_Roar";
+			this._blowMotion = "Allo_Damage_Blow_Begin";
+			this._blowEndMotion = "Allo_Damage_Blow_End";
+			this._limpMotion = "Allo_Limp";
+			this._groggyMotion = "Allo_Groggy";
+			this._attackMotions.AddRange(new string[]
+			{
+				"Allo_Attack_Bite",
+				"Allo_Attack_Bite_Normal",
+				"Allo_Attack_Dash",
+				"Allo_Attack_Stamp",
+				"Allo_Attack_Tail_Back",
+				"Allo_Attack_Tail_L",
+				"Allo_Attack_Tail_R",
+				"Allo_Attack_Tail_Turn"
+			});
+			this._evadeMotion = "Allo_Evade";
+			this._damagedMotions.AddRange(new string[]
+			{
+				"Allo_Damage_W",
+				"Allo_Damage_N",
+				"Allo_Damage_E",
+				"Allo_Damage_S"
+			});
+			this._deadMotion = "Allo_Die";
+			this._healCooltime = 0.1f;
+			break;
+		case WildAnimalAI.Type.Tarbo:
+			this._defenseValue = 0.8f;
+			this._standMotion = "Tarbo_Stand";
+			this._walkMotion = "Allo_Walk";
+			this._walkSpeed = 480f;
+			this._runMotion = "Allo_Run";
+			this._runSpeed = 650f;
+			this._healCooltime = 0.1f;
+			break;
+		case WildAnimalAI.Type.Raptor:
+			this._standMotion = "Allo_Stand";
+			this._walkMotion = "Allo_Walk";
+			this._walkSpeed = 480f;
+			this._runMotion = "Allo_Run";
+			this._runSpeed = 650f;
+			break;
+		default:
+			UIManager.SystemMsg("Error", "정의되지 않은 AI 타입입니다.", 3f);
+			break;
+		}
+		this._healTimer = new System.Timers.Timer((double)this._healCooltime * 1000.0);
+		this._healTimer.Enabled = true;
+		this._healTimer.AutoReset = true;
+		this._healTimer.Elapsed += this.OnHealTimedEvent;
+	}
+
+	public static WildAnimalAI.Type CurType { get; set; }
+
+	private IEnumerator WaitForBattleBeginDoing()
+	{
+		this.TargetAnimal.CrossFade(this._standMotion, 0.1f, true, 0f, 1f);
+		base.GetComponent<BoneLookAtTarget>().SetLookTarget(this._victim, false);
+		yield break;
+	}
+
+	private void ChaseEntered()
+	{
+	}
+
+	private void ChaseExited()
+	{
+	}
+
+	private IEnumerator ChaseDoing()
+	{
+		if (Maths.Make2D(this._victim.transform.position - base.transform.position).magnitude <= this._walkDistance)
+		{
+			this.TargetAnimal.CrossFade(this._walkMotion, 0.1f, true, 0f, 1f);
+		}
+		else
+		{
+			this.TargetAnimal.CrossFade(this._runMotion, 0.1f, true, 0f, 1f);
+		}
+		while (!(null == this._victim))
+		{
+			if (base.IsInterrupted)
+			{
+				yield break;
+			}
+			if (Maths.Make2D(this._victim.transform.position - base.transform.position).magnitude <= this._engageDistance)
+			{
+				if (Time.time > this._attackCooldownEnd)
+				{
+					base.CurState = WildAnimalAI.State.Attack;
+				}
+				else
+				{
+					base.CurState = WildAnimalAI.State.Normal;
+				}
+				yield break;
+			}
+			float yaw = Maths.CalcYawWithTarget(this._victim.transform.position, base.transform.position);
+			AnimationElemMoveSet animationElemMoveSet = this.TargetAnimal.AnimalFrameworkResource.GetAnimationElements("move_motion_sets") as AnimationElemMoveSet;
+			MoveSet moveSet = ((animationElemMoveSet != null) ? animationElemMoveSet.elems.FirstOrDefault<MoveSet>() : null);
+			MoveMotionInfo moveMotion = moveSet.GetMoveMotion(0f);
+			this.TargetAnimal.SetRotateSpeed(moveMotion.rot_speed);
+			this.TargetAnimal.TurnToYaw(yaw, false);
+			float currentYaw = this.TargetAnimal.CurrentYaw;
+			Vector3 delta = default(Vector3);
+			if (Maths.Make2D(this._victim.transform.position - base.transform.position).magnitude <= this._walkDistance)
+			{
+				delta = new Vector3(Mathf.Sin(currentYaw * 0.017453292f), 0f, Mathf.Cos(currentYaw * 0.017453292f)) * this._walkSpeed * Time.deltaTime;
+			}
+			else
+			{
+				delta = new Vector3(Mathf.Sin(currentYaw * 0.017453292f), 0f, Mathf.Cos(currentYaw * 0.017453292f)) * this._runSpeed * Time.deltaTime;
+			}
+			Vector3 currentPosition = this.TargetAnimal.CurrentPosition;
+			Vector3 vector = this.ProcessCollisionWithSliding(this.TargetAnimal.CurrentPosition, delta);
+			Vector2 floatTile = Util.ClientPositionToTilePosition(vector);
+			if (TerrainWater.IsTooDeepToSwim(Singleton<TerrainBase>.Instance().GetTileDepth(floatTile), 0f))
+			{
+				base.CurState = WildAnimalAI.State.Normal;
+				yield break;
+			}
+			if (Maths.Make2D(this._victim.transform.position - base.transform.position).magnitude <= this._walkDistance)
+			{
+				if ((vector - currentPosition).magnitude / Time.deltaTime / this._walkSpeed < 0.7f)
+				{
+					base.CurState = WildAnimalAI.State.Normal;
+					yield break;
+				}
+			}
+			else if ((vector - currentPosition).magnitude / Time.deltaTime / this._runSpeed < 0.7f)
+			{
+				base.CurState = WildAnimalAI.State.Normal;
+				yield break;
+			}
+			this.TargetAnimal.CurrentPosition = vector;
+			yield return null;
+		}
+		yield break;
+	}
+
+	public void EventDamaged()
+	{
+		base.CurState = WildAnimalAI.State.Damaged;
+	}
+
+	private void DamagedEntered()
+	{
+		int index = UnityEngine.Random.Range(0, this._damagedMotions.Count);
+		this.TargetAnimal.Play(this._damagedMotions[index], false, 0f, 1f);
+		this._damagedEndTime = Time.time + this.TargetAnimal.CurAnimState.length;
+	}
+
+	private void DamagedExited()
+	{
+	}
+
+	private IEnumerator DamagedDoing()
+	{
+		yield return new WaitForSeconds(this._damagedEndTime - Time.time);
+		base.CurState = WildAnimalAI.State.Normal;
+		yield break;
+	}
+
+	public void EventBlow()
+	{
+		float value = UnityEngine.Random.value;
+		if (value <= 0.5f && base.CurState != WildAnimalAI.State.Groggy && base.CurState != WildAnimalAI.State.Collapse)
+		{
+			base.CurState = WildAnimalAI.State.Damaged;
+		}
+		if (value > 0.5f && value <= 0.9f)
+		{
+			base.CurState = WildAnimalAI.State.Blow;
+		}
+		if (value > 0.9f && value <= 0.95f)
+		{
+			base.CurState = WildAnimalAI.State.Groggy;
+		}
+		if (value > 0.95f && value <= 1f)
+		{
+			base.CurState = WildAnimalAI.State.Collapse;
+		}
+	}
+
+	private void BlowEntered()
+	{
+		this.TargetAnimal.Play(this._blowMotion, false, 0f, 1f);
+		this._blowEndTime = Time.time + this.TargetAnimal.CurAnimState.length;
+		this._isBlowing = true;
+	}
+
+	private void BlowExited()
+	{
+	}
+
+	private IEnumerator BlowDoing()
+	{
+		yield return new WaitForSeconds(this._blowEndTime - Time.time);
+		this.TargetAnimal.Play(this._blowEndMotion, false, 0f, 1f);
+		yield return new WaitForSeconds(this.TargetAnimal.CurAnimState.length);
+		this._isBlowing = false;
+		base.CurState = WildAnimalAI.State.Normal;
+		yield break;
+	}
+
+	public void EventDead()
+	{
+		this._isDeadPhase = true;
+		this._isCanHeal = false;
+		if (this._healTimer != null)
+		{
+			this._healTimer.Stop();
+		}
+		this._isHealing = false;
+		this.TargetAnimal.SetAsDead();
+		this.TargetAnimal.SetAlive(false, false);
+		Gauge life = new Gauge(this.TargetAnimal.Life.Max(), 0f, new GaugeNode[]
+		{
+			new GaugeNode
+			{
+				Time = 0.0,
+				Value = 0f
+			}
+		});
+		this.TargetAnimal.SetSurvivalGauge(life, null);
+		HuntRewardEffect huntRewardEffect = new HuntRewardEffect
+		{
+			TargetAnimal = this.TargetAnimal.GetName(),
+			TargetEntityType = this.TargetAnimal.EntityTypeId,
+			Type = Shared.System.RewardEffect.Hunted
+		};
+		var alarmGroup = UIManager.FindScript<AlarmGroup>();
+		var showRewardAlarmMethod = typeof(AlarmGroup).GetMethod("ShowRewardAlarm", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+		showRewardAlarmMethod.Invoke(alarmGroup, new object[] { huntRewardEffect });
+		CombatSystem.ExitBattle();
+		base.CurState = WildAnimalAI.State.Dead;
+	}
+
+	private void DeadEntered()
+	{
+		this.TargetAnimal.Play(this._deadMotion, false, 0f, 1f);
+		Vector3 vector = Maths.ProjectDirection(PlayerBehavior.LocalPlayer.transform);
+		vector.y = 0f;
+		vector.z = 0f;
+		vector = vector.normalized;
+		Vector3 currentPosition = this.TargetAnimal.CurrentPosition;
+		this._deadTime = this.TargetAnimal.CurAnimState.length;
+		TweenPosition tweenPosition = TweenPosition.Begin(this.TargetAnimal.gameObject, this._deadTime, currentPosition);
+		tweenPosition.method = UITweener.Method.EaseInOut;
+		tweenPosition.PlayForward();
+		this.PinUpRootBone();
+	}
+
+	private void DeadExited()
+	{
+		if (base.CurState != WildAnimalAI.State.Dead)
+		{
+			base.CurState = WildAnimalAI.State.Dead;
+		}
+		if (this.TargetAnimal.IsAlive)
+		{
+			base.CurState = WildAnimalAI.State.Dead;
+		}
+	}
+
+	private IEnumerator DeadDoing()
+	{
+		yield return new WaitForSeconds(this.TargetAnimal.CurAnimState.length);
+		if (this.TargetAnimal.IsAlive)
+		{
+			this.TargetAnimal.SetAsDead();
+			this.TargetAnimal.SetAlive(false, false);
+		}
+		yield break;
+	}
+
+	public void OnTakeDamage(Damage damage, bool isDead)
+	{
+		if (damage.Value <= 0)
+		{
+			return;
+		}
+		if (isDead)
+		{
+			this.EventDead();
+			PlayerBehavior.LocalPlayer.OnKilledAnimal(this.TargetAnimal);
+			return;
+		}
+		Gauge life = new Gauge(this.TargetAnimal.Life.Max(), 0f, new GaugeNode[]
+		{
+			new GaugeNode
+			{
+				Time = 0.0,
+				Value = this.TargetAnimal.Life.Goal() - (float)damage.Value
+			}
+		});
+		this.TargetAnimal.SetSurvivalGauge(life, null);
+		if (WildAnimalAI.CurType == WildAnimalAI.Type.TRex)
+		{
+			if (this.TargetAnimal.Life.Goal() + (float)damage.Value >= this.TargetAnimal.Life.Max() / 2f && this.TargetAnimal.Life.Goal() <= this.TargetAnimal.Life.Max() / 2f)
+			{
+				UIManager.SystemMsg("BattleAction", this.TargetAnimal.GetName() + "가 화가 났습니다.", 3f);
+				if (this._isDoingOnePhase)
+				{
+					this._isDoingOnePhase = false;
+				}
+				else if (!this._isDoingTwoPhase)
+				{
+					this._isDoingTwoPhase = true;
+				}
+				else if (this._isDoingThreePhase)
+				{
+					this._isDoingThreePhase = false;
+				}
+			}
+			if (this.TargetAnimal.Life.Goal() + (float)damage.Value >= this.TargetAnimal.Life.Max() / 2f / 2.5f && this.TargetAnimal.Life.Goal() <= this.TargetAnimal.Life.Max() / 2f / 2.5f)
+			{
+				UIManager.SystemMsg("BattleAction", this.TargetAnimal.GetName() + "가 최후의 발악을 합니다.", 3f);
+				if (this._isDoingOnePhase)
+				{
+					this._isDoingOnePhase = false;
+				}
+				else if (this._isDoingTwoPhase)
+				{
+					this._isDoingTwoPhase = false;
+				}
+				else if (!this._isDoingThreePhase)
+				{
+					this._isDoingThreePhase = true;
+				}
+			}
+		}
+		if (damage.Effects == DamageEffects.Blow)
+		{
+			this.EventBlow();
+		}
+		if (damage.Effects == DamageEffects.Critical || damage.Effects == DamageEffects.CrossCounter)
+		{
+			this.EventCritical();
+		}
+		if (damage.Effects == DamageEffects.KnockBack)
+		{
+			this.EventCollapse();
+		}
+		if (damage.Effects == DamageEffects.None)
+		{
+			this.EventMiss();
+		}
+	}
+
+	private void NormalEntered()
+	{
+		this.TargetAnimal.CrossFade(this._standMotion, 0.1f, true, 0f, 1f);
+	}
+
+	private void NormalExited()
+	{
+	}
+
+	private IEnumerator NormalDoing()
+	{
+		if (null != this._victim)
+		{
+			if ((this._victim.transform.position - base.transform.position).magnitude > this._engageDistance)
+			{
+				base.CurState = WildAnimalAI.State.Chase;
+			}
+			else if (Time.time > this._attackCooldownEnd)
+			{
+				base.CurState = WildAnimalAI.State.Attack;
+			}
+			else
+			{
+				base.CurState = WildAnimalAI.State.Normal;
+			}
+		}
+		yield return new WaitForSeconds(0.3f);
+		yield break;
+	}
+
+	protected override IEnumerator OnBeforeDoingState()
+	{
+		this._victim = PlayerBehavior.LocalPlayer.gameObject;
+		if (this._victim == null)
+		{
+			yield return new WaitForSeconds(1f);
+			yield break;
+		}
+		yield break;
+	}
+
+	protected override IEnumerator OnAfterDoingState()
+	{
+		yield break;
+	}
+
+	private void AttackEntered()
+	{
+		this._attackCooldownEnd = Time.time + this._attackCoolTime;
+	}
+
+	private void AttackExited()
+	{
+	}
+
+	private IEnumerator AttackDoing()
+	{
+		Vector3 newPos = Vector3.MoveTowards(this.TargetAnimal.transform.position, PlayerBehavior.LocalPlayer.CurrentPosition, this._maxAttackDist);
+		float yaw = Maths.CalcYawWithTarget(newPos, base.transform.position);
+		this.TargetAnimal.TurnToYaw(yaw, false);
+		this.UnPinUpRootBone();
+		ParticleManager.Emit("Particle/FX_SkillActivated_Common_01.prefab", this.TargetAnimal.CurrentPosition, Quaternion.identity, false, false, default(Vector3), true, true);
+		if (base.IsInterrupted)
+		{
+			yield break;
+		}
+		yield return new WaitForSeconds(0.1f);
+		int index = UnityEngine.Random.Range(0, this._attackMotions.Count);
+		this.TargetAnimal.Play(this._attackMotions[index], false, 0f, 1f);
+		TweenPosition tween = TweenPosition.Begin(this.TargetAnimal.gameObject, this.TargetAnimal.CurAnimState.length, newPos);
+		tween.method = UITweener.Method.EaseInOut;
+		tween.PlayForward();
+		this.PinUpRootBone();
+		float attackAt = Time.time + 0.6f;
+		bool attacked = false;
+		while (tween.enabled)
+		{
+			if (base.IsInterrupted)
+			{
+				tween.enabled = false;
+				yield break;
+			}
+			if (!attacked && Time.time >= attackAt)
+			{
+				AnimalHandlingPlugin.AnimalHandlingPlugin.AnimalManager_DamagePlayer_Patch.Prefix(Singleton<AnimalManager>.Instance(), this.Animal);
+				attacked = true;
+			}
+			yield return null;
+		}
+		base.CurState = WildAnimalAI.State.Normal;
+		yield break;
+	}
+
+	public void EventCollapse()
+	{
+		base.CurState = WildAnimalAI.State.Collapse;
+	}
+
+	private void CollapseEntered()
+	{
+		UIManager.SystemMsg("BattleAction", this.TargetAnimal.GetName() + "가 쓰러졌습니다!", 3f);
+		this.TargetAnimal.Play(this._collapseMotion, false, 0f, 1f);
+		this._collapseEndTime = Time.time + this.TargetAnimal.CurAnimState.length;
+	}
+
+	private void CollapseExited()
+	{
+	}
+
+	private IEnumerator CollapseDoing()
+	{
+		yield return new WaitForSeconds(this._collapseEndTime - Time.time);
+		UIManager.SystemMsg("BattleAction", this.TargetAnimal.GetName() + "가 기운을 되찾았습니다.", 3f);
+		this.TargetAnimal.Play(this._blowEndMotion, false, 0f, 1f);
+		yield return new WaitForSeconds(this.TargetAnimal.CurAnimState.length);
+		base.CurState = WildAnimalAI.State.Normal;
+		yield break;
+	}
+
+	private void GroggyEntered()
+	{
+		UIManager.SystemMsg("BattleAction", this.TargetAnimal.GetName() + "가 정신을 차리지 못하고 있습니다.", 3f);
+		this.TargetAnimal.Play(this._groggyMotion, false, 0f, 1f);
+		this._groggyEndTime = Time.time + this.TargetAnimal.CurAnimState.length;
+	}
+
+	private void GroggyExited()
+	{
+	}
+
+	private IEnumerator GroggyDoing()
+	{
+		yield return new WaitForSeconds(this._groggyEndTime - Time.time);
+		UIManager.SystemMsg("BattleAction", this.TargetAnimal.GetName() + "가 기운을 되찾았습니다.", 3f);
+		base.CurState = WildAnimalAI.State.Normal;
+		yield break;
+	}
+
+	public void EventCritical()
+	{
+		float value = UnityEngine.Random.value;
+		if (value <= 0.75f)
+		{
+			base.CurState = WildAnimalAI.State.Blow;
+		}
+		if (value > 0.75f && value <= 0.9f)
+		{
+			base.CurState = WildAnimalAI.State.Collapse;
+		}
+		if (value > 0.9f && value <= 1f)
+		{
+			base.CurState = WildAnimalAI.State.Groggy;
+		}
+	}
+
+	public void EventMiss()
+	{
+	}
+
+	public void SetCombatAiActivated()
+	{
+		base.CurState = WildAnimalAI.State.BattleBegin;
+	}
+
+	private IEnumerator BattleBeginDoing()
+	{
+		yield return new WaitForSeconds(this.TargetAnimal.CurAnimState.length);
+		base.CurState = WildAnimalAI.State.Normal;
+		yield break;
+	}
+
+	private void BattleBeginEntered()
+	{
+		float yaw = Maths.CalcYawWithTarget(this._victim.transform.position, base.transform.position);
+		AnimationElemMoveSet animationElemMoveSet = this.TargetAnimal.AnimalFrameworkResource.GetAnimationElements("move_motion_sets") as AnimationElemMoveSet;
+		MoveSet moveSet = ((animationElemMoveSet != null) ? animationElemMoveSet.elems.FirstOrDefault<MoveSet>() : null);
+		MoveMotionInfo moveMotion = moveSet.GetMoveMotion(0f);
+		this.TargetAnimal.SetRotateSpeed(moveMotion.rot_speed);
+		this.TargetAnimal.TurnToYaw(yaw, false);
+		this.TargetAnimal.CrossFade(this._threatMotion, -1f, true, 0f, 1f);
+	}
+
+	private void BattleBeginExited()
+	{
+	}
+
+	private void OnHealTimedEvent(object p0, ElapsedEventArgs p1)
+	{
+		if (this._isCanHeal)
+		{
+			this._isHealing = true;
+			Gauge life = new Gauge(this.TargetAnimal.Life.Max(), 0f, new GaugeNode[]
+			{
+				new GaugeNode
+				{
+					Time = 0.0,
+					Value = this.TargetAnimal.Life.Goal() + 1f
+				}
+			});
+			this.TargetAnimal.SetSurvivalGauge(life, null);
+		}
+	}
+
+	private string _standMotion;
+	private string _walkMotion;
+	private float _walkSpeed;
+	private Vector3 _minArea;
+	private Vector3 _maxArea;
+	private string _runMotion;
+	private float _runSpeed;
+	private float _moveSpeed;
+	public bool _isDoingOnePhase;
+	public bool _isDoingTwoPhase;
+	public bool _isDoingThreePhase;
+	private bool _isHealing;
+	private bool _isDeadPhase;
+	private string _sleepMotion;
+	private string _sleepLoopMotion;
+	private string _sleepEndMotion;
+	private string _runStopMotion;
+	private string _limpMotion;
+	private string _eatMotion;
+	private string _evadeMotion;
+	private string _battleIdleMotion;
+	private string _battleStandMotion;
+	private string _turnMotion;
+	private float _engageDistance = 350f;
+	private string _blowMotion;
+	private Vector3 _deadDestPos;
+	private float _attackCooldownEnd;
+	private GameObject _victim;
+	private List<string> _damagedMotions;
+	private float _damagedEndTime;
+	private float _blowDistance;
+	private float _blowTime;
+	private string _groggyMotion;
+	private string _threatMotion;
+	private float _maxLeapDist;
+	private float _attackCoolTime = 3f; // Default cooldown
+	private Vector3 _deadDestPosOriginOffset;
+	private float _maxAttackDist;
+	private string _blowEndMotion;
+	private string _deadMotion;
+	private float _deadTime;
+	private string _collapseMotion = "TRex_Stand"; // Fallback motion name
+	public float _defenseValue;
+	private float _deadDistance;
+	private float _collapseEndTime;
+	private float _groggyEndTime;
+	private float _blowEndTime;
+	private List<string> _attackMotions;
+	private float _walkDistance;
+	private bool _isBattleBegin;
+	private float _healCooltime;
+	private bool _isCanHeal;
+	private System.Timers.Timer _healTimer;
+	public bool _isBlowing;
+
+	public enum State
+	{
+		Invalid = -1,
+		Idle,
+		Roaming,
+		Chase = 4,
+		Blow = 6,
+		Dead = 8,
+		Normal,
+		Attack,
+		Collapse,
+		Groggy,
+		WaitForBattleBegin = 3,
+		Evade = 7,
+		Damaged = 5,
+		BattleBegin = 13,
+		Count = 2
+	}
+
+	public enum Type
+	{
+		Invalid = -1,
+		TRex,
+		Allo,
+		Tarbo,
+		Raptor
+	}
+}

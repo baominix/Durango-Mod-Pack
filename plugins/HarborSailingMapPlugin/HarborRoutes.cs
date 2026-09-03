@@ -48,7 +48,9 @@ namespace BaoX.DurangoOriginal.HarborSailingMap
             Level = level;
             Biome = biome;
             SeaName = seaName;
-            Name = name;
+            Name = kind == HarborIslandKind.Unstable
+                ? UnstableIslandDatabase.IslandName(terrainId, name)
+                : name;
             UnstableFactor = unstableFactor;
             Role = role;
             Kind = kind;
@@ -89,12 +91,27 @@ namespace BaoX.DurangoOriginal.HarborSailingMap
             new SailTarget("ri55sw", "ri55sw171228", "55SwT01", 55, Biome.SwampMud, "Swamp Sea", "Swamp Island Lv. 55", 1),
             new SailTarget("ua60tu", "ua60tuMain01", "60TuT01", 60, Biome.Tundra, "Tundra Sea", "Tundra Island Lv. 60", 1),
             new SailTarget("ua60sn", "ua60snMain03", "60SnT01", 60, Biome.SnowField, "Snowfield Sea", "Snowfield Island Lv. 60", 1),
-            new SailTarget("ua60vol", "ua60vol_01_01", "60VoS01", 60, Biome.Volcanic, "Volcanic Sea", "Volcanic Island Lv. 60", 1),
+            new SailTarget("ua60vol", "ua60vol_01_01", "60VoS01", 60, Biome.Volcanic, "Volcano Sea", "Volcanic Island Lv. 60", 1),
             new SailTarget("ua60sw", "ua60swMain05", "60SwT01", 60, Biome.SwampMud, "Swamp Sea", "Swamp Island Lv. 60", 1),
             new SailTarget("ua60de", "ua60deMain01", "60DeT01", 60, Biome.Desert, "Desert Sea", "Desert Island Lv. 60", 1),
             new SailTarget("ua60tr", "ua60trMain01", "60TrT01", 60, Biome.TropicalForest, "Tropical Sea", "Tropical Island Lv. 60", 1),
             new SailTarget("op60te", "op60te171228", "op60te171228", 60, Biome.TemperateForest, "Temperate Savage Island Sea", "Temperate Savage Island Lv. 60", 1, Role.Outpost, HarborIslandKind.Unstable, false),
-            new SailTarget("op60tr", "op60tr171228", "op60tr171228", 60, Biome.TropicalForest, "Tropical Savage Island Sea", "Tropical Savage Island Lv. 60", 1, Role.Outpost, HarborIslandKind.Unstable, false)
+            new SailTarget("op60tr", "op60tr171228", "op60tr171228", 60, Biome.TropicalForest, "Tropical Savage Island Sea", "Tropical Savage Island Lv. 60", 1, Role.Outpost, HarborIslandKind.Unstable, false),
+
+            // The offline personal-region selector also exposes every remaining
+            // packaged terrain. Keep these as separate Personal destinations even
+            // when the same physical terrain is available through Unstable sailing.
+            // These terrain package ids are not RegionTemplate keys. Keep the
+            // Personal destination identity, but use the template declared by
+            // each packaged terrain so UI systems can resolve its metadata.
+            new SailTarget("ra60sw", "ra60sw180226", "ra60sw", 10, Biome.SwampMud, "Tamed Islands", "Tamed Swamp Island", 0, Role.Personal, HarborIslandKind.Tamed),
+            new SailTarget("ri35de", "ri35deSub01", "ri35de", 10, Biome.Desert, "Tamed Islands", "Tamed Desert Island", 0, Role.Personal, HarborIslandKind.Tamed),
+            new SailTarget("ri35te", "ri35teSub01", "ri35te", 10, Biome.TemperateForest, "Tamed Islands", "Tamed Temperate Island", 0, Role.Personal, HarborIslandKind.Tamed),
+            new SailTarget("ri40tr", "ri40trSub01", "ri40tr", 10, Biome.TropicalForest, "Tamed Islands", "Tamed Tropical Island", 0, Role.Personal, HarborIslandKind.Tamed),
+            new SailTarget("ri45sa", "ri45saSub01", "ri45sa", 10, Biome.Grassland, "Tamed Islands", "Tamed Savanna Island", 0, Role.Personal, HarborIslandKind.Tamed),
+            new SailTarget("ri50sn", "ri50snSub01", "ri50sn", 10, Biome.SnowField, "Tamed Islands", "Tamed Snowfield Island", 0, Role.Personal, HarborIslandKind.Tamed),
+            new SailTarget("ri55tu", "ri55tuSub01", "ri55tu", 10, Biome.Tundra, "Tamed Islands", "Tamed Tundra Island", 0, Role.Personal, HarborIslandKind.Tamed),
+            new SailTarget("ua60vol", "ua60vol_06_03", "ua60vol", 10, Biome.Volcanic, "Tamed Islands", "Tamed Volcanic Island", 0, Role.Personal, HarborIslandKind.Tamed)
         };
 
         public static Routes MakeRoutes()
@@ -105,6 +122,10 @@ namespace BaoX.DurangoOriginal.HarborSailingMap
             for (int i = 0; i < Targets.Length; i++)
             {
                 SailTarget target = Targets[i];
+                if (target.Kind != HarborIslandKind.Unstable)
+                {
+                    continue;
+                }
                 Route route = new Route { RegionId = target.RegionId, Price = null };
                 Dictionary<string, List<Route>> grouped;
                 if (!groupedByRole.TryGetValue(target.Role, out grouped))
@@ -249,6 +270,16 @@ namespace BaoX.DurangoOriginal.HarborSailingMap
             return null;
         }
 
+        public static SailTarget FindBySaveKey(string saveKey)
+        {
+            if (string.IsNullOrEmpty(saveKey)) return null;
+            for (int i = 0; i < Targets.Length; i++)
+            {
+                if (Targets[i].SaveKey == saveKey) return Targets[i];
+            }
+            return null;
+        }
+
         public static string[] GetSeaNames()
         {
             List<string> names = new List<string>();
@@ -262,9 +293,40 @@ namespace BaoX.DurangoOriginal.HarborSailingMap
             return names.ToArray();
         }
 
-        private static SailTarget FindByRegionId(string id)
+        public static SailTarget FindByRegionId(string id)
         {
             for (int i = 0; i < Targets.Length; i++) if (Targets[i].RegionId == id) return Targets[i];
+            return null;
+        }
+
+        public static SailTarget FindForWorld(Durango.Offline.World world)
+        {
+            if (world == null) return null;
+
+            // Several physical terrain packages can now be either Personal or
+            // Unstable. The active Harbor save key is authoritative when present.
+            SailTarget activeTarget = HarborRuntime.GetCurrentTarget(world);
+            if (activeTarget != null) return activeTarget;
+
+            string templateId = world.TerrainInfo == null
+                ? null
+                : world.TerrainInfo.region_template;
+            for (int i = 0; i < Targets.Length; i++)
+            {
+                if (Targets[i].RegionTemplateId == templateId ||
+                    Targets[i].TerrainId == templateId)
+                {
+                    return Targets[i];
+                }
+            }
+
+            Durango.Offline.WorldContext context =
+                HarborRuntime.GetWorldContext(world);
+            string terrainId = context == null ? null : context.TerrainId;
+            for (int i = 0; i < Targets.Length; i++)
+            {
+                if (Targets[i].TerrainId == terrainId) return Targets[i];
+            }
             return null;
         }
 

@@ -1,0 +1,346 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca623cbf980f338b9506b97c6ddc38aa, type: 3}
+  m_Name: Direwolf_framework
+  m_EditorClassIdentifier:
+  normal_motions:
+  - key: stand
+    motion: Wolf_Stand
+    _clipObj: {fileID: 7400000, guid: df821dd6425f27c4c9fa30424e58d4e8, type: 2}
+  - key: idle
+    motion: Wolf_Idle
+    _clipObj: {fileID: 7400000, guid: d615ee71cb28b4645b8ad2ccc6d1f3e7, type: 2}
+  - key: eat
+    motion: Wolf_Eat
+    _clipObj: {fileID: 7400000, guid: 3c982a42f96673f4d97604dcc199ed08, type: 2}
+  - key: alert
+    motion: Wolf_Alert
+    _clipObj: {fileID: 7400000, guid: adf1b5ac492cb594b84890f2fbb7e740, type: 2}
+  - key: dead
+    motion: Wolf_Die
+    _clipObj: {fileID: 7400000, guid: f45db4cfd4d70bf448fe44f1e271aab7, type: 2}
+  normal_3states:
+  - key: sleep_motions
+    begin: Wolf_Sleep_Begin
+    during: Wolf_Sleep_Looping
+    end: Wolf_Sleep_End
+    _clipObjBegin: {fileID: 7400000, guid: a706ecdc3d5bd384b8258843ddaad869, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: b7d41668bbed1ba4e9fb087dc753571d, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 075a737a660ec5948af29508dcc7ab0b, type: 2}
+  weighted_motions:
+  - key: rest_motions
+    elems:
+    - weight: 1
+      motion: Wolf_Stand
+      duration: {x: 3, y: 3}
+      _clipObj: {fileID: 7400000, guid: df821dd6425f27c4c9fa30424e58d4e8, type: 2}
+    - weight: 1
+      motion: Wolf_Idle
+      duration: {x: 5.4, y: 5.4}
+      _clipObj: {fileID: 7400000, guid: d615ee71cb28b4645b8ad2ccc6d1f3e7, type: 2}
+  weighted_3states:
+  - key: seq_rest_motions
+    elems:
+    - weight: 1
+      begin: Wolf_Sit_Begin
+      loopings:
+      - weight: 0.7
+        motion: Wolf_Sit_Looping_A
+        duration: {x: 3, y: 10}
+        _clipObj: {fileID: 7400000, guid: cdd6165c448558545ac58846dbc12709, type: 2}
+      - weight: 0.3
+        motion: Wolf_Sit_Looping_B
+        duration: {x: 8.8, y: 8.8}
+        _clipObj: {fileID: 7400000, guid: 8c9a5838cc292134e8cf67e3efd1c5ba, type: 2}
+      end: Wolf_Sit_End
+      _clipObjBegin: {fileID: 7400000, guid: e4b135a5c8a4ab54aa6921b79fa0793a, type: 2}
+      _clipObjEnd: {fileID: 7400000, guid: 4d450fa26f0411245b77a1834f94d527, type: 2}
+  move_sets:
+  - key: move_motion_sets
+    elems:
+    - name: direwolf_move_set
+      motions:
+      - motion: Wolf_Limp
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion:
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 220
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 5cb32e5aa586fba41a4ac175fd0ba2d8, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 0}
+      - motion: Wolf_Walk
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<400'
+        base_move_speed: 380
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 0ace4af6c2d02d4419ab4b487c690a2f, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 0}
+      - motion: Wolf_Run
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 670
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 7c2634291a4b6f84bbec2824d87aea92, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 0}
+    - name: direwolf_pet_move_set
+      motions:
+      - motion: Wolf_Run_Pet
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 580
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: bd2c56af2745a214a9c24e8520ba84d2, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 0}
+  comabt_motions:
+  - key: battle_idle
+    motion: Wolf_BattleStand
+    _clipObj: {fileID: 7400000, guid: c8dd4d8f2a408684991bb400c953339a, type: 2}
+  - key: battle_stand
+    motion: Wolf_BattleStand
+    _clipObj: {fileID: 7400000, guid: c8dd4d8f2a408684991bb400c953339a, type: 2}
+  - key: evade
+    motion: Wolf_Evade
+    _clipObj: {fileID: 7400000, guid: cf8c1a0b65ecc9d478902c4ca97dfa22, type: 2}
+  - key: groggy
+    motion: Wolf_Groggy
+    _clipObj: {fileID: 7400000, guid: f52531d3f9e3a4c458bb71b05616b425, type: 2}
+  - key: blow
+    motion: Wolf_Damage_Blow_Begin
+    _clipObj: {fileID: 7400000, guid: c8cd2c3b96c9f38488738aa33e75fe7c, type: 2}
+  combat_directions:
+  - key: knock_back_motion_map
+    front: Wolf_Damage_S
+    back: Wolf_Damage_N
+    left: Wolf_Damage_E
+    right: Wolf_Damage_W
+    _clipObjFront: {fileID: 7400000, guid: 250fac5cf2433484d944986c57cf9027, type: 2}
+    _clipObjBack: {fileID: 7400000, guid: 75cc833f987e81c45b63d50a76721bf6, type: 2}
+    _clipObjLeft: {fileID: 7400000, guid: bdba63fe7ee318740bd7ca31f015ed1c, type: 2}
+    _clipObjRight: {fileID: 7400000, guid: e4391b1c6b8114d449ff6c6ce613bb70, type: 2}
+  combat_3states:
+  - key: knock_down_motions
+    begin: Wolf_Damage_Blow_Begin
+    during: Wolf_Damage_Blow_Looping
+    end: Wolf_Damage_Blow_End
+    _clipObjBegin: {fileID: 7400000, guid: c8cd2c3b96c9f38488738aa33e75fe7c, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: fd074f4f59a0d404ca55f83f76d98d3f, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: eb2fcd035ad476c44aa481755a8807d9, type: 2}
+  combat_attacks:
+  - key: direwolf_dash
+    meta:
+      motion: Wolf_Attack_Dash
+      bound_enemy: 1
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: d5d2fb12699f6a2419938d53be6a7e24, type: 2}
+    attack_info:
+    - frame: 36
+      sub_action_id: direwolf_dash_0
+      damage_type: 2
+      radius: 400
+      radius_min: 0
+      angles: {x: -30, y: 90}
+      rect_half_size: {x: 180, y: 80}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: direwolf_bite
+    meta:
+      motion: Wolf_Attack_Bite
+      bound_enemy: 1
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: d3e483efe62d6e5428b1de03fa476da0, type: 2}
+    attack_info:
+    - frame: 17
+      sub_action_id: direwolf_bite_0
+      damage_type: 0
+      radius: 150
+      radius_min: 0
+      angles: {x: -60, y: 60}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: direwolf_counter
+    meta:
+      motion: Wolf_Attack_Counter
+      bound_enemy: 1
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 5e624d584365d3141bc808578eb77c0d, type: 2}
+    attack_info:
+    - frame: 35
+      sub_action_id: direwolf_counter_0
+      damage_type: 0
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: wolf_attack_howling
+    meta:
+      motion: Wolf_Attack_Howling
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 7878cda5198150840bcfa2748bda103d, type: 2}
+    attack_info:
+    - frame: 0
+      sub_action_id: wolf_attack_howling_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: direwolf_active_bite_s
+    meta:
+      motion: Wolf_Active_Attack_Bite
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 707c7986712a0d94189fe45d96d59bd7, type: 2}
+    attack_info:
+    - frame: 17
+      sub_action_id: direwolf_active_bite_0
+      damage_type: 0
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: direwolf_bite_f
+    meta:
+      motion: Wolf_Attack_Bite
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: d3e483efe62d6e5428b1de03fa476da0, type: 2}
+    attack_info:
+    - frame: 17
+      sub_action_id: direwolf_bite_f_0
+      damage_type: 0
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: direwolf_active_bite_c
+    meta:
+      motion: Wolf_Active_Attack_Bite
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 707c7986712a0d94189fe45d96d59bd7, type: 2}
+    attack_info:
+    - frame: 17
+      sub_action_id: direwolf_active_bite_0
+      damage_type: 0
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: direwolf_active_bite_b
+    meta:
+      motion: Wolf_Active_Attack_Bite
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 707c7986712a0d94189fe45d96d59bd7, type: 2}
+    attack_info:
+    - frame: 17
+      sub_action_id: direwolf_active_bite_0
+      damage_type: 0
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: direwolf_active_bite_a
+    meta:
+      motion: Wolf_Active_Attack_Bite
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 707c7986712a0d94189fe45d96d59bd7, type: 2}
+    attack_info:
+    - frame: 17
+      sub_action_id: direwolf_active_bite_0
+      damage_type: 0
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  active_skills:
+  - key: active_default
+    motion: Wolf_Active_Default
+    _clipObj: {fileID: 7400000, guid: 5abd07dd13dc9584091e45d88807bef1, type: 2}
+  etc_motions:
+  - key: wolf_battle_idle
+    motion: Wolf_Battle_Idle
+    _clipObj: {fileID: 7400000, guid: 7cc2856f19cbc3f428d90b0740645069, type: 2}
+  - key: wolf_walk_quietly
+    motion: Wolf_Walk_Quietly
+    _clipObj: {fileID: 7400000, guid: f54606bc1b32cdb4c991b330e61e6324, type: 2}
+  - key: wolf_run_pet
+    motion: Wolf_Run_Pet
+    _clipObj: {fileID: 7400000, guid: bd2c56af2745a214a9c24e8520ba84d2, type: 2}
+  - key: wolf_run_stop
+    motion: Wolf_Run_Stop
+    _clipObj: {fileID: 7400000, guid: 7dbddaa2604d5ae44b99ef197b882539, type: 2}

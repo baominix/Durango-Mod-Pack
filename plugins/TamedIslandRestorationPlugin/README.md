@@ -3,12 +3,19 @@
 Restores the Original client's offline Domain/Tamed Island requests while
 keeping Tamed and Unstable islands as separate Harbor destinations.
 
-The restored selector exposes all five packaged personal terrains,
-`pe10gr_1` through `pe10gr_5`, with their matching original region templates.
-They are exposed as `Role.Personal`, use `tamed.<terrain>.10` snapshots, and do
-not share the Unstable route IDs or saves. The plugin remembers the selected
-personal terrain and also recognizes it when a profile starts on one of those
-five layouts.
+The restored selector exposes all thirteen terrain packages listed by the
+Original offline client's `personal_region.region_template_ids`: `pe10gr_1`
+through `pe10gr_5`, `ra60sw`, `ri35de`, `ri35te`, `ri40tr`, `ri45sa`,
+`ri50sn`, `ri55tu`, and `ua60vol`. They are exposed as `Role.Personal`, use
+`tamed.<terrain>.10` snapshots, and do not share the Unstable route IDs or
+saves. Physical terrain packages which also appear in Harbor sailing are
+disambiguated using the active save key, so their Personal and Unstable roles
+remain separate.
+
+Fresh characters have no Harbor state yet: the selected terrain is written
+directly to their slot world. Such worlds are recognized as Personal from the
+thirteen-item selector list; after the first sailing transition, the active
+save key becomes authoritative.
 
 Implemented offline responses:
 
@@ -34,11 +41,15 @@ for Tamed regions. Releasing the last cell returns the island to the undeclared
 state so the player can select a new location.
 
 The plugin also replaces the stock offline `Welcome` region only while a
-`pe10gr_*` Tamed terrain is loaded. The stock server reports every map as
+Tamed terrain is loaded. The stock server reports every map as
 region `1` / `Role.Rural`; Tamed maps are now reported with their matching
 `tamed|<terrain>|10` ID, `Role.Personal`, and `PersonalRegionId`. Terrain ID
 remains `1` because the Original offline Gateway serves terrain data at that
 fixed endpoint.
+
+The world-map header uses the current character name as the yellow personal
+island name. Personal regions always report Lv.10 regardless of the selected
+physical terrain layout.
 
 Pioneer Rank is persisted per player. The Original `GetPioneerGradeInfo` and
 `UseItemsForPioneerPoint` messages are restored. Players build a Personal

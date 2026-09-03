@@ -1,0 +1,366 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca623cbf980f338b9506b97c6ddc38aa, type: 3}
+  m_Name: iguana_framework
+  m_EditorClassIdentifier:
+  normal_motions:
+  - key: stand
+    motion: Iguana_Stand
+    _clipObj: {fileID: 7400000, guid: 16dcbcf1ed2679c48868db6bbf41efae, type: 2}
+  - key: idle
+    motion: Iguana_Idle
+    _clipObj: {fileID: 7400000, guid: 1c006cb12c7e41c4f8511db22491f798, type: 2}
+  - key: idle_step
+    motion: Iguana_Idle_Step
+    _clipObj: {fileID: 7400000, guid: 69f5cd33373e0a349981e5d6120425e3, type: 2}
+  - key: eat
+    motion: Iguana_Eat
+    _clipObj: {fileID: 7400000, guid: 70572203c4b954c4fb9f09bcf4fc27e6, type: 2}
+  - key: dead
+    motion: Iguana_Die
+    _clipObj: {fileID: 7400000, guid: c9c594f6fd697ee44a59f810bcdd8f55, type: 2}
+  - key: alert
+    motion: Iguana_Alert
+    _clipObj: {fileID: 7400000, guid: e162364e18c279b4f9c4358fe092160c, type: 2}
+  - key: idle_headbanging
+    motion: Iguana_Idle_Headbanging
+    _clipObj: {fileID: 7400000, guid: 1adff0bd6aa87a944bb2ce9a12ac4a1e, type: 2}
+  normal_3states:
+  - key: sleep_motions
+    begin: Iguana_Sleep_Begin
+    during: Iguana_Sleep_Looping
+    end: Iguana_Sleep_End
+    _clipObjBegin: {fileID: 7400000, guid: 0db07b7aa0522d4468ac9c7130650b5e, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 33fefbb5e60c6ec4c94c1a56d36e966f, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: ed4f76d0c3a8fd84f81b67c0f67fbffb, type: 2}
+  weighted_motions:
+  - key: rest_motions
+    elems:
+    - weight: 1
+      motion: Iguana_Stand
+      duration: {x: 1, y: 4}
+      _clipObj: {fileID: 7400000, guid: 16dcbcf1ed2679c48868db6bbf41efae, type: 2}
+    - weight: 1
+      motion: Iguana_Idle
+      duration: {x: 1, y: 7.6}
+      _clipObj: {fileID: 7400000, guid: 1c006cb12c7e41c4f8511db22491f798, type: 2}
+    - weight: 1
+      motion: Iguana_Idle_Step
+      duration: {x: 1, y: 9.3}
+      _clipObj: {fileID: 7400000, guid: 69f5cd33373e0a349981e5d6120425e3, type: 2}
+    - weight: 1
+      motion: Iguana_Idle_Headbanging
+      duration: {x: 1, y: 6.3}
+      _clipObj: {fileID: 7400000, guid: 1adff0bd6aa87a944bb2ce9a12ac4a1e, type: 2}
+  weighted_3states: []
+  move_sets:
+  - key: move_motion_sets
+    elems:
+    - name: Iguana_move_set
+      motions:
+      - motion: Iguana_Limp
+        rot_motion_cw: Iguana_Rotate_CW
+        rot_motion_ccw: Iguana_Rotate_CCW
+        turn_reverse_motion: Iguana_Turn
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 110
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: c2215b4149cd5e843894d69f6580618d, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 002c6ff5cb9217d4b9694432c1994bfb, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: f1abf2471f30b3a4dae305679ff7e7e4, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 7a26f383267eef34eb8725d6c287b0dc, type: 2}
+      - motion: Iguana_Walk
+        rot_motion_cw: Iguana_Rotate_CW
+        rot_motion_ccw: Iguana_Rotate_CCW
+        turn_reverse_motion: Iguana_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<400'
+        base_move_speed: 120
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: df12024ae45dfc141aa355895c5fbb3e, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 002c6ff5cb9217d4b9694432c1994bfb, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: f1abf2471f30b3a4dae305679ff7e7e4, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 7a26f383267eef34eb8725d6c287b0dc, type: 2}
+      - motion: Iguana_Run
+        rot_motion_cw: Iguana_Rotate_CW
+        rot_motion_ccw: Iguana_Rotate_CCW
+        turn_reverse_motion: Iguana_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 400
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 6bb0facd247be66499e85a1bf85f3487, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 002c6ff5cb9217d4b9694432c1994bfb, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: f1abf2471f30b3a4dae305679ff7e7e4, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 7a26f383267eef34eb8725d6c287b0dc, type: 2}
+  comabt_motions:
+  - key: battle_idle
+    motion: Iguana_BattleStand
+    _clipObj: {fileID: 7400000, guid: 4f93ad65879e143479ac0d457f9b4f76, type: 2}
+  - key: battle_stand
+    motion: Iguana_BattleStand
+    _clipObj: {fileID: 7400000, guid: 4f93ad65879e143479ac0d457f9b4f76, type: 2}
+  - key: groggy
+    motion: Iguana_Groggy
+    _clipObj: {fileID: 7400000, guid: c5bf8d5172ad9464f9754eb284657d42, type: 2}
+  - key: evade
+    motion: Iguana_Evade
+    _clipObj: {fileID: 7400000, guid: 74fc17f3269e24d4ab7332274ed4e0d6, type: 2}
+  combat_directions:
+  - key: knock_back_motion_map
+    front: Iguana_Damage_S
+    back: Iguana_Damage_N
+    left: Iguana_Damage_E
+    right: Iguana_Damage_W
+    _clipObjFront: {fileID: 7400000, guid: 18c22b4b45e26dd4083b44cc14c65f6b, type: 2}
+    _clipObjBack: {fileID: 7400000, guid: 5a5f0e576ba41784a8442e24d12f6c97, type: 2}
+    _clipObjLeft: {fileID: 7400000, guid: 203bca7bb0128a349b172da6c4a56426, type: 2}
+    _clipObjRight: {fileID: 7400000, guid: 8deb3f6798da36643b251a016a89c11c, type: 2}
+  combat_3states:
+  - key: knock_down_motions
+    begin: Iguana_Damage_Blow_Begin
+    during: Iguana_Damage_Blow_Looping
+    end: Iguana_Damage_Blow_End
+    _clipObjBegin: {fileID: 7400000, guid: d77a3bddc50359544ad805bd4116d334, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: cbfc96d23226a494c97c40f743aa3723, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 51c5525a180399e4ca0df1a6471444fc, type: 2}
+  combat_attacks:
+  - key: iguana_attack_head
+    meta:
+      motion: Iguana_Attack_Head
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: b369357bb8542064f902ef378163f228, type: 2}
+    attack_info:
+    - frame: 22
+      sub_action_id: iguana_attack_head_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: iguana_attack_dash
+    meta:
+      motion: Iguana_Attack_Dash
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: bf35e78a9b6eab5438588d34e2ea3424, type: 2}
+    attack_info:
+    - frame: 42
+      sub_action_id: iguana_attack_dash_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: iguana_attack_spit
+    meta:
+      motion: Iguana_Attack_Spit
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 4b606fac7713f9d48bced729481f17d3, type: 2}
+    attack_info:
+    - frame: 29
+      sub_action_id: iguana_attack_spit_0
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 300, y: 100}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: iguana_attack_tail
+    meta:
+      motion: Iguana_Attack_Tail
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 2d3f7657f3dfb40479f16e583258db4a, type: 2}
+    attack_info:
+    - frame: 24
+      sub_action_id: iguana_attack_tail_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: iguana_attack_torso
+    meta:
+      motion: Iguana_Attack_Torso
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 31e1bfe37fe98af4e9de6ab772a9c6e2, type: 2}
+    attack_info:
+    - frame: 36
+      sub_action_id: iguana_attack_torso_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: iguana_attack_back
+    meta:
+      motion: Iguana_Attack_Back
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: de4b9406d37cddb4a928d16c0f6f2c55, type: 2}
+    attack_info:
+    - frame: 17
+      sub_action_id: iguana_attack_back_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: iguana_attack_head_02
+    meta:
+      motion: Iguana_Attack_Back
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: de4b9406d37cddb4a928d16c0f6f2c55, type: 2}
+    attack_info:
+    - frame: 17
+      sub_action_id: iguana_attack_back_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 1
+  - key: iguana_attack_dash_02
+    meta:
+      motion: Iguana_Attack_Back
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: de4b9406d37cddb4a928d16c0f6f2c55, type: 2}
+    attack_info:
+    - frame: 17
+      sub_action_id: iguana_attack_back_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 1
+  - key: iguana_attack_spit_02
+    meta:
+      motion: Iguana_Attack_Back
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: de4b9406d37cddb4a928d16c0f6f2c55, type: 2}
+    attack_info:
+    - frame: 17
+      sub_action_id: iguana_attack_back_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 1
+  - key: iguana_attack_tail_02
+    meta:
+      motion: Iguana_Attack_Back
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: de4b9406d37cddb4a928d16c0f6f2c55, type: 2}
+    attack_info:
+    - frame: 17
+      sub_action_id: iguana_attack_back_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 1
+  - key: iguana_attack_torso_02
+    meta:
+      motion: Iguana_Attack_Back
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: de4b9406d37cddb4a928d16c0f6f2c55, type: 2}
+    attack_info:
+    - frame: 17
+      sub_action_id: iguana_attack_back_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 1
+  - key: iguana_attack_back_02
+    meta:
+      motion: Iguana_Attack_Back
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: de4b9406d37cddb4a928d16c0f6f2c55, type: 2}
+    attack_info:
+    - frame: 17
+      sub_action_id: iguana_attack_back_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 1
+  active_skills: []
+  etc_motions:
+  - key: iguana_revive
+    motion: Iguana_Revive
+    _clipObj: {fileID: 7400000, guid: 8246bcfbc41594d489ee45922ba6d426, type: 2}

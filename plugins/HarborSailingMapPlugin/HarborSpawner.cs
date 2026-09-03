@@ -232,12 +232,29 @@ namespace BaoX.DurangoOriginal.HarborSailingMap
             {
                 return true;
             }
+            List<int> interactions = new List<int>
+            {
+                (int)Interaction.SailingRoutes
+            };
+            List<int> disabledInteractions = new List<int>();
+            if (HarborRuntime.IsAtTamedHome(__instance))
+            {
+                disabledInteractions.Add((int)Interaction.SailingPersonalRegion);
+            }
+            else
+            {
+                interactions.Add((int)Interaction.SailingPersonalRegion);
+            }
+            if (HarborRuntime.CanReturnToExploring(__instance))
+            {
+                interactions.Add((int)Interaction.SailingBack);
+            }
             Touched touched = new Touched
             {
                 EntityId = touch.EntityId,
                 EntityName = "Harbor",
-                Interactions = new int[] { (int)Interaction.SailingExplore, (int)Interaction.SailingRoutes },
-                DisabledInteractions = new int[0],
+                Interactions = interactions.ToArray(),
+                DisabledInteractions = disabledInteractions.ToArray(),
                 AccessDeniedInteractions = new int[0]
             };
             __instance.Send<Touched>(touched, seq);

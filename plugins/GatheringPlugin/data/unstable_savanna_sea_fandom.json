@@ -1,0 +1,188 @@
+{
+  "source": "https://durango-archive.fandom.com/wiki/Unstable_Savanna_Sea",
+  "regionTemplateId": "ri15sa190710",
+  "level": 15,
+  "sea": "Unstable Savanna Sea",
+  "resources": [
+    {
+      "name": "Animal Egg",
+      "collectible_ids": ["egg"],
+      "yield": 3,
+      "items": ["Egg"],
+      "generator_ids": ["egg"],
+      "prototype_ids": ["egg"],
+      "rarity": ["At Crater"]
+    },
+    {
+      "name": "Baobab Tree",
+      "collectible_ids": ["tree_baobab"],
+      "yield": 20,
+      "items": ["Broad-leaved Branch", "Leaf", "Log"],
+      "generator_ids": ["wood_bough_broadleaved", "leaf_small", "wood_log_baobab"],
+      "prototype_ids": ["wood_bough_broadleaved", "leaf_small", "wood_log"],
+      "tools": ["Work Knife", "N/A", "Work Axe / Saw / Work Two-Handed Axe"],
+      "rarity": ["Common", "At Crater"]
+    },
+    {
+      "name": "Boulder",
+      "collectible_ids": ["rock"],
+      "yield": 10,
+      "items": ["Boulder", "Pebble"],
+      "generator_ids": ["rock", "stone"],
+      "prototype_ids": ["stone_big", "stone"],
+      "tools": ["Work Hammer / Pickaxe / Work Two-Handed Hammer", "N/A"],
+      "rarity": ["Cliffside", "River", "At Crater"]
+    },
+    {
+      "name": "Cabbage Palm Tree",
+      "collectible_ids": ["tree_cabbagepalm"],
+      "yield": 12,
+      "items": ["Branch", "Coconut", "Coconut Crab", "Large Leaf", "Log"],
+      "generator_ids": ["wood_bough", "coconut", "crab_coconut", "leaf_large", "wood_log"],
+      "prototype_ids": ["wood_bough", "coconut", "crab_coconut", "leaf_large", "wood_log"],
+      "tools": ["Work Knife", "N/A", "N/A", "Work Knife", "Work Axe / Saw / Work Two-Handed Axe"],
+      "rarity": ["Beach"]
+    },
+    {
+      "name": "Clam",
+      "collectible_ids": ["seashell_1"],
+      "yield": 6,
+      "items": ["Clam Meat", "Seashell"],
+      "generator_ids": ["clam", "clam_shell"],
+      "prototype_ids": ["clam", "clam_shell"],
+      "rarity": ["Beach"]
+    },
+    {
+      "name": "Crabgrass",
+      "collectible_ids": ["grass_wiregrass"],
+      "yield": 5,
+      "items": ["Stalk"],
+      "generator_ids": ["reed"],
+      "prototype_ids": ["stem"],
+      "tools": ["Work Knife"],
+      "rarity": ["Common"]
+    },
+    {
+      "name": "Elephant Grass",
+      "collectible_ids": ["grass_elephant"],
+      "yield": 5,
+      "items": ["Stalk"],
+      "generator_ids": ["reed"],
+      "prototype_ids": ["stem"],
+      "tools": ["Work Knife"],
+      "rarity": ["Waterside", "At Crater"]
+    },
+    {
+      "name": "Flowered Crabgrass",
+      "collectible_ids": ["grass_wiregrass_flowered"],
+      "yield": 5,
+      "items": ["Crabgrass Flower", "Stalk"],
+      "generator_ids": ["wiregrass_flower", "reed"],
+      "prototype_ids": ["flower", "stem"],
+      "tools": ["Work Knife", "Work Knife"],
+      "rarity": ["Rare", "At Crater"]
+    },
+    {
+      "name": "Lavender",
+      "collectible_ids": ["bush_lavender"],
+      "yield": 7,
+      "items": ["Lavender", "Leaf"],
+      "generator_ids": ["lavender_flower", "leaf_small"],
+      "prototype_ids": ["flower", "leaf_small"],
+      "tools": ["Work Knife", "N/A"],
+      "rarity": ["At Crater"]
+    },
+    {
+      "name": "Lost Package",
+      "collectible_ids": ["paperbox_normal_mixed"],
+      "yield": 1,
+      "items": ["Random Modern Item"],
+      "generator_ids": ["random_modern_item"],
+      "prototype_pool": ["fish_can", "fish_vynil", "food_k", "ramen", "glass_piece", "wiper"],
+      "rarity": ["Rare"]
+    },
+    {
+      "name": "Moriche Palm Tree",
+      "collectible_ids": ["tree_morichepalm"],
+      "yield": 12,
+      "items": ["Branch", "Coconut", "Large Leaf", "Log"],
+      "generator_ids": ["wood_bough", "coconut", "leaf_large", "wood_log"],
+      "prototype_ids": ["wood_bough", "coconut", "leaf_large", "wood_log"],
+      "tools": ["Work Knife", "N/A", "Work Knife", "Work Axe / Saw / Work Two-Handed Axe"],
+      "rarity": ["Lakeside"]
+    },
+    {
+      "name": "Mud Pit",
+      "collectible_ids": ["mud_swamp"],
+      "yield": 3,
+      "items": ["Mud"],
+      "generator_ids": ["clay"],
+      "prototype_ids": ["clay"],
+      "tools": ["Shovel"],
+      "rarity": ["Lakeside", "At Crater"]
+    },
+    {
+      "name": "Pebble",
+      "collectible_ids": ["stone"],
+      "yield": 5,
+      "items": ["Pebble"],
+      "generator_ids": ["stone"],
+      "prototype_ids": ["stone"],
+      "rarity": ["Common"]
+    },
+    {
+      "name": "Reed",
+      "collectible_ids": ["grass_reed", "grass_reed_lake"],
+      "yield": 5,
+      "items": ["Stalk"],
+      "generator_ids": ["reed"],
+      "prototype_ids": ["stem"],
+      "tools": ["Work Knife"],
+      "rarity": ["River"]
+    },
+    {
+      "name": "Screw Pine Tree",
+      "collectible_ids": ["tree_screwpine"],
+      "yield": 20,
+      "items": ["Branch", "Fruit", "Leaf", "Log"],
+      "generator_ids": ["wood_bough", "fruit", "leaf_small", "wood_log"],
+      "prototype_ids": ["wood_bough", "fruit", "leaf_small", "wood_log"],
+      "tools": ["Work Knife", "N/A", "N/A", "Work Axe / Saw / Work Two-Handed Axe"],
+      "rarity": ["Rare"]
+    },
+    {
+      "name": "Seedbed Tree",
+      "collectible_ids": ["tree_birdnest"],
+      "yield": 12,
+      "items": ["Branch", "Caterpillar"],
+      "generator_ids": ["wood_bough", "worm"],
+      "prototype_ids": ["wood_bough", "worm"],
+      "tools": ["Work Knife", "N/A"],
+      "rarity": ["Rare"]
+    },
+    {
+      "name": "Shoal of Fish",
+      "collectible_ids": [
+        "harpoon_fishing_point_river",
+        "harpoon_fishing_point_ocean",
+        "harpoon_fishing_point_lake"
+      ],
+      "yield": 2,
+      "items": ["Big Fish", "Fish", "Plastic Bag"],
+      "generator_ids": ["fish_big_harpoon", "fish_harpoon", "fish_vynil_harpoon"],
+      "prototype_ids": ["fish_big", "fish", "fish_vynil"],
+      "tools": ["Harpoon", "Harpoon", "N/A"],
+      "rarity": ["Lake", "Sea"]
+    },
+    {
+      "name": "Small Animal Dropping",
+      "collectible_ids": ["dump_s"],
+      "yield": 2,
+      "items": ["Animal Droppings"],
+      "generator_ids": ["dump"],
+      "prototype_ids": ["dump"],
+      "tools": ["Shovel"],
+      "rarity": ["At Crater"]
+    }
+  ]
+}

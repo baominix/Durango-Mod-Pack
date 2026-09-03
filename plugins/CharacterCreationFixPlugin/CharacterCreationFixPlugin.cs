@@ -14,9 +14,10 @@ using Yaml.Util;
 namespace BaoX.DurangoOriginal.CharacterCreationFix
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class CharacterCreationFixPlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "com.baox.durango.original.charactercreationfix";
+        public const string PluginGuid = "com.baominix.durango.original.charactercreationfix";
         public const string PluginName = "Character Creation Fix Plugin";
         public const string PluginVersion = "0.1.7";
 

@@ -5,7 +5,7 @@ using HarmonyLib;
 using Messages;
 using Yaml;
 
-namespace BaoX.DurangoOriginal.WeaponStatisticsMod
+namespace Baominix.DurangoOriginal.CombatSystem.EquipmentPerformance
 {
     internal static class WeaponItemPerformance
     {
@@ -17,15 +17,16 @@ namespace BaoX.DurangoOriginal.WeaponStatisticsMod
             }
 
             WeaponPerformanceValues values;
-            if (WeaponPerformanceDatabase.TryGet(item.PrototypeId, item.Level, out values))
+            int previewLevel = EquipmentLevelRules.GetPerformanceLevel(item);
+            if (WeaponPerformanceDatabase.TryGet(item.PrototypeId, previewLevel, out values))
             {
                 Merge(item, "weapon", values);
             }
-            if (WeaponPerformanceDatabase.TryGetArmor(item.PrototypeId, item.Level, out values))
+            if (WeaponPerformanceDatabase.TryGetArmor(item.PrototypeId, previewLevel, out values))
             {
                 Merge(item, "armor", values);
             }
-            if (WeaponPerformanceDatabase.TryGetModifiers(item.PrototypeId, item.Level, out values))
+            if (WeaponPerformanceDatabase.TryGetModifiers(item.PrototypeId, previewLevel, out values))
             {
                 Merge(item, "modifiers", values);
             }

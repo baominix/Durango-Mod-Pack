@@ -1,0 +1,278 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca623cbf980f338b9506b97c6ddc38aa, type: 3}
+  m_Name: Dog_framework
+  m_EditorClassIdentifier:
+  normal_motions:
+  - key: stand
+    motion: Dog_Stand
+    _clipObj: {fileID: 7400000, guid: c4dadcea42e290f4ca062349a6a32e56, type: 2}
+  - key: idle
+    motion: Dog_Idle
+    _clipObj: {fileID: 7400000, guid: 9273191a76d6f864cbaf1df5393dcc81, type: 2}
+  - key: eat
+    motion: Dog_Eat
+    _clipObj: {fileID: 7400000, guid: 4b45e2bb0709f8240a3e0c862fbabc71, type: 2}
+  - key: alert
+    motion: Dog_Alert
+    _clipObj: {fileID: 7400000, guid: c8e831ea830e3f243b3f452baf85922a, type: 2}
+  - key: dead
+    motion: Dog_Die
+    _clipObj: {fileID: 7400000, guid: 0e1af92d4a9754e47a7eaecd51167383, type: 2}
+  normal_3states:
+  - key: sleep_motions
+    begin: Dog_Sleep_Begin
+    during: Dog_Sleep_Looping
+    end: Dog_Sleep_End
+    _clipObjBegin: {fileID: 7400000, guid: e8eda888d84be09409056e048528e9d4, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 4cb50f69870058e459ab414b9a72b227, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: d0745a6c33a229e4983d292af62bd3f3, type: 2}
+  weighted_motions:
+  - key: rest_motions
+    elems:
+    - weight: 1
+      motion: Dog_Bark
+      duration: {x: 1.5, y: 1.5}
+      _clipObj: {fileID: 7400000, guid: 31dd3d27c02ccf94a8fc262a0379d9dc, type: 2}
+    - weight: 1
+      motion: Dog_Happy
+      duration: {x: 1.9, y: 1.9}
+      _clipObj: {fileID: 7400000, guid: e19ccba506c98994693f026c38742bcc, type: 2}
+    - weight: 1
+      motion: Dog_Idle_Attention
+      duration: {x: 3.1, y: 3.1}
+      _clipObj: {fileID: 7400000, guid: 92431b5fd15ebc74990e144cd4c6f215, type: 2}
+    - weight: 1
+      motion: Dog_Idle
+      duration: {x: 3.3, y: 3.3}
+      _clipObj: {fileID: 7400000, guid: 43afaa6337668bb4ead1c006afbf3341, type: 2}
+    - weight: 1
+      motion: Dog_Idle_LieDown
+      duration: {x: 3.5, y: 3.5}
+      _clipObj: {fileID: 7400000, guid: 02a2749dc40edd340bcbca54e3153764, type: 2}
+  weighted_3states:
+  - key: seq_rest_motions
+    elems:
+    - weight: 1
+      begin: Dog_Sit_Begin
+      loopings:
+      - weight: 1
+        motion: Dog_Sit_Looping_A
+        duration: {x: 3, y: 10}
+        _clipObj: {fileID: 7400000, guid: 15de8cd57ba1a4e419147a794ead4619, type: 2}
+      - weight: 1
+        motion: Dog_Sit_Looping_B
+        duration: {x: 6, y: 12}
+        _clipObj: {fileID: 7400000, guid: d67a9b1111b8e104f87f809ad855f0bd, type: 2}
+      end: Dog_Sit_End
+      _clipObjBegin: {fileID: 7400000, guid: b6342f5bfcb6d174c8f0ec3721a7b38f, type: 2}
+      _clipObjEnd: {fileID: 7400000, guid: ed75fe97f1c39f24d8b5ce9fb82c3444, type: 2}
+  move_sets:
+  - key: move_motion_sets
+    elems:
+    - name: dog_move_set
+      motions:
+      - motion: Dog_Limp
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion: Dog_Turn
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 220
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: ccd1e3a4a81296943832ecddf31d4ebf, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 7400000, guid: dd64b5aec3fb4c34096eb796f4f52a94, type: 2}
+      - motion: Dog_Walk
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion: Dog_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<400'
+        base_move_speed: 380
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 4cc96773f00e8a2469ca940b8a9bc7d1, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 7400000, guid: dd64b5aec3fb4c34096eb796f4f52a94, type: 2}
+      - motion: Dog_Run
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion: Dog_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 670
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: c0b1625d4a5730b4dab5695432c80fca, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 7400000, guid: dd64b5aec3fb4c34096eb796f4f52a94, type: 2}
+    - name: dog_pet_move_set
+      motions:
+      - motion: Dog_Run_Pet
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion: Dog_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 600
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 6e0f2c4f63117144ba7cb26f6637cceb, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 7400000, guid: dd64b5aec3fb4c34096eb796f4f52a94, type: 2}
+  comabt_motions:
+  - key: battle_idle
+    motion: Dog_Battle_Idle
+    _clipObj: {fileID: 7400000, guid: 0981e8833c510054f83f32546d704d74, type: 2}
+  - key: battle_stand
+    motion: Dog_BattleStand
+    _clipObj: {fileID: 7400000, guid: 8de106df60fb95c4ca0521c998b81b2b, type: 2}
+  - key: evade
+    motion: Dog_Evade
+    _clipObj: {fileID: 7400000, guid: c51ffddbb87a8234ea2369421c871b20, type: 2}
+  - key: groggy
+    motion: Dog_Groggy
+    _clipObj: {fileID: 7400000, guid: 40df8e6be88491140b0f96fc4f1998ba, type: 2}
+  - key: blow
+    motion: Dog_Damage_Blow_Begin
+    _clipObj: {fileID: 7400000, guid: efdff0143d82daa4bb331f33cf551df2, type: 2}
+  combat_directions:
+  - key: knock_back_motion_map
+    front: Dog_Damage_S
+    back: Dog_Damage_N
+    left: Dog_Damage_E
+    right: Dog_Damage_W
+    _clipObjFront: {fileID: 7400000, guid: cf303fef0a352dd4b9f2b1ee431c85ce, type: 2}
+    _clipObjBack: {fileID: 7400000, guid: 80c0807465d28c049a8b70c1c38d0ef7, type: 2}
+    _clipObjLeft: {fileID: 7400000, guid: 74cd3d44046d3174da8b496a12b38725, type: 2}
+    _clipObjRight: {fileID: 7400000, guid: c9085ac929449e74c9329de604f92214, type: 2}
+  combat_3states:
+  - key: knock_down_motions
+    begin: Dog_Damage_Blow_Begin
+    during: Dog_Damage_Blow_Looping
+    end: Dog_Damage_Blow_End
+    _clipObjBegin: {fileID: 7400000, guid: efdff0143d82daa4bb331f33cf551df2, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 2b7bf0518a1a37f489e7e4d3a2559093, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 874052fdeb2093846be1e35930d45105, type: 2}
+  combat_attacks:
+  - key: dog_attack_bite
+    meta:
+      motion: Dog_Attack_Bite
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 8588e509776287c45bf4941d45fdc2e9, type: 2}
+    attack_info:
+    - frame: 16
+      sub_action_id: dog_attack_bite_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: -20, y: 150}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: dog_attack_counter
+    meta:
+      motion: Dog_Attack_Counter
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 61f2de7dccb77c845a58b55acc926432, type: 2}
+    attack_info:
+    - frame: 30
+      sub_action_id: dog_attack_counter_0
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 120}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: dog_attack_dash
+    meta:
+      motion: Dog_Attack_Dash
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: f98b793cf7320d141b067c851ccc40f3, type: 2}
+    attack_info:
+    - frame: 38
+      sub_action_id: dog_attack_dash_0
+      damage_type: 1
+      radius: 120
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 150}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 72
+      sub_action_id: dog_attack_dash_1
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 150}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: dog_attack_howling
+    meta:
+      motion: Dog_Attack_Howling
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 83c60b22c1c5d874fa6e9c52b16c7e16, type: 2}
+    attack_info:
+    - frame: 108
+      sub_action_id: dog_attack_howling_0
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  active_skills:
+  - key: active_default
+    motion: Dog_Active_A
+    _clipObj: {fileID: 7400000, guid: 0bb99d982f783044b91e633921a9605a, type: 2}
+  etc_motions:
+  - key: dog_bike_begin
+    motion: Dog_Bike_Begin
+    _clipObj: {fileID: 7400000, guid: 02e9d2e22e136824ab9e092f875ed3ff, type: 2}
+  - key: dog_bike_lick
+    motion: Dog_Bike_Lick
+    _clipObj: {fileID: 7400000, guid: c0526d93c6345ff49b744fdaa4581bde, type: 2}
+  - key: dog_run_pet
+    motion: Dog_Run_Pet
+    _clipObj: {fileID: 7400000, guid: 6e0f2c4f63117144ba7cb26f6637cceb, type: 2}
+  - key: dog_walk_quietly
+    motion: Dog_Walk_Quietly
+    _clipObj: {fileID: 7400000, guid: 7f1ba24527eccaa4ea507468a961946c, type: 2}

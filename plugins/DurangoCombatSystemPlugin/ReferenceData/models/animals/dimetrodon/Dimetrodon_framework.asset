@@ -1,0 +1,233 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca623cbf980f338b9506b97c6ddc38aa, type: 3}
+  m_Name: Dimetrodon_framework
+  m_EditorClassIdentifier:
+  normal_motions:
+  - key: stand
+    motion: Dimetrodon_Stand
+    _clipObj: {fileID: 7400000, guid: 2521eb4571c252743b69f73befd7cd94, type: 2}
+  - key: idle
+    motion: Dimetrodon_Idle
+    _clipObj: {fileID: 7400000, guid: 4d3aaeef2f789804da339ade2488277c, type: 2}
+  - key: eat
+    motion: Dimetrodon_Eat
+    _clipObj: {fileID: 7400000, guid: 40c6e794d1b2ae844adcdd43b9a5f776, type: 2}
+  - key: alert
+    motion: Dimetrodon_Alert
+    _clipObj: {fileID: 7400000, guid: 5a6b6b5e4c09d7045a2f09c4124824a2, type: 2}
+  - key: dead
+    motion: Dimetrodon_Die
+    _clipObj: {fileID: 7400000, guid: 6ce99c51b6d88c24b82ae6084b8e3584, type: 2}
+  normal_3states:
+  - key: sleep_motions
+    begin: Dimetrodon_Sleep_Begin
+    during: Dimetrodon_Sleep_Looping
+    end: Dimetrodon_Sleep_End
+    _clipObjBegin: {fileID: 7400000, guid: fbfba9c1093eaa04b82f7da5695a43ef, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 981506429cb877e46898309b0a28d6fd, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 26dd3ad4057ac054bae08bb0ee43859c, type: 2}
+  weighted_motions:
+  - key: rest_motions
+    elems:
+    - weight: 1
+      motion: Dimetrodon_Idle
+      duration: {x: 1, y: 7.6}
+      _clipObj: {fileID: 7400000, guid: 4d3aaeef2f789804da339ade2488277c, type: 2}
+    - weight: 1
+      motion: Dimetrodon_Stand
+      duration: {x: 1, y: 4}
+      _clipObj: {fileID: 7400000, guid: 2521eb4571c252743b69f73befd7cd94, type: 2}
+    - weight: 1
+      motion: Dimetrodon_Idle_Step
+      duration: {x: 1, y: 9.3}
+      _clipObj: {fileID: 7400000, guid: b9803f54fe746a84391efc945152ab66, type: 2}
+  weighted_3states: []
+  move_sets:
+  - key: move_motion_sets
+    elems:
+    - name: dimetrodon_move_set
+      motions:
+      - motion: Dimetrodon_Limp
+        rot_motion_cw: Dimetrodon_Rotate_CW
+        rot_motion_ccw: Dimetrodon_Rotate_CCW
+        turn_reverse_motion: Dimetrodon_Turn
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 190
+        rot_speed: 60
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 27eed910f5180394681de9420838c3f2, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: ce406fa8d841dec4c8d7538658fbf249, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 2d4b8ac5aaedc9b4585870e601576a2a, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: cd6643e119f76ea499007a379f01a4ad, type: 2}
+      - motion: Dimetrodon_Run
+        rot_motion_cw: Dimetrodon_Rotate_CW
+        rot_motion_ccw: Dimetrodon_Rotate_CCW
+        turn_reverse_motion: Dimetrodon_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound: '>600'
+        base_move_speed: 580
+        rot_speed: 60
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 07b512fb3e0c9a246826aab2eeef1d11, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: ce406fa8d841dec4c8d7538658fbf249, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 2d4b8ac5aaedc9b4585870e601576a2a, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: cd6643e119f76ea499007a379f01a4ad, type: 2}
+      - motion: Dimetrodon_Walk
+        rot_motion_cw: Dimetrodon_Rotate_CW
+        rot_motion_ccw: Dimetrodon_Rotate_CCW
+        turn_reverse_motion: Dimetrodon_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 200
+        rot_speed: 60
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: caa13c1df79447d489bb2837fe4fb082, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: ce406fa8d841dec4c8d7538658fbf249, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 2d4b8ac5aaedc9b4585870e601576a2a, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: cd6643e119f76ea499007a379f01a4ad, type: 2}
+  comabt_motions:
+  - key: battle_idle
+    motion: Dimetrodon_Battle_Idle
+    _clipObj: {fileID: 7400000, guid: 67fb33d94cdda2645aeee2eabdb84d37, type: 2}
+  - key: battle_stand
+    motion: Dimetrodon_BattleStand
+    _clipObj: {fileID: 7400000, guid: 9acc64f2e5acab44eb44aea778ec4456, type: 2}
+  - key: evade
+    motion: Dimetrodon_Evade
+    _clipObj: {fileID: 7400000, guid: d38a29e46302d854dab90ce82e48ceeb, type: 2}
+  - key: groggy
+    motion: Dimetrodon_Groggy
+    _clipObj: {fileID: 7400000, guid: 1381af2b3c8969b4da58098ffa1e5282, type: 2}
+  - key: blow
+    motion: Dimetrodon_Damage_Blow_Begin
+    _clipObj: {fileID: 7400000, guid: 1e526f8605d9ae24794e4bf3cc163e29, type: 2}
+  combat_directions:
+  - key: knock_back_motion_map
+    front: Dimetrodon_Damage_S
+    back: Dimetrodon_Damage_N
+    left: Dimetrodon_Damage_E
+    right: Dimetrodon_Damage_W
+    _clipObjFront: {fileID: 7400000, guid: 7375f518496b4104daefaa6642b6a905, type: 2}
+    _clipObjBack: {fileID: 7400000, guid: 6193a0b64c3235a418b2166251ed240a, type: 2}
+    _clipObjLeft: {fileID: 7400000, guid: 4321190bcbc7b474db7196bd65291ae4, type: 2}
+    _clipObjRight: {fileID: 7400000, guid: 4fa4aea6a30517e459f4b90a2bd8e3fc, type: 2}
+  combat_3states:
+  - key: knock_down_motions
+    begin: Dimetrodon_Damage_Blow_Begin
+    during: Dimetrodon_Damage_Blow_Looping
+    end: Dimetrodon_Damage_Blow_End
+    _clipObjBegin: {fileID: 7400000, guid: 1e526f8605d9ae24794e4bf3cc163e29, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: cb46e23cfa70dd14b89c19fe2e4000a2, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: aa3bd4c0d37d9114cb8a16f5693b8203, type: 2}
+  combat_attacks:
+  - key: dimetrodon_counter
+    meta:
+      motion: Dimetrodon_Attack_Counter
+      bound_enemy: 1
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 6127588aba19e9e4aa5a5239eac97453, type: 2}
+    attack_info:
+    - frame: 33
+      sub_action_id: dimetrodon_counter_0
+      damage_type: 1
+      radius: 250
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 100, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: dimetrodon_head
+    meta:
+      motion: Dimetrodon_Attack_Head
+      bound_enemy: 1
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 9c7dbab1fe4de6b408dfe94ca1f1c3b4, type: 2}
+    attack_info:
+    - frame: 22
+      sub_action_id: dimetrodon_head_0
+      damage_type: 2
+      radius: 250
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 320, y: 200}
+      offset: {x: 50, y: 90}
+      damage_angle: 10
+      use_target_origin: 0
+    SameAbove: 0
+  - key: dimetrodon_spit
+    meta:
+      motion: Dimetrodon_Attack_Spit
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 1b19f6497b3b90b4183f991c4cd23e7c, type: 2}
+    attack_info:
+    - frame: 30
+      sub_action_id: dimetrodon_spit_0
+      damage_type: 1
+      radius: 220
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 300}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: dimetrodon_tail
+    meta:
+      motion: Dimetrodon_Attack_Tail
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 48658880b58373148b07414d67bf35be, type: 2}
+    attack_info:
+    - frame: 21
+      sub_action_id: dimetrodon_tail_0
+      damage_type: 1
+      radius: 500
+      radius_min: 0
+      angles: {x: 150, y: 260}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: dimetrodon_torso
+    meta:
+      motion: Dimetrodon_Attack_Torso
+      bound_enemy: 1
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 98161807add5f9b42944dc62e6e7500a, type: 2}
+    attack_info:
+    - frame: 36
+      sub_action_id: dimetrodon_torso_0
+      damage_type: 2
+      radius: 250
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 350, y: 200}
+      offset: {x: 0, y: 50}
+      damage_angle: 4
+      use_target_origin: 0
+    SameAbove: 0
+  active_skills:
+  - key: active_default
+    motion: Dimetrodon_Active_Default
+    _clipObj: {fileID: 7400000, guid: 848e68ebfef9f1f4698ba781568cb9b7, type: 2}
+  etc_motions: []

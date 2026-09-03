@@ -1,0 +1,375 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca623cbf980f338b9506b97c6ddc38aa, type: 3}
+  m_Name: Phenacodus_framework
+  m_EditorClassIdentifier:
+  normal_motions:
+  - key: stand
+    motion: Phenaco_Stand
+    _clipObj: {fileID: 7400000, guid: 6eccb146d0be96e4b8d67b5c85fc7d1e, type: 2}
+  - key: idle
+    motion: Phenaco_Idle
+    _clipObj: {fileID: 7400000, guid: ce87ffe90e0c69b42a2b13c0add2b9b8, type: 2}
+  - key: eat
+    motion: Phenaco_Eat
+    _clipObj: {fileID: 7400000, guid: 7b558f994a38a184a9278b323b3f8a11, type: 2}
+  - key: alert
+    motion:
+    _clipObj: {fileID: 0}
+  - key: dead
+    motion: Phenaco_Die
+    _clipObj: {fileID: 7400000, guid: c12dec363ea5888418d35b51575c975d, type: 2}
+  - key: paperdead
+    motion: Phenaco_PaperDie
+    _clipObj: {fileID: 7400000, guid: decae04109aae02458d7167dccd9e313, type: 2}
+  normal_3states:
+  - key: sleep_motions
+    begin: Phenaco_Sleep_Begin
+    during: Phenaco_Sleep_Looping
+    end: Phenaco_Sleep_End
+    _clipObjBegin: {fileID: 7400000, guid: 3b143630d48d27540a524bbe03ef398a, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 30e8a61e756ecda46a32ea8efe83642d, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 841e2c806a7c3a7458a1bcc08eccecc5, type: 2}
+  weighted_motions:
+  - key: rest_motions
+    elems:
+    - weight: 1
+      motion: Phenaco_Stand
+      duration: {x: 3, y: 3}
+      _clipObj: {fileID: 7400000, guid: 6eccb146d0be96e4b8d67b5c85fc7d1e, type: 2}
+    - weight: 1
+      motion: Phenaco_Idle
+      duration: {x: 4.2, y: 4.2}
+      _clipObj: {fileID: 7400000, guid: ce87ffe90e0c69b42a2b13c0add2b9b8, type: 2}
+    - weight: 1
+      motion: Phenaco_Eat
+      duration: {x: 2.5, y: 2.5}
+      _clipObj: {fileID: 7400000, guid: 7b558f994a38a184a9278b323b3f8a11, type: 2}
+    - weight: 1
+      motion: Phenaco_Idle_Sprawl
+      duration: {x: 9.9, y: 9.9}
+      _clipObj: {fileID: 7400000, guid: bab5083f92d4c6c428c21e5ca06963ab, type: 2}
+  weighted_3states:
+  - key: seq_rest_motions
+    elems:
+    - weight: 1
+      begin: Phenaco_Sit_Begin
+      loopings:
+      - weight: 0.7
+        motion: Phenaco_Sit_Looping_A
+        duration: {x: 2, y: 10}
+        _clipObj: {fileID: 7400000, guid: 154db17320caf2244b35ba7fc27ceff2, type: 2}
+      - weight: 1
+        motion: Phenaco_Sit_Looping_B
+        duration: {x: 4.9, y: 4.9}
+        _clipObj: {fileID: 7400000, guid: bf07985422bf41f42af171d76901e896, type: 2}
+      end: Phenaco_Sit_End
+      _clipObjBegin: {fileID: 7400000, guid: fb62572f2f240ab49a3479acc6f2b20a, type: 2}
+      _clipObjEnd: {fileID: 7400000, guid: 56c95d8c5d0b95a44955e8e9153b0f6f, type: 2}
+  move_sets:
+  - key: move_motion_sets
+    elems:
+    - name: phenacodus_move_set
+      motions:
+      - motion: Phenaco_Walk
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<240'
+        base_move_speed: 181
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 89ad9c89b47a4304ea1591a2d97605ab, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 0}
+      - motion: Phenaco_Run
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 360
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: f845ab65e130f594da081c48da520015, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 0}
+    - name: phenacodus_pet_move_set
+      motions:
+      - motion: Phenaco_Walk_Pet
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 432
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: c45be833800f27745a6cfde13c99d597, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 0}
+  comabt_motions:
+  - key: battle_idle
+    motion: Phenaco_Battle_Idle
+    _clipObj: {fileID: 7400000, guid: 08506b761c3448a42a6d9409e4bbfcf2, type: 2}
+  - key: battle_stand
+    motion: Phenaco_BattleStand
+    _clipObj: {fileID: 7400000, guid: 42855affbe3f4654489858e66adefd4f, type: 2}
+  - key: evade
+    motion: Phenaco_Evade
+    _clipObj: {fileID: 7400000, guid: 7ce10c2fe4d8a4e44a4631979704e65f, type: 2}
+  - key: groggy
+    motion: Phenaco_Groggy
+    _clipObj: {fileID: 7400000, guid: fc875a309324aed4d91ccd0577bad481, type: 2}
+  - key: blow
+    motion: Phenaco_Damage_Blow_Begin
+    _clipObj: {fileID: 7400000, guid: eaf29f7ed36e3a84da51fa64ecc78f4a, type: 2}
+  combat_directions:
+  - key: knock_back_motion_map
+    front: Phenaco_Damage_S
+    back: Phenaco_Damage_N
+    left: Phenaco_Damage_E
+    right: Phenaco_Damage_W
+    _clipObjFront: {fileID: 7400000, guid: 358efd58d23f39c4685cfb02f866717e, type: 2}
+    _clipObjBack: {fileID: 7400000, guid: 9d5ea29bc36f7584bb89840c7d2ad400, type: 2}
+    _clipObjLeft: {fileID: 7400000, guid: be95a9b14039e384ca22e812a78c78e4, type: 2}
+    _clipObjRight: {fileID: 7400000, guid: a236f14cfcf8dd44eb0ed8f457c880ef, type: 2}
+  combat_3states:
+  - key: knock_down_motions
+    begin: Phenaco_Damage_Blow_Begin
+    during: Phenaco_Damage_Blow_Looping
+    end: Phenaco_Damage_Blow_End
+    _clipObjBegin: {fileID: 7400000, guid: eaf29f7ed36e3a84da51fa64ecc78f4a, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 800632c2bebebd642955b021553ca40d, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: a01c3ba381deaef48b779aa71e3bab80, type: 2}
+  combat_attacks:
+  - key: phenaco_jump
+    meta:
+      motion: Phenaco_Attack_Jump
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: dbd28cdfc5580394f97c2f3f3c80c571, type: 2}
+    attack_info:
+    - frame: 24
+      sub_action_id: phenaco_jump_0
+      damage_type: 2
+      radius: 80
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 80}
+      offset: {x: 0, y: -50}
+      damage_angle: 13
+      use_target_origin: 0
+    SameAbove: 0
+  - key: phenaco_bite
+    meta:
+      motion: Phenaco_Attack_Bite
+      bound_enemy: 1
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 208ab709d824a8342be5b31706abfdf8, type: 2}
+    attack_info:
+    - frame: 14
+      sub_action_id: phenaco_bite_0
+      damage_type: 2
+      radius: 80
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 120, y: 80}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: phenaco_gas
+    meta:
+      motion: Phenaco_Attack_Gas
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 32d656262830a52479c0c64129118aec, type: 2}
+    attack_info:
+    - frame: 42
+      sub_action_id: phenaco_gas_0
+      damage_type: 1
+      radius: 400
+      radius_min: 0
+      angles: {x: 140, y: 220}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: phenaco_active_gas_s
+    meta:
+      motion: Phenaco_Active_Attack_Gas
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 47ae3f5a26ed11545b90092946e6f818, type: 2}
+    attack_info:
+    - frame: 42
+      sub_action_id: phenaco_active_gas_0
+      damage_type: 1
+      radius: 400
+      radius_min: 0
+      angles: {x: 140, y: 220}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: phenaco_gas_f
+    meta:
+      motion: Phenaco_Attack_Gas
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 32d656262830a52479c0c64129118aec, type: 2}
+    attack_info:
+    - frame: 42
+      sub_action_id: phenaco_gas_f_0
+      damage_type: 1
+      radius: 400
+      radius_min: 0
+      angles: {x: 140, y: 220}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: phenaco_active_gas_c
+    meta:
+      motion: Phenaco_Active_Attack_Gas
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 47ae3f5a26ed11545b90092946e6f818, type: 2}
+    attack_info:
+    - frame: 42
+      sub_action_id: phenaco_active_gas_0
+      damage_type: 1
+      radius: 400
+      radius_min: 0
+      angles: {x: 140, y: 220}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: phenaco_active_gas_b
+    meta:
+      motion: Phenaco_Active_Attack_Gas
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 47ae3f5a26ed11545b90092946e6f818, type: 2}
+    attack_info:
+    - frame: 42
+      sub_action_id: phenaco_active_gas_0
+      damage_type: 1
+      radius: 400
+      radius_min: 0
+      angles: {x: 140, y: 220}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: phenaco_active_gas_a
+    meta:
+      motion: Phenaco_Active_Attack_Gas
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 47ae3f5a26ed11545b90092946e6f818, type: 2}
+    attack_info:
+    - frame: 42
+      sub_action_id: phenaco_active_gas_0
+      damage_type: 1
+      radius: 400
+      radius_min: 0
+      angles: {x: 140, y: 220}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: phenaco_attack_escape
+    meta:
+      motion: Phenaco_Attack_Escape
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 3080a53f4be2926409b4dc2636a09853, type: 2}
+    attack_info:
+    - frame: 14
+      sub_action_id: phenaco_attack_escape_0
+      damage_type: 2
+      radius: 300
+      radius_min: 0
+      angles: {x: 240, y: 150}
+      rect_half_size: {x: 250, y: 60}
+      offset: {x: 0, y: -150}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 18
+      sub_action_id: phenaco_attack_escape_1
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 250, y: 60}
+      offset: {x: 0, y: -150}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 22
+      sub_action_id: phenaco_attack_escape_2
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 250, y: 60}
+      offset: {x: 0, y: -150}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 26
+      sub_action_id: phenaco_attack_escape_3
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 250, y: 60}
+      offset: {x: 0, y: -150}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  active_skills:
+  - key: active_default
+    motion: Phenaco_Active_Default
+    _clipObj: {fileID: 7400000, guid: ac0f65afe60771f4f86fff2c2c0587fe, type: 2}
+  etc_motions:
+  - key: phenaco_death
+    motion: Phenaco_Death
+    _clipObj: {fileID: 7400000, guid: 759fcef48343e96408885caa9f5cd01a, type: 2}
+  - key: phenaco_flinch
+    motion: Phenaco_Flinch
+    _clipObj: {fileID: 7400000, guid: 86eef8760409ef145baee3bb4f2de53f, type: 2}
+  - key: phenaco_walk_pet
+    motion: Phenaco_Walk_Pet
+    _clipObj: {fileID: 7400000, guid: c45be833800f27745a6cfde13c99d597, type: 2}
+  - key: phenaco_run_stop
+    motion: Phenaco_Run_Stop
+    _clipObj: {fileID: 7400000, guid: 0c9cba096688e33479f79ac7b4d4531d, type: 2}
+  - key: phenaco_active_a
+    motion:
+    _clipObj: {fileID: 0}

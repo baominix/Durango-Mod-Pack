@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Durango.Logic;
 using Durango.Logic.Combat;
 using Durango.Logic.Item;
@@ -10,6 +11,7 @@ using Shared.Ability;
 using Shared.Skill;
 using Yaml;
 using Yaml.Util;
+using HarmonyLib;
 using OfflinePlayer = Durango.Offline.Player;
 
 namespace BaoX.DurangoOriginal.SkillSystemMod
@@ -60,6 +62,14 @@ namespace BaoX.DurangoOriginal.SkillSystemMod
         private static Statistics Build(OfflineSkillState state)
         {
             int level = state.Context.PlayerInfo == null ? 1 : Math.Max(1, state.Context.PlayerInfo.PlayerLevel);
+            int experience = GameSystem<StatisticsSystem>.HasInstance()
+                ? Math.Max(0, GameSystem<StatisticsSystem>.Instance().Exp)
+                : 0;
+            TryResolvePlayerProgression(
+                state.Context,
+                ref level,
+                ref experience);
+
             Statistics result = default(Statistics);
             result.BasicAbilities = new Dictionary<Basic, int>();
             result.DerivedsAbilities = new Dictionary<Derived, float>();
@@ -68,7 +78,7 @@ namespace BaoX.DurangoOriginal.SkillSystemMod
             result.Modifiers = new Dictionary<string, float>(StringComparer.Ordinal);
             result.RepresentPowers = new Dictionary<RepresentType, float>();
             result.Level = level;
-            result.Exp = GameSystem<StatisticsSystem>.HasInstance() ? Math.Max(0, GameSystem<StatisticsSystem>.Instance().Exp) : 0;
+            result.Exp = experience;
 
             InitializeBasicAbilities(result, level);
             ApplyCategoryBasicAbilities(result, state);
@@ -97,6 +107,53 @@ namespace BaoX.DurangoOriginal.SkillSystemMod
             ApplyRepresentPowers(result);
 
             return result;
+        }
+
+        private static bool TryResolvePlayerProgression(
+            PlayerContext context,
+            ref int level,
+            ref int experience)
+        {
+            try
+            {
+                Type api = AccessTools.TypeByName(
+                    "BaoX.DurangoOriginal.PlayerProgressionMod.PlayerProgressionApi");
+                MethodInfo method = api == null
+                    ? null
+                    : api.GetMethod(
+                        "TryGetProgression",
+                        BindingFlags.Static | BindingFlags.Public);
+                if (method == null)
+                {
+                    return false;
+                }
+
+                object[] args = new object[]
+                {
+                    context,
+                    level,
+                    experience
+                };
+                bool resolved = (bool)method.Invoke(null, args);
+                if (!resolved)
+                {
+                    return false;
+                }
+
+                level = Math.Max(1, (int)args[1]);
+                experience = Math.Max(0, (int)args[2]);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                if (SkillSystemPlugin.Log != null)
+                {
+                    SkillSystemPlugin.Log.LogWarning(
+                        "Player progression statistics lookup failed: " +
+                        exception.Message);
+                }
+                return false;
+            }
         }
 
         private static void InitializeBasicAbilities(Statistics statistics, int level)

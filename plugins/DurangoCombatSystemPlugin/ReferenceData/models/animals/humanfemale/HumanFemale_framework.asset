@@ -1,0 +1,317 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca623cbf980f338b9506b97c6ddc38aa, type: 3}
+  m_Name: HumanFemale_framework
+  m_EditorClassIdentifier:
+  normal_motions:
+  - key: stand
+    motion: Onehand_Stand
+    _clipObj: {fileID: 7400000, guid: da62a5432bddbba49b0671762b7722c6, type: 2}
+  - key: idle
+    motion: Onehand_Idle
+    _clipObj: {fileID: 7400000, guid: 25e127bb976e185409351d012992fa4b, type: 2}
+  - key: eat
+    motion: Barehand_Eat
+    _clipObj: {fileID: 7400000, guid: 66901df85a9838f48b3ac415f4ccd95c, type: 2}
+  - key: alert
+    motion: Onehand_Stand
+    _clipObj: {fileID: 7400000, guid: da62a5432bddbba49b0671762b7722c6, type: 2}
+  - key: dead
+    motion: Barehand_Die
+    _clipObj: {fileID: 7400000, guid: eb8b96bcaecf8fa4c914ff4f48e76f0f, type: 2}
+  normal_3states:
+  - key: sleep_motions
+    begin: Onehand_Sit_Begin
+    during: Onehand_Sit_Looping
+    end: Onehand_Sit_End
+    _clipObjBegin: {fileID: 7400000, guid: 5bc9b2cf253f2aa4b9bda7e57cefc841, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 0e5fd02883d9c554db68a21b4bbeb003, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: b200f3e0db2e1214a830523fb982fcad, type: 2}
+  weighted_motions:
+  - key: rest_motions
+    elems:
+    - weight: 1
+      motion: Onehand_Stand
+      duration: {x: 1, y: 1}
+      _clipObj: {fileID: 7400000, guid: da62a5432bddbba49b0671762b7722c6, type: 2}
+    - weight: 1
+      motion: Onehand_Idle
+      duration: {x: 1, y: 1}
+      _clipObj: {fileID: 7400000, guid: 25e127bb976e185409351d012992fa4b, type: 2}
+  weighted_3states:
+  - key: seq_rest_motions
+    elems:
+    - weight: 1
+      begin: Onehand_Sit_Begin
+      loopings:
+      - weight: 1
+        motion: Onehand_Sit_Looping
+        duration: {x: 1, y: 1}
+        _clipObj: {fileID: 7400000, guid: 0e5fd02883d9c554db68a21b4bbeb003, type: 2}
+      end: Onehand_Sit_End
+      _clipObjBegin: {fileID: 7400000, guid: 5bc9b2cf253f2aa4b9bda7e57cefc841, type: 2}
+      _clipObjEnd: {fileID: 7400000, guid: b200f3e0db2e1214a830523fb982fcad, type: 2}
+  move_sets:
+  - key: move_motion_sets
+    elems:
+    - name: humanfemale_move_set
+      motions:
+      - motion: Onehand_Walk
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<600'
+        base_move_speed: 120
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 455a7ef6c6fd7b341a0a24c38055b8b9, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 0}
+      - motion: Onehand_Run
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 500
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: ba77a3285961edd4a94ed80ffa1f4d47, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 0}
+    - name: humanfemale_move_set_battle
+      motions:
+      - motion: F_Onehand_Run
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 500
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 3432a854272f06d4697444c1c3ea8e0e, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 0}
+  comabt_motions:
+  - key: battle_idle
+    motion: Onehand_BattleStand
+    _clipObj: {fileID: 7400000, guid: 8850f7a3aca47a245bfa612191215ae6, type: 2}
+  - key: battle_stand
+    motion: Onehand_BattleStand
+    _clipObj: {fileID: 7400000, guid: c26412ea21ada4d41a126ffc858f5373, type: 2}
+  - key: evade
+    motion: Evade
+    _clipObj: {fileID: 7400000, guid: 6e0ab315a08158d4daadf75e21ea95b5, type: 2}
+  - key: groggy
+    motion: Onehand_Groggy
+    _clipObj: {fileID: 7400000, guid: 80c80019b4ce3d245b2ce5b6e719c745, type: 2}
+  - key: blow
+    motion: Barehand_Damage_Blow_Begin
+    _clipObj: {fileID: 7400000, guid: 8afc4dfbc2e5c4f49ac9f73273bfa178, type: 2}
+  combat_directions:
+  - key: knock_back_motion_map
+    front: Onehand_Damage_S
+    back: Onehand_Damage_N
+    left: Onehand_Damage_E
+    right: Onehand_Damage_W
+    _clipObjFront: {fileID: 7400000, guid: 58e2d87c3ab924f4f91e8c695d56707b, type: 2}
+    _clipObjBack: {fileID: 7400000, guid: 9fb0e5cd3397f4943a856d04046e7140, type: 2}
+    _clipObjLeft: {fileID: 7400000, guid: afd2490f1985bce459b04885829ee1d8, type: 2}
+    _clipObjRight: {fileID: 7400000, guid: c6a7783a6ea3d97448610d5b0ee99e12, type: 2}
+  combat_3states:
+  - key: knock_down_motions
+    begin: Barehand_Damage_Blow_Begin
+    during: Barehand_Damage_Blow_Looping
+    end: Barehand_Damage_Blow_End
+    _clipObjBegin: {fileID: 7400000, guid: 8afc4dfbc2e5c4f49ac9f73273bfa178, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 88ff74310c9afba46be1e8e3d1b85f71, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 4a8185f6046fcc44fbb6ce6bbd35376f, type: 2}
+  combat_attacks:
+  - key: f_onehand_attackdash
+    meta:
+      motion: Onehand_AttackDash
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 50866a5857eb3aa488834c020d7c6510, type: 2}
+    attack_info:
+    - frame: 54
+      sub_action_id: f_onehand_attackdash_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 150}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: f_onehand_attackstrong
+    meta:
+      motion: Onehand_AttackStrong
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 3e177d172aa65fa4cb7113a73511a497, type: 2}
+    attack_info:
+    - frame: 24
+      sub_action_id: f_onehand_attackstrong_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 150}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: f_onehand_attack_a
+    meta:
+      motion: Onehand_Attack_A
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 61ce587d97768fb408a7ef58d6b863be, type: 2}
+    attack_info:
+    - frame: 16
+      sub_action_id: f_onehand_attack_a_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 150}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: f_onehand_attack_b
+    meta:
+      motion: Onehand_Attack_B
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: de99c828584392b41a71e90140f39f8b, type: 2}
+    attack_info:
+    - frame: 17
+      sub_action_id: f_onehand_attack_b_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 150}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: f_onehand_attack_c
+    meta:
+      motion: Onehand_Attack_C
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: e2d0e7e9ced2aaf4f998d18bce1bf61f, type: 2}
+    attack_info:
+    - frame: 14
+      sub_action_id: f_onehand_attack_c_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 150}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: f_onehand_attack_stab
+    meta:
+      motion: Onehand_Attack_Stab
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 3c50c4a0fff0f874ebb88d3b7e59d21a, type: 2}
+    attack_info:
+    - frame: 30
+      sub_action_id: f_onehand_attack_stab_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 150}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: f_onehand_attack_tripleswing
+    meta:
+      motion: Onehand_Attack_TripleSwing
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 0ec7f6ccb2367f4478be9d3bf783a446, type: 2}
+    attack_info:
+    - frame: 17
+      sub_action_id: f_onehand_attack_tripleswing_0
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 100, y: 150}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 27
+      sub_action_id: f_onehand_attack_tripleswing_1
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 150}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 58
+      sub_action_id: f_onehand_attack_tripleswing_2
+      damage_type: 0
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: -150, y: 25}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  active_skills: []
+  etc_motions:
+  - key: stand_tired
+    motion: Barehand_Stand_Tired
+    _clipObj: {fileID: 7400000, guid: 85aad667034586f41ab0bf2a93604fc8, type: 2}
+  - key: walk_tired
+    motion: Barehand_Walk_Tired
+    _clipObj: {fileID: 7400000, guid: 717aa96d574ed9147a6ae5d69bf1a084, type: 2}
+  - key: die_a
+    motion: Onehand_Die_A
+    _clipObj: {fileID: 7400000, guid: e4cb42a129e3cce42ac5f640d9bd83a5, type: 2}
+  - key: die_b
+    motion: Onehand_Die_B
+    _clipObj: {fileID: 7400000, guid: 602a03a9137877a47ba87dcf7504b250, type: 2}
+  - key: die_c
+    motion: Onehand_Die_C
+    _clipObj: {fileID: 7400000, guid: 6b94c921e4df29f469f042dbf8c20a6b, type: 2}
+  - key: die_d
+    motion: Onehand_Die_D
+    _clipObj: {fileID: 7400000, guid: 8312ab3c56a56e34890b2f6c1685fb5a, type: 2}
+  - key: die_e
+    motion: Onehand_Die_E
+    _clipObj: {fileID: 7400000, guid: 812304c9342170544b0a6f9b762838f7, type: 2}

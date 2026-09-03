@@ -7,12 +7,13 @@ using HarmonyLib;
 namespace BaoX.DurangoOriginal.HarborSailingMap
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
-    [BepInDependency("com.baox.durango.original.islandmaprestoration", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.baominix.durango.original.islandmaprestoration", BepInDependency.DependencyFlags.HardDependency)]
     public sealed class HarborSailingMapPlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "com.baox.durango.original.harborsailingmap";
+        public const string PluginGuid = "com.baominix.durango.original.harborsailingmap";
         public const string PluginName = "Harbor Sailing Map Plugin (Original)";
-        public const string PluginVersion = "1.5.0";
+        public const string PluginVersion = "1.9.1";
 
         internal static ManualLogSource Log;
         internal static ConfigEntry<bool> Enabled;

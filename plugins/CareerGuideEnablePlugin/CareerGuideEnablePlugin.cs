@@ -9,9 +9,10 @@ using HarmonyLib;
 namespace BaoX.DurangoOriginal.CareerGuideEnable
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class CareerGuideEnablePlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "com.baox.durango.original.careerguideenable";
+        public const string PluginGuid = "com.baominix.durango.original.careerguideenable";
         public const string PluginName = "Career Guide Enable Plugin";
         public const string PluginVersion = "0.1.0";
 

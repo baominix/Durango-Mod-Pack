@@ -1,111 +1,424 @@
-# Durango Mod Pack
+# Durango Mod Pack V1.1
 
-BepInEx plugin source pack for the Original PC client of **Durango: Wild Lands**.
+ชุด source code ของ BepInEx plugins สำหรับ **Durango_Ver_PC_Final / Durango: Wild Lands**  
+โปรเจกต์นี้ใช้สำหรับการกู้คืนระบบของเกมในรูปแบบ offline / co-op และการพัฒนา mod ภายใน PC Final
 
-ชุด source plugin BepInEx สำหรับ PC client ต้นฉบับของ **Durango: Wild Lands**
+> โครงการนี้ไม่ได้ออกแบบเป็น private server ของเกมต้นฉบับ แต่เป็นการ restore / emulate ระบบที่จำเป็นสำหรับ PC Final
 
 ---
 
-## 📁 Project Structure / โครงสร้างโปรเจกต์
+## Requirements
 
-<<<<<<< HEAD
+สำหรับการใช้งาน mod ภายในเกม แนะนำ:
+
+- Durango_Ver_PC_Final
+- Windows x64
+- BepInEx 5.x
+- แนะนำ **BepInEx_win_x64_5.4.23.5**
+- .NET Framework 3.5 C# compiler สำหรับ build source ชุดนี้
+
+BepInEx:
+
+https://github.com/BepInEx/BepInEx/releases/tag/v5.4.23.5
+
+Compiler default ที่ build scripts ใช้:
+
+```text
+C:\Windows\Microsoft.NET\Framework\v3.5\csc.exe
 ```
-Durango Mod Pack/
-├── plugins/          # C# source code for each plugin / ซอร์สโค้ด C# ของแต่ละ plugin
-├── refs/             # Reference DLLs (BepInEx, Unity, etc.) / ไฟล์ DLL อ้างอิง
-├── build/            # Build scripts (.ps1) / สคริปต์ build
-├── build-output/     # Compiled plugin DLLs / ไฟล์ DLL ที่ build แล้ว
-└── artifacts/        # Additional assets / ไฟล์เสริมอื่น ๆ
-=======
-## Build
 
-Build one plugin entirely inside this repository:
+ถ้าต้องการใช้ compiler path อื่น สามารถกำหนด environment variable:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-GatheringPlugin.ps1"
->>>>>>> dd33197f2330c4c89d484e48ba79d2d10aad4e48
+$env:DURANGO_CSC = "C:\path\to\csc.exe"
 ```
-
-> All paths are self-contained within this folder — no external game folder dependencies.
->
-> ทุก path อยู่ภายในโฟลเดอร์นี้ทั้งหมด ไม่ต้องพึ่งพาโฟลเดอร์เกมภายนอก
 
 ---
 
-## 🔨 Build / วิธี Build
+## Folder Structure
 
-### Build All Plugins / Build ทุก Plugin
+```text
+Durango Mod Pack
+├─ build
+│  ├─ Build-All.ps1
+│  ├─ Build-Plugin.ps1
+│  └─ Build-<PluginName>.ps1
+│
+├─ plugins
+│  ├─ ChatCommandPlugin
+│  ├─ DurangoCombatSystemPlugin
+│  ├─ SkillSystemPlugin
+│  └─ ...
+│
+├─ refs
+│  ├─ BepInEx.dll
+│  ├─ 0Harmony.dll
+│  ├─ Assembly-CSharp.dll
+│  ├─ ExternalLibrary.dll
+│  ├─ UnityEngine*.dll
+│  ├─ MsgPack.dll
+│  ├─ NCalc.dll
+│  └─ ...
+│
+├─ build-output
+│  ├─ *.dll
+│  ├─ MapEditorPlugin
+│  └─ Durango_Data
+│
+├─ img
+└─ README.md
+```
+
+### `plugins`
+
+เก็บ source code ของ plugin แต่ละตัว
+
+`Build-All.ps1` จะใช้ folder ที่อยู่ภายใน `plugins` เป็น **source of truth**  
+หมายความว่า plugin ที่อยู่ใน folder นี้จะถูกนำไป build อัตโนมัติ
+
+### `refs`
+
+เก็บ DLL references ที่จำเป็นสำหรับ compile
+
+Build scripts จะอ่าน DLL ทุกไฟล์ใน `refs` อัตโนมัติ จึงไม่ต้อง hardcode path ไปยัง:
+
+```text
+Durango_Original\Durango_Data\Managed
+BepInEx\core
+```
+
+ในแต่ละ plugin อีกต่อไป
+
+ถ้า plugin ใหม่ต้องใช้ assembly เพิ่ม สามารถใส่ DLL ที่จำเป็นลงใน `refs` ได้
+
+### `build`
+
+เก็บ PowerShell build scripts
+
+ระบบ build หลักมี 2 ตัว:
+
+```text
+Build-Plugin.ps1
+Build-All.ps1
+```
+
+ส่วนไฟล์:
+
+```text
+Build-ChatCommandPlugin.ps1
+Build-SkillSystemPlugin.ps1
+Build-DurangoCombatSystemPlugin.ps1
+...
+```
+
+เป็น wrapper สำหรับเรียก `Build-Plugin.ps1` ด้วยชื่อ plugin ที่ถูกต้อง
+
+### `build-output`
+
+เป็นปลายทางของไฟล์ที่ build สำเร็จ
+
+Build scripts **จะไม่ deploy DLL เข้าเกมโดยอัตโนมัติ** และจะไม่เขียน DLL กลับเข้า source folder
+
+ตัวอย่าง:
+
+```text
+build-output\ChatCommandPlugin.dll
+build-output\SkillSystemPlugin.dll
+build-output\AnimalHandlingPlugin.dll
+```
+
+---
+
+# Build
+
+## Build plugin ตัวเดียว
+
+ตัวอย่าง build `ChatCommandPlugin`:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-ChatCommandPlugin.ps1"
+```
+
+หรือเรียก generic builder โดยตรง:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-Plugin.ps1" -PluginName "ChatCommandPlugin"
+```
+
+ผลลัพธ์:
+
+```text
+build-output\ChatCommandPlugin.dll
+```
+
+### Clean ก่อน build ตัวเดียว
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-ChatCommandPlugin.ps1" -Clean
+```
+
+---
+
+## Build plugin ทั้งหมด
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-All.ps1"
 ```
 
-### Build Single Plugin / Build Plugin เดี่ยว
+หรือ clean generated plugin outputs ก่อน:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-<PluginName>.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-All.ps1" -Clean
 ```
 
-**Example / ตัวอย่าง:**
+`-Clean` จะลบเฉพาะ generated plugin DLL และ companion data ที่ builder สร้างขึ้น เช่น:
+
+```text
+build-output\*.dll
+build-output\MapEditorPlugin
+```
+
+รวมถึงล้าง `build-output\ReferenceData` หากเป็น output เก่าจาก builder รุ่นก่อน
+
+โดยจะ **ไม่ลบ** `build-output\Durango_Data`
+
+---
+
+## Local Plugin Dependencies
+
+บาง plugin ใช้ source/type จาก plugin อื่นตอน compile
+
+ปัจจุบันมี dependency ที่ builder จัดการให้อัตโนมัติ:
+
+```text
+TamedIslandRestorationPlugin
+└─ HarborSailingMapPlugin.dll
+```
+
+ดังนั้นถ้าเรียก:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-GatheringPlugin.ps1"
+.\build\Build-TamedIslandRestorationPlugin.ps1
 ```
 
-> Output DLLs are written to `build-output/`.
->
-> ไฟล์ DLL ที่ build ได้จะอยู่ในโฟลเดอร์ `build-output/`
+และยังไม่มี:
 
-### Compiler / คอมไพเลอร์
-
+```text
+build-output\HarborSailingMapPlugin.dll
 ```
-C:\Windows\Microsoft.NET\Framework\v3.5\csc.exe
+
+builder จะ build `HarborSailingMapPlugin` ก่อนให้เอง
+
+---
+
+## Source Filtering
+
+`Build-Plugin.ps1` compile ไฟล์ `*.cs` ภายใน plugin แบบ recursive เพื่อรองรับ plugin ที่แบ่ง source เป็นหลาย sub-folder เช่น:
+
+```text
+DurangoCombatSystemPlugin
+├─ Actions
+├─ Damage
+├─ Data
+├─ Geometry
+├─ Presentation
+├─ Runtime
+├─ SaurusAI
+└─ Statistics
+```
+
+ไฟล์ backup จะไม่ถูกนำไป compile เช่น:
+
+```text
+*.backup_*.cs
+*.backup.cs
+*.bak.cs
+```
+
+รวมถึง source ที่อยู่ใน child directory ประเภท:
+
+```text
+backup
+backups
+_backups
+test
+tests
+disabled
+```
+
+จึงไม่เกิด duplicate class จากไฟล์ source สำรอง
+
+---
+
+# Runtime Companion Data
+
+บาง plugin ต้องมี data เพิ่มนอกจาก DLL
+
+## DurangoCombatSystemPlugin
+
+**ไม่ต้องใช้ companion data ภายนอกแล้ว**
+
+หลัง build ใช้งานเพียง:
+
+```text
+build-output\DurangoCombatSystemPlugin.dll
+```
+
+combat data ที่จำเป็นถูก embed เข้า DLL ตอน compile ได้แก่:
+
+- animal profiles ที่ runtime รองรับ: `2001 / 2027 / 2037 / 2039`
+- Framework: `Tricera / Phenacodus / Raptor`
+- Saurus root-motion เฉพาะ clip ที่ framework เหล่านี้อ้างถึง
+- `player_battle_actions` สำหรับ impact metadata ของ player combat
+
+folder:
+
+```text
+plugins\DurangoCombatSystemPlugin\ReferenceData
+```
+
+เป็น **development/build-time snapshot เท่านั้น** และไม่ต้องแจกไปกับ DLL
+
+## MapEditorPlugin
+
+หลัง build จะมี:
+
+```text
+build-output
+├─ MapEditorPlugin.dll
+└─ MapEditorPlugin
+   └─ model_catalog.tsv
+```
+
+หมายเหตุ: MapEditor เป็น optional tooling; ถ้าไม่ได้ใช้งาน ไม่จำเป็นต้องติดตั้ง DLL นี้ในเกม
+
+---
+
+# References Included in This Pack
+
+ระบบ build ปัจจุบันทดสอบกับ references ภายใน `refs` ซึ่งรวมถึง:
+
+```text
+0Harmony.dll
+Assembly-CSharp.dll
+BepInEx.dll
+ExternalLibrary.dll
+ICSharpCode.SharpZipLib.dll
+MsgPack.dll
+NCalc.dll
+UnityEngine.dll
+UnityEngine.CoreModule.dll
+UnityEngine.AnimationModule.dll
+UnityEngine.PhysicsModule.dll
+UnityEngine.IMGUIModule.dll
+UnityEngine.InputModule.dll
+UnityEngine.ParticleSystemModule.dll
+```
+
+อย่าลบ reference เหล่านี้หากยังมี plugin ใช้งานอยู่
+
+---
+
+# Plugins
+
+ณ โครง source ปัจจุบัน `plugins` มี 36 build targets:
+
+```text
+AnimalHandlingPlugin
+CareerGuideEnablePlugin
+CashShopRestorationPlugin
+CharacterCreationFixPlugin
+ChatCommandPlugin
+CraftBuildPlugin
+DecorativeGearPlugin
+DeveloperModePlugin
+DurangoCombatSystemPlugin
+FoodConsumptionPlugin
+GameMenuPlugin
+GatheringPlugin
+HarborSailingMapPlugin
+InventoryLockPlugin
+IslandMapRestorationPlugin
+IslandMarketEnablePlugin
+KeybindSettingsPlugin
+LogControlPlugin
+MapEditorPlugin
+MobilePCUISwitchPlugin
+NPCFriendListPlugin
+OfflineClanRestorationPlugin
+OfflineSurvivalPlugin
+PartySystemPlugin
+PCCurrencyGroupRestorationPlugin
+PlayerProgressionPlugin
+SelectCharacterPlugin
+SelectGameMode
+SkillSystemPlugin
+SupportOrganizationRestorationPlugin
+TamedIslandRestorationPlugin
+TaskSystemRestorationPlugin
+TitleBarMenuDisablePlugin
+TradeAvailablePlugin
+UISizeOptionsPlugin
+WeatherModePlugin
 ```
 
 ---
 
-## 📦 Included Plugins / รายชื่อ Plugin ทั้งหมด (28)
+# Build Test
 
-| Category | Plugin | Description |
-|----------|--------|-------------|
-| **Combat / การต่อสู้** | `DurangoCombatSystemPlugin` | Combat system / ระบบการต่อสู้ |
-| **Character / ตัวละคร** | `CharacterCreationFixPlugin` | Character creation fix / แก้ไขการสร้างตัวละคร |
-| | `SelectCharacterPlugin` | Character selection / เลือกตัวละคร |
-| | `PlayerProgressionPlugin` | Player progression / ระบบความก้าวหน้าของผู้เล่น |
-| | `SkillSystemPlugin` | Skill system / ระบบสกิล |
-| **World / โลก** | `IslandMapRestorationPlugin` | Terrain aliases & simulation templates for restored islands / กู้คืนแผนที่เกาะ |
-| | `HarborSailingMapPlugin` | All 24 sailing-map destinations / จุดหมายเดินเรือทั้ง 24 แห่ง |
-| | `TamedIslandRestorationPlugin` | Tamed island restoration / กู้คืนเกาะที่เลี้ยงแล้ว |
-| | `CustomTerrainLoaderPlugin` | Custom terrain loader / โหลด terrain แบบกำหนดเอง |
-| **Gathering & Crafting / เก็บของ & คราฟต์** | `GatheringPlugin` | Resource gathering / ระบบเก็บทรัพยากร |
-| | `CraftBuildPlugin` | Crafting & building / ระบบคราฟต์และก่อสร้าง |
-| | `AnimalHandlingPlugin` | Animal handling / ระบบจัดการสัตว์ |
-| **Economy / เศรษฐกิจ** | `CashShopRestorationPlugin` | Cash shop restoration / กู้คืนร้านค้า Cash Shop |
-| | `IslandMarketEnablePlugin` | Island market / ตลาดเกาะ |
-| | `TradeAvailablePlugin` | Trading system / ระบบการค้า |
-| | `PCCurrencyGroupRestorationPlugin` | PC currency group restoration / กู้คืนกลุ่มสกุลเงิน PC |
-| **Social / สังคม** | `PartySystemPlugin` | Party system / ระบบปาร์ตี้ |
-| | `OfflineClanRestorationPlugin` | Offline clan restoration / กู้คืนแคลนออฟไลน์ |
-| | `SupportOrganizationRestorationPlugin` | Support organization / กู้คืนองค์กรสนับสนุน |
-| | `ChatCommandPlugin` | Chat commands. try use /help / คำสั่งแชท ลอง /help |
-| **Quest / เควส** | `TaskSystemRestorationPlugin` | Task/quest system / กู้คืนระบบเควส |
-| | `CareerGuideEnablePlugin` | Career guide / ระบบแนะนำอาชีพ |
-| **UI / อินเทอร์เฟซ** | `GameMenuPlugin` | Game menu / เมนูเกม |
-| | `SelectGameMode` | Game mode selection / เลือกโหมดเกม |
-| | `TitleBarMenuDisablePlugin` | Disable title bar menu / ปิดเมนู Title Bar |
-| | `UISizeOptionsPlugin` | UI size options / ตัวเลือกขนาด UI |
-| | `KeybindSettingsPlugin` | Keybind settings / ตั้งค่าปุ่มกด |
-| | `Keybind2` | Additional keybinds / ปุ่มกดเพิ่มเติม |
+ระบบ build แบบ self-contained ภายใน folder นี้ได้รับการทดสอบด้วย:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\build\Build-All.ps1" -Clean
+```
+
+ผลการทดสอบ:
+
+```text
+Plugins : 36
+Success : 36
+Failed  : 0
+Output  : Durango Mod Pack\build-output
+```
+
+ตัวอย่าง output ที่ตรวจสอบแล้ว:
+
+```text
+build-output\ChatCommandPlugin.dll
+build-output\DurangoCombatSystemPlugin.dll
+build-output\MobilePCUISwitchPlugin.dll
+build-output\NPCFriendListPlugin.dll
+build-output\TamedIslandRestorationPlugin.dll
+build-output\WeatherModePlugin.dll
+```
 
 ---
 
-## 📝 Notes / หมายเหตุ
+# การติดตั้ง BepInEx เบื้องต้น
 
-- Each plugin has its own build script in `build/Build-<PluginName>.ps1`.
-  แต่ละ plugin มีสคริปต์ build ของตัวเองใน `build/Build-<PluginName>.ps1`
+1. แตกไฟล์ BepInEx x64 ลงใน folder เกม Durango
+2. เปิดเกมอย่างน้อย 1 ครั้ง เพื่อให้ BepInEx สร้าง directory/config ที่จำเป็น
+3. ปิดเกม
+4. นำ DLL ที่ต้องการจาก `build-output` ไปวางใน:
 
-- Reference DLLs in `refs/` are shared across all plugins.
-  ไฟล์ DLL อ้างอิงใน `refs/` ใช้ร่วมกันทุก plugin
+```text
+BepInEx\plugins
+```
 
-- Build scripts use `$PSScriptRoot` for relative paths — portable and self-contained.
-  สคริปต์ build ใช้ relative path ผ่าน `$PSScriptRoot` — พกพาได้ อยู่ในตัว
+5. สำหรับ plugin ที่มี companion data จริง เช่น `MapEditorPlugin` ให้ copy data ที่เกี่ยวข้องไปด้วย
+6. `DurangoCombatSystemPlugin` ใช้เฉพาะ DLL ไม่ต้อง copy `ReferenceData`
+7. เปิดเกมและตรวจสอบ `BepInEx\LogOutput.log`
+
+> `build-output` เป็น build staging area ไม่ใช่การ deploy เข้าเกมอัตโนมัติ
+
+---
+
+## Development Notes
+
+- หลีกเลี่ยงการ hardcode absolute path ใน build scripts
+- source plugin ต้องอยู่ใต้ `plugins\<PluginName>`
+- compile references ต้องอยู่ใน `refs`
+- generated binaries ต้องออกไป `build-output`
+- อย่า commit `*.staging.dll` หรือ DLL ที่ build ชั่วคราวจาก source folder
+- หากเพิ่ม plugin ใหม่ ให้สร้าง folder ใน `plugins` และเพิ่ม wrapper `Build-<PluginName>.ps1` เมื่ออยาก build แบบ shortcut
+- `Build-All.ps1` ไม่จำเป็นต้องแก้รายชื่อ plugin เมื่อเพิ่ม folder ใหม่ เพราะอ่านรายการจาก `plugins` โดยตรง

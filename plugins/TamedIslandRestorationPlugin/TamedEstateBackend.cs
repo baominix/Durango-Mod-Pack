@@ -52,8 +52,10 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
         public static bool IsTamedWorld(OfflinePlayer player, out World world, out string terrainId)
         {
             world = HarborIslandApi.GetCurrentWorld(player);
-            terrainId = world == null ? null : world.TerrainInfo.region_template;
-            return world != null && HarborIslandApi.IsTamedTerrain(terrainId);
+            terrainId = world == null
+                ? null
+                : HarborIslandApi.GetCurrentTamedTerrainId(world);
+            return world != null && !string.IsNullOrEmpty(terrainId);
         }
 
         public static void SendGrid(OfflinePlayer player, string ownerId)

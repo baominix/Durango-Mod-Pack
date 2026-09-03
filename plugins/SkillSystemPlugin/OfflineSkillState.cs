@@ -166,6 +166,12 @@ namespace BaoX.DurangoOriginal.SkillSystemMod
 
         internal Skills CreateMessage()
         {
+            int autoLearned = EnsureAutoSkills();
+            if (autoLearned > 0)
+            {
+                Save();
+                LogAutoSkills(autoLearned);
+            }
             EnsureSkillPoints();
 
             List<SkillBundle> bundles = new List<SkillBundle>();
@@ -257,6 +263,7 @@ namespace BaoX.DurangoOriginal.SkillSystemMod
                 // "set" means total category XP, so rebuild the level from the beginning.
                 saved.Level = 1;
                 saved.Exp = amount;
+                saved.GameplayExpRemainder = 0.0;
             }
             else if (string.Equals(operation, "add", StringComparison.OrdinalIgnoreCase))
             {
@@ -287,7 +294,88 @@ namespace BaoX.DurangoOriginal.SkillSystemMod
 
             currentLevel = saved.Level;
             currentExp = saved.Exp;
-            Save();
+            int autoLearned = currentLevel != previousLevel
+                ? EnsureAutoSkills()
+                : 0;
+            SaveDeferred();
+            LogAutoSkills(autoLearned);
+            return true;
+        }
+
+        internal bool AddCategoryExperienceFromGameplay(
+            Category category,
+            double amount,
+            out int previousLevel,
+            out int currentLevel,
+            out int currentExp,
+            out int appliedExp,
+            out double remainder)
+        {
+            previousLevel = 0;
+            currentLevel = 0;
+            currentExp = 0;
+            appliedExp = 0;
+            remainder = 0.0;
+
+            SkillCategorySaveData saved = GetCategory(category);
+            if (saved == null ||
+                amount <= 0.0 ||
+                Double.IsNaN(amount) ||
+                Double.IsInfinity(amount))
+            {
+                return false;
+            }
+
+            previousLevel = saved.Level;
+            int playerLevel = _context.PlayerInfo == null
+                ? 1
+                : Math.Max(1, Math.Min(60, _context.PlayerInfo.PlayerLevel));
+            if (saved.Level >= playerLevel || saved.Level >= 60)
+            {
+                currentLevel = saved.Level;
+                currentExp = saved.Exp;
+                remainder = saved.GameplayExpRemainder;
+                return true;
+            }
+
+            double accumulated = saved.GameplayExpRemainder + amount;
+            long wholeExp = accumulated >= Int32.MaxValue
+                ? Int32.MaxValue
+                : (long)Math.Floor(accumulated + 0.000000001);
+            saved.GameplayExpRemainder = Math.Max(
+                0.0,
+                Math.Min(0.999999999, accumulated - wholeExp));
+
+            long capacity = GetGameplayExperienceCapacity(
+                category,
+                saved,
+                playerLevel);
+            appliedExp = (int)Math.Min(wholeExp, capacity);
+
+            if (appliedExp > 0)
+            {
+                saved.Exp += appliedExp;
+                while (saved.Level < playerLevel && saved.Level < 60)
+                {
+                    int needed = GetCategoryExpNeeded(category, saved.Level);
+                    if (needed <= 0 || saved.Exp < needed)
+                    {
+                        break;
+                    }
+
+                    saved.Exp -= needed;
+                    saved.Level++;
+                }
+            }
+
+            currentLevel = saved.Level;
+            currentExp = saved.Exp;
+            remainder = saved.GameplayExpRemainder;
+            int autoLearned = currentLevel > previousLevel
+                ? EnsureAutoSkills()
+                : 0;
+            SaveDeferred();
+            LogAutoSkills(autoLearned);
             return true;
         }
 
@@ -322,9 +410,113 @@ namespace BaoX.DurangoOriginal.SkillSystemMod
 
             saved.Level = Math.Max(1, Math.Min(60, level));
             saved.Exp = 0;
+            saved.GameplayExpRemainder = 0.0;
             currentLevel = saved.Level;
-            Save();
+            int autoLearned = EnsureAutoSkills();
+            SaveDeferred();
+            LogAutoSkills(autoLearned);
             return true;
+        }
+
+        private int EnsureAutoSkills()
+        {
+            if (!GameSystem<SkillSystem>.HasInstance())
+            {
+                return 0;
+            }
+
+            List<LogicBundle> skills = GameSystem<SkillSystem>.Instance().Skills;
+            if (skills == null || skills.Count == 0)
+            {
+                return 0;
+            }
+
+            int learned = 0;
+            for (int i = 0; i < skills.Count; i++)
+            {
+                LogicBundle logicBundle = skills[i];
+                if (logicBundle == null || string.IsNullOrEmpty(logicBundle.Id))
+                {
+                    continue;
+                }
+
+                SkillBundleSaveData savedBundle = GetBundle(logicBundle.Id, false);
+                learned += EnsureAutoSkill(logicBundle, logicBundle.Base, ref savedBundle);
+
+                if (logicBundle.Sub == null)
+                {
+                    continue;
+                }
+
+                for (int j = 0; j < logicBundle.Sub.Length; j++)
+                {
+                    learned += EnsureAutoSkill(logicBundle, logicBundle.Sub[j], ref savedBundle);
+                }
+            }
+
+            return learned;
+        }
+
+        private int EnsureAutoSkill(LogicBundle logicBundle, LogicSkill logicSkill, ref SkillBundleSaveData savedBundle)
+        {
+            if (logicSkill == null || string.IsNullOrEmpty(logicSkill.SubId))
+            {
+                return 0;
+            }
+
+            if (logicSkill != logicBundle.Base && GetSavedLevel(savedBundle, logicBundle.Base) <= 0)
+            {
+                return 0;
+            }
+
+            SkillLevelSaveData savedLevel = GetLevel(savedBundle, logicSkill.SubId, false);
+            int currentLevel = savedLevel == null ? 0 : Math.Max(0, savedLevel.Level);
+            int learned = 0;
+
+            while (currentLevel < logicSkill.MaxLevel)
+            {
+                Durango.Logic.Skill.Node node = logicSkill.Get(currentLevel + 1);
+                if (node == null || node.SkillPoints > 0 || node.CategoryLevel > GetCategoryLevel(node.Category))
+                {
+                    break;
+                }
+
+                if (savedBundle == null)
+                {
+                    savedBundle = GetBundle(logicBundle.Id, true);
+                }
+                savedBundle.Category = (int)node.Category;
+
+                if (savedLevel == null)
+                {
+                    savedLevel = GetLevel(savedBundle, logicSkill.SubId, true);
+                }
+
+                currentLevel++;
+                savedLevel.Level = currentLevel;
+                learned++;
+            }
+
+            return learned;
+        }
+
+        private static int GetSavedLevel(SkillBundleSaveData savedBundle, LogicSkill logicSkill)
+        {
+            if (savedBundle == null || logicSkill == null)
+            {
+                return 0;
+            }
+
+            SkillLevelSaveData savedLevel = GetLevel(savedBundle, logicSkill.SubId, false);
+            return savedLevel == null ? 0 : Math.Max(0, savedLevel.Level);
+        }
+
+        private static void LogAutoSkills(int count)
+        {
+            if (count > 0 && SkillSystemPlugin.Log != null)
+            {
+                SkillSystemPlugin.Log.LogInfo("Auto-learned " + count + " skill node(s) for available category levels.");
+            }
         }
 
         internal IEnumerable<Durango.Logic.Skill.Node> EnumerateLearnedNodes()
@@ -363,6 +555,33 @@ namespace BaoX.DurangoOriginal.SkillSystemMod
         {
             Yaml.SkillCategory data = SingletonDict<Category, Yaml.SkillCategory>.Get(category, null);
             return data == null || data.ExpNeeded == null ? -1 : data.ExpNeeded.Get(level, -1);
+        }
+
+        private static long GetGameplayExperienceCapacity(
+            Category category,
+            SkillCategorySaveData saved,
+            int levelCap)
+        {
+            if (saved == null || saved.Level > levelCap || saved.Level >= 60)
+            {
+                return 0L;
+            }
+
+            long capacity = 0L;
+            for (int level = saved.Level; level < levelCap && level < 60; level++)
+            {
+                int needed = GetCategoryExpNeeded(category, level);
+                if (needed <= 0)
+                {
+                    return capacity;
+                }
+
+                capacity += level == saved.Level
+                    ? Math.Max(0, needed - saved.Exp)
+                    : needed;
+            }
+
+            return Math.Min(Int32.MaxValue, capacity);
         }
 
         private static int GetTotalSkillPoints(int level)
@@ -436,8 +655,13 @@ namespace BaoX.DurangoOriginal.SkillSystemMod
         private void Save()
         {
             _data.Normalize();
-            SkillPlayerDataPersistence.Attach(_context, _data);
-            _context.Save();
+            SkillPlayerDataPersistence.SaveNow(_context, _data);
+        }
+
+        private void SaveDeferred()
+        {
+            _data.Normalize();
+            SkillPlayerDataPersistence.MarkDirty(_context, _data);
         }
     }
 
@@ -474,6 +698,9 @@ namespace BaoX.DurangoOriginal.SkillSystemMod
                     {
                         Categories[j].Level = Math.Max(1, Categories[j].Level);
                         Categories[j].Exp = Math.Max(0, Categories[j].Exp);
+                        Categories[j].GameplayExpRemainder = Math.Max(
+                            0.0,
+                            Math.Min(0.999999999, Categories[j].GameplayExpRemainder));
                         found = true;
                         break;
                     }
@@ -492,6 +719,7 @@ namespace BaoX.DurangoOriginal.SkillSystemMod
         public int Category;
         public int Level = 1;
         public int Exp;
+        public double GameplayExpRemainder;
     }
 
     [Serializable]

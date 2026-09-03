@@ -1,0 +1,48 @@
+{
+  "source": "D:/ProgramData/Durango_Ver_PC_Final/tools/island-market-dump/island-market-dump.log",
+  "collectible_id": "paperbox_normal_mixed",
+  "maximum_types_per_object": 8,
+  "maximum_amount_per_type": 5,
+  "amount_probability_percent": {
+    "1": 85.0,
+    "2": 9.0,
+    "3": 4.0,
+    "4": 1.5,
+    "5": 0.5
+  },
+  "groups": {
+    "clothing": [
+      "clothes_cargopants", "clothes_northernface", "clothes_officeworker",
+      "clothes_officeworker_torn", "clothes_waiter", "clothes_waiter_torn",
+      "clothes_gmpress", "clothes_school_event_cardigan"
+    ],
+    "accessories": [
+      "digitalwatch", "event_tablet", "bag_birkin", "hat_sunglasses", "hat_bike",
+      "hat_safety", "hat_trafficcone", "necklace_tag_starting"
+    ],
+    "furniture": [
+      "capsulated_refrigerator_01", "capsulated_refrigerator_02",
+      "capsulated_fan_01", "capsulated_cabinet_warp_01",
+      "capsulated_cabinet_warp_02", "capsulated_classroom_chair",
+      "capsulated_classroom_desk", "capsulated_classroom_locker_01",
+      "capsulated_bed_02_steel_hospital", "capsulated_curtain_01_steel_hospital",
+      "capsulated_wheelchair_01", "capsulated_camp_radio_station_02",
+      "capsulated_worktable_warp_02", "capsulated_worktable_warp_03",
+      "capsulated_sofa_warp_01", "capsulated_s02_car"
+    ],
+    "weapons_tools": [
+      "axe_onehand_emergency", "bat_onehand", "broom_twohand",
+      "chainsaw_twohand", "chair_twohand", "gmpress_camera", "golf_twohand",
+      "hammer_officer", "hoe_twohand_farmer", "keyboard_onehand",
+      "knife_onehand_survival", "needle_waiter", "signpole_twohand_01",
+      "signpole_twohand_02", "saxophone_onehand", "urban_axe_twohand"
+    ],
+    "food_medicine": [
+      "food_k", "ramen", "coffee_lessbe", "event_fatigue_drug_01",
+      "medicine_modern_01", "medicine_pillet_01", "ration_survival",
+      "survival_food_the_firm", "hamberger_01", "bread_03_pizza",
+      "sandwich_01", "milk", "hardtack_store", "hp_medicine_store",
+      "fatigue_drug", "immune_gas"
+    ]
+  }
+}

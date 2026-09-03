@@ -15,13 +15,13 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
             PlayerBehavior player = PlayerBehavior.LocalPlayer;
             if (player == null)
             {
-                ChatCommandRegistry.Reply("Enter a character before using /kill.");
+                ChatCommandRegistry.Reply(ChatCommandLocalization.Get("kill_enter"));
                 return;
             }
 
             if (!player.IsAlive)
             {
-                ChatCommandRegistry.Reply("You are already dead.");
+                ChatCommandRegistry.Reply(ChatCommandLocalization.Get("already_dead"));
                 return;
             }
 
@@ -34,7 +34,7 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
             player.SetSurvivalGauge(zeroLife, null);
             player.SetAlive(false, false);
 
-            ChatCommandRegistry.Reply("Killed local player.");
+            ChatCommandRegistry.Reply(ChatCommandLocalization.Get("killed_player"));
         }
 
         private static bool IsSelfTarget(string[] args)
@@ -77,8 +77,8 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
 
         private static void ShowUsage()
         {
-            ChatCommandRegistry.Reply("Usage: /kill me");
-            ChatCommandRegistry.Reply("Also supported: /kill myself");
+            ChatCommandRegistry.Reply(ChatCommandLocalization.Get("usage_prefix", "/kill me"));
+            ChatCommandRegistry.Reply(ChatCommandLocalization.Get("also_supported", "/kill myself"));
         }
     }
 }

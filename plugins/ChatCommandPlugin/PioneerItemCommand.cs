@@ -30,7 +30,7 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
 
             if (Connections.Frontend == null)
             {
-                ChatCommandRegistry.Reply("Enter an offline character before using /givepioneer.");
+                ChatCommandRegistry.Reply(ChatCommandLocalization.Get("pioneer_enter"));
                 return;
             }
 
@@ -39,16 +39,17 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
                 _Cheat = "pioneer_it " + prototype + " " + level + " " + count + " " + tagLevel
             }, false, 0U);
             ChatCommandRegistry.Reply(
-                "Requested " + count + " x " + prototype + " Lv." + level +
-                " with Pioneer Material Lv." + tagLevel + ".");
+                ChatCommandLocalization.Get("pioneer_requested",
+                    count, prototype, level, tagLevel));
         }
 
         private static void Usage()
         {
             ChatCommandRegistry.Reply(
-                "Usage: /givepioneer [prototype] [level 1-100] [count 1-200] [tagLevel 1-8]");
-            ChatCommandRegistry.Reply("Example: /givepioneer flax 15 10 1");
-            ChatCommandRegistry.Reply("No arguments gives 10 x clam_product Lv.1 / Pioneer Material Lv.1.");
+                ChatCommandLocalization.Get("usage_prefix",
+                    "/givepioneer [prototype] [level 1-100] [count 1-200] [tagLevel 1-8]"));
+            ChatCommandRegistry.Reply(ChatCommandLocalization.Get("example_prefix", "/givepioneer flax 15 10 1"));
+            ChatCommandRegistry.Reply(ChatCommandLocalization.Get("pioneer_noargs"));
         }
     }
 }

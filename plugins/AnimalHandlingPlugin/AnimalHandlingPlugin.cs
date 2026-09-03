@@ -10,6 +10,7 @@ using Durango.Network;
 using Durango.Offline;
 using Durango.UI;
 using Durango.UI.Control;
+using Durango.UI.Popup;
 using Durango.Utils;
 using HarmonyLib;
 using Newtonsoft.Json;
@@ -22,15 +23,19 @@ using Shared.Display;
 using Shared.Item;
 using Shared.Pet;
 using Shared.Economy;
+using Shared.Region;
 using UnityEngine;
 using Yaml;
 using Yaml.Util;
 
 namespace AnimalHandlingPlugin
 {
-	[BepInPlugin("com.antigravity.animalhandling", "Animal Handling Plugin", "1.2.5")]
+	[BepInPlugin("com.baominix.durango.original.animalhandling", "Animal Handling Plugin", "1.5.4")]
+	[BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
 	public class AnimalHandlingPlugin : BaseUnityPlugin
 	{
+		private static readonly Messages.Pet[] NoRoamingPets = new Messages.Pet[0];
+
 		public sealed class PlayerAnimalData
 		{
 			public GenDict SaveData = new GenDict();
@@ -48,8 +53,246 @@ namespace AnimalHandlingPlugin
 
 		private void Awake()
 		{
-			new Harmony("com.antigravity.animalhandling").PatchAll(Assembly.GetExecutingAssembly());
-			Logger.LogInfo("AnimalHandlingPlugin 1.2.5 loaded (all-pet rank reset, active skill reset, rank-based milestones, persistent pets, feeding, skills and cages).");
+			new Harmony("com.baominix.durango.original.animalhandling").PatchAll(Assembly.GetExecutingAssembly());
+			Logger.LogInfo("AnimalHandlingPlugin 1.5.4 loaded (consistent Market, Cash Shop and Break Bond carrier icons, Owned-only roaming selector, persistent pets, Tamed Island roaming, feeding, skills and cages).");
+		}
+
+		private static bool IsOnOwnTamedIsland()
+		{
+			Durango.Logic.Explore.Region region = GameManager.Region;
+			return region != null &&
+				region.Role() == Role.Personal &&
+				!string.IsNullOrEmpty(GameManager.PersonalRegionId) &&
+				string.Equals(region.Id, GameManager.PersonalRegionId, StringComparison.Ordinal);
+		}
+
+		// The stock client deliberately enables grazing everywhere when ClusterMode
+		// is Offline. Restored islands still have truthful region metadata, so keep
+		// the original grazing system active only in the player's own Personal region.
+		[HarmonyPatch(typeof(PetManager), "OnGrazedPets")]
+		private static class GrazedPetsRegionPatch
+		{
+			private static void Prefix(ref GrazedPets __0)
+			{
+				if (IsOnOwnTamedIsland())
+				{
+					return;
+				}
+
+				GrazedPets message = __0;
+				message.Data = NoRoamingPets;
+				__0 = message;
+			}
+		}
+
+		// GrazingPetManager already contains the game's original free-roaming AI.
+		// Stop it before every update outside the owned Tamed Island and clear any
+		// ghosts retained across an offline scene transition.
+		[HarmonyPatch(typeof(GrazingPetManager), "Update")]
+		private static class GrazingPetUpdateRegionPatch
+		{
+			private static bool Prefix(GrazingPetManager __instance)
+			{
+				if (IsOnOwnTamedIsland())
+				{
+					return true;
+				}
+
+				__instance.Set(NoRoamingPets);
+				return false;
+			}
+		}
+
+		// The live service charged a shop-only Break Bond ticket. That item has no
+		// reliable offline source, so retain the original localized confirmation
+		// and make the conversion to a boxed pet free in offline play.
+		[HarmonyPatch(typeof(PetGroup), "ReinifyPet")]
+		private static class BreakBondDialogPatch
+		{
+			private static bool Prefix(Messages.Pet pet, Action onSuccess)
+			{
+				UIManager.MessageBox.Show(
+					T._("<em>귀속 해제</em>하시겠습니까?"),
+					string.Empty,
+					delegate(int index)
+					{
+						if (index != 0)
+						{
+							return;
+						}
+
+						PetManager.ReinifyPet(pet.EntityId, null, delegate
+						{
+							UIManager.SystemMsg(T._("귀속이 해제되었습니다."), 3f);
+							SoundManager.PlayEvent("ui_button_animal_unbind");
+							if (onSuccess != null)
+							{
+								onSuccess();
+							}
+						});
+					},
+					new MessageBox.Button[]
+					{
+						new MessageBox.Button
+						{
+							Text = T._("귀속 해제"),
+							Style = PresetButton.Style.Solid
+						},
+						new MessageBox.Button
+						{
+							Text = T._("취소"),
+							Style = PresetButton.Style.Border
+						}
+					});
+				return false;
+			}
+		}
+
+		// The stock selector accidentally requires CageInfo to be non-null. Normal
+		// owned pets use null to mean "not in a pen", which made the + list empty.
+		[HarmonyPatch(typeof(PetGroup), "ShowPetSelectorPopup")]
+		private static class RoamingPetSelectorPatch
+		{
+			private static readonly FieldInfo InfoField = AccessTools.Field(typeof(PetGroup), "_info");
+			private static readonly MethodInfo ActionMethod = typeof(PetGroup).GetMethod(
+				"OnPetActionClick",
+				BindingFlags.NonPublic | BindingFlags.Instance);
+
+			private static bool Prefix(PetGroup __instance)
+			{
+				if (InfoField == null || ActionMethod == null)
+				{
+					return true;
+				}
+
+				object boxedInfo = InfoField.GetValue(__instance);
+				if (boxedInfo == null)
+				{
+					return false;
+				}
+
+				PetsInfo info = (PetsInfo)boxedInfo;
+				Messages.Pet[] pets = info.Pets.Data ?? new Messages.Pet[0];
+				List<Messages.Pet> available = pets
+					.Where(delegate(Messages.Pet pet)
+					{
+						return pet.CageInfo == null ||
+							string.IsNullOrEmpty(pet.CageInfo.Value.RegionId);
+					})
+					.OrderBy(delegate(Messages.Pet pet) { return !pet.IsSpawned; })
+					.ToList();
+				if (available.Count == 0)
+				{
+					UIManager.SystemMsg(T._("방목 가능한 동물이 없습니다."), 3f);
+					return false;
+				}
+
+				SelectPetPopup popup = UIManager.Popup.Tooltip<SelectPetPopup>();
+				popup.SetTitle(T._("동물 방목하기"))
+					.SetInfo(T._("축사에 있는 동물은 방목할 수 없습니다."))
+					.SetList(available)
+					.SetOnConfirm(delegate(Messages.Pet selected)
+					{
+						ActionMethod.Invoke(__instance, new object[]
+						{
+							PetInfoWidget.PetAction.PutInToStorage,
+							selected
+						});
+					})
+					.SetConfirmButtonText(T._("방목하기"))
+					.Show();
+				return false;
+			}
+		}
+
+		// Cash Shop pet products are delivered without Reins state. Give those and
+		// Break Bond boxes (which contain the full Pet state) the compact carrier
+		// icon, while ordinary captured-animal boxes remain stock wooden crates.
+		[HarmonyPatch(typeof(MarketManager), "MakeProduct")]
+		private static class CashShopPetProductAppearancePatch
+		{
+			private static void Postfix(ref Product __result)
+			{
+				NormalizeCashShopPetBoxes(__result.Items);
+			}
+		}
+
+		[HarmonyPatch(typeof(MarketManager), "BuyProduct")]
+		private static class CashShopPetBoxAppearancePatch
+		{
+			private static void Postfix(ref Item[] __result)
+			{
+				NormalizeCashShopPetBoxes(__result);
+			}
+		}
+
+		private static void NormalizeCashShopPetBoxes(Item[] items)
+		{
+			if (items == null)
+			{
+				return;
+			}
+
+			for (int i = 0; i < items.Length; i++)
+			{
+				Item item = items[i];
+				if (PerformanceYaml.GetRein(item.Prototype) == null)
+				{
+					continue;
+				}
+
+				NormalizeCarrierPetBox(ref item);
+				items[i] = item;
+			}
+		}
+
+		private static void NormalizeCarrierPetBox(ref Item item)
+		{
+			item.Icon = "vehicle_cage_02";
+			item.Size = 1;
+		}
+
+		private static bool NormalizeSavedPetBoxes(PlayerContext context)
+		{
+			bool changed = false;
+			for (int i = 0; i < context.InventoryItems.Count; i++)
+			{
+				Item item = context.InventoryItems[i];
+				if (PerformanceYaml.GetRein(item.Prototype) == null)
+				{
+					continue;
+				}
+
+				Messages.Reins? itemReins = null;
+				if (item.Ext is Messages.Reins)
+				{
+					itemReins = new Messages.Reins?((Messages.Reins)item.Ext);
+				}
+				bool useCarrier = item.Ext == null ||
+					(itemReins != null && itemReins.Value.Pet != null);
+				if (useCarrier)
+				{
+					if (item.Icon != "vehicle_cage_02" || item.Size != 1)
+					{
+						NormalizeCarrierPetBox(ref item);
+						context.InventoryItems[i] = item;
+						changed = true;
+					}
+					continue;
+				}
+
+				Prototype prototype = PrototypeYaml.GetItemPrototype(item.Prototype);
+				string normalIcon = prototype == null ? "vehicle_cage_01" : prototype.Icon;
+				int normalSize = prototype == null ? 4 : prototype.Size;
+				if (item.Icon != normalIcon || item.Size != normalSize)
+				{
+					item.Icon = normalIcon;
+					item.Size = normalSize;
+					context.InventoryItems[i] = item;
+					changed = true;
+				}
+			}
+			return changed;
 		}
 
 		private static PlayerAnimalData GetData(Durango.Offline.Player player)
@@ -173,6 +416,10 @@ namespace AnimalHandlingPlugin
 				PlayerContext context = GetContext(player);
 				PlayerAnimalData data = GetData(player);
 				string savePath = GetSavePath(context);
+				if (NormalizeSavedPetBoxes(context))
+				{
+					context.Save();
+				}
 
 				if (!File.Exists(savePath))
 				{
@@ -557,7 +804,7 @@ namespace AnimalHandlingPlugin
 			int itemIndex = context.InventoryItems.FindIndex(delegate(Item item) { return item.Id == itemId; });
 			if (itemIndex < 0)
 			{
-				UIManager.SystemMsg("Animal Handling", "Taming Material was not found.", 3f);
+				UIManager.SystemMsg(AnimalHandlingLocalization.Get("title"), AnimalHandlingLocalization.Get("no_taming_material"), 3f);
 				return;
 			}
 
@@ -565,7 +812,7 @@ namespace AnimalHandlingPlugin
 			PerformanceYaml.Rein rein = PerformanceYaml.GetRein(material.Prototype);
 			if (rein == null)
 			{
-				UIManager.SystemMsg("Animal Handling", "This item has no animal data.", 3f);
+				UIManager.SystemMsg(AnimalHandlingLocalization.Get("title"), AnimalHandlingLocalization.Get("no_animal_data"), 3f);
 				return;
 			}
 
@@ -600,7 +847,7 @@ namespace AnimalHandlingPlugin
 				{
 					if (index == 0)
 					{
-						AddPetFromTamingMaterial(player, itemId);
+						AddPetFromTamingMaterial(player, itemId, true);
 					}
 				},
 				new MessageBox.Button[]
@@ -610,27 +857,35 @@ namespace AnimalHandlingPlugin
 				});
 		}
 
-		private static void AddPetFromTamingMaterial(Durango.Offline.Player player, string itemId)
+		private static bool AddPetFromTamingMaterial(
+			Durango.Offline.Player player,
+			string itemId,
+			bool openPetGroup)
 		{
+			if (player == null)
+			{
+				return false;
+			}
+
 			PlayerContext context = GetContext(player);
 			PlayerAnimalData data = GetData(player);
 			int itemIndex = context.InventoryItems.FindIndex(delegate(Item item) { return item.Id == itemId; });
 			if (itemIndex < 0 || data.Pets.Any(delegate(Messages.Pet pet) { return pet.EntityId == itemId; }))
 			{
-				return;
+				return false;
 			}
 			int maxPets = (int)GameSystem<StatisticsSystem>.Instance().GetDeriveds(Derived.MaxTamingPet, 99f);
 			if (data.Pets.Count >= Mathf.Max(1, maxPets))
 			{
-				UIManager.SystemMsg("Animal Handling", "The animal handling slots are full.", 3f);
-				return;
+				UIManager.SystemMsg(AnimalHandlingLocalization.Get("title"), AnimalHandlingLocalization.Get("slots_full"), 3f);
+				return false;
 			}
 
 			Item material = context.InventoryItems[itemIndex];
 			PerformanceYaml.Rein rein = PerformanceYaml.GetRein(material.Prototype);
 			if (rein == null)
 			{
-				return;
+				return false;
 			}
 
 			float lifeValue = UnityEngine.Random.Range(15420f, 38219f);
@@ -725,11 +980,15 @@ namespace AnimalHandlingPlugin
 				null,
 				null,
 				null);
-			PetGroup petGroup = UIManager.FindScript<PetGroup>();
-			if (petGroup != null)
+			if (openPetGroup)
 			{
-				petGroup.Open(petData.EntityId);
+				PetGroup petGroup = UIManager.FindScript<PetGroup>();
+				if (petGroup != null)
+				{
+					petGroup.Open(petData.EntityId);
+				}
 			}
+			return true;
 		}
 
 		private static float GetOptionalReinValue(PerformanceYaml.Rein rein, string fieldName, float fallback)
@@ -1518,8 +1777,10 @@ namespace AnimalHandlingPlugin
 			PlayerAnimalData data = GetData(player);
 			int index = FindPetIndex(data, message.PetId);
 			PlayerContext context = GetContext(player);
-			int catalystIndex = context.InventoryItems.FindIndex(delegate(Item item) { return item.Id == message.ItemId; });
-			if (index < 0 || catalystIndex < 0) return false;
+			int catalystIndex = string.IsNullOrEmpty(message.ItemId)
+				? -1
+				: context.InventoryItems.FindIndex(delegate(Item item) { return item.Id == message.ItemId; });
+			if (index < 0) return false;
 			Messages.Pet pet = data.Pets[index];
 			CustomPetDefinition definition = GetPetDefinition(pet.EntityType);
 			if (definition == null || !definition.is_reinifiable || string.IsNullOrEmpty(definition.rein_id)) return false;
@@ -1537,7 +1798,11 @@ namespace AnimalHandlingPlugin
 				Domesticated = true
 			};
 			reinItem.Ext = reins;
-			context.InventoryItems.RemoveAt(catalystIndex);
+			NormalizeCarrierPetBox(ref reinItem);
+			if (catalystIndex >= 0)
+			{
+				context.InventoryItems.RemoveAt(catalystIndex);
+			}
 			context.InventoryItems.Add(reinItem);
 			List<Item> bag;
 			if (data.PetInventories.TryGetValue(message.PetId, out bag) && bag.Count > 0)
@@ -1551,7 +1816,9 @@ namespace AnimalHandlingPlugin
 			player.Send<InventoryUpdated>(new InventoryUpdated
 			{
 				EntityId = context.AppearPlayer.EntityId,
-				RemovedItemIds = new string[] { message.ItemId },
+				RemovedItemIds = catalystIndex >= 0
+					? new string[] { message.ItemId }
+					: new string[0],
 				Items = new List<Item>(new Item[] { reinItem }).Concat(bag ?? new List<Item>()).ToArray()
 			}, 0U);
 			player.Send<Messages.Pets>(new Messages.Pets { Data = data.Pets.ToArray() }, 0U);
@@ -2333,7 +2600,7 @@ namespace AnimalHandlingPlugin
 				tabs.Clicked += CreateDelegate<Action<int>>(__instance, "SelectTab");
 
 				UITitle title = (UITitle)AccessTools.Field(typeof(PetGroup), "_titleWidget").GetValue(__instance);
-				title.Object.SetTitle(T._("Animal Handling"));
+				title.Object.SetTitle(AnimalHandlingLocalization.Get("title"));
 
 				PetListWidget petList = (PetListWidget)AccessTools.Field(typeof(PetGroup), "_petList").GetValue(__instance);
 				petList.PetSelected += CreateDelegate<Action<Messages.Pet>>(__instance, "OnPetSelect");
@@ -2407,7 +2674,7 @@ namespace AnimalHandlingPlugin
 				try
 				{
 					UITitle title = (UITitle)AccessTools.Field(typeof(PetGroup), "_titleWidget").GetValue(__instance);
-					if (title != null && title.Object != null) title.Object.SetTitle(T._("Animal Handling"));
+					if (title != null && title.Object != null) title.Object.SetTitle(AnimalHandlingLocalization.Get("title"));
 					GameObject petCountBtn = (GameObject)AccessTools.Field(typeof(PetGroup), "_petCountButton").GetValue(__instance);
 					GameObject grazedBtn = (GameObject)AccessTools.Field(typeof(PetGroup), "_grazedPetCountButton").GetValue(__instance);
 					GameObject voucherBtn = (GameObject)AccessTools.Field(typeof(PetGroup), "_petVoucherButton").GetValue(__instance);

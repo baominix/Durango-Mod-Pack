@@ -6,6 +6,7 @@ using BepInEx.Logging;
 using Durango.Logic;
 using Durango.Logic.Clusters;
 using Durango.Logic.InputSystem;
+using Durango.System;
 using Durango.System.Config;
 using Durango.UI;
 using Durango.UI.Control;
@@ -14,7 +15,8 @@ using UnityEngine;
 
 namespace BaoX.DurangoOriginal.KeybindSettings
 {
-    [BepInPlugin("baox.durango.original.keybindsettings", "Keybind Settings Plugin", "0.1.0")]
+    [BepInPlugin("com.baominix.durango.original.keybindsettings", "Keybind Settings Plugin", "0.2.5")]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class KeybindSettingsPlugin : BaseUnityPlugin
     {
         internal static ManualLogSource Log;
@@ -22,7 +24,7 @@ namespace BaoX.DurangoOriginal.KeybindSettings
         private void Awake()
         {
             Log = base.Logger;
-            new Harmony("baox.durango.original.keybindsettings").PatchAll();
+            new Harmony("com.baominix.durango.original.keybindsettings").PatchAll();
             KeybindRuntime.ExtendSettings();
             Log.LogInfo("KeybindSettingsPlugin loaded");
         }
@@ -62,6 +64,253 @@ namespace BaoX.DurangoOriginal.KeybindSettings
         private const int IconTileHeight = 132;
         private const float IconGridOffsetX = 100f;
         private const float IconGridOffsetY = -130f;
+        private const int MobileMaxGridColumns = 8;
+        private const int MobileMinTileWidth = 140;
+        private const int MobileTileHeight = 145;
+        private const float MobileGridOffsetX = 180f;
+        private const float MobileGridOffsetY = -125f;
+        private const string CategoryLabelKey = "category";
+        private const string QuickScreenshotLabelKey = "quick_screenshot";
+        private const string ChatLabelKey = "chat";
+        private const string QuickChatLabelKey = "quick_chat";
+        private const string PopupTitleKey = "popup_title";
+        private const string PopupInstructionKey = "popup_instruction";
+        private const string PopupCurrentKey = "popup_current";
+        private const string PopupSetNoneKey = "popup_set_none";
+        private const string PopupNotEditableKey = "popup_not_editable";
+        private const string PopupCloseKey = "popup_close";
+        private const string PopupNoneKey = "popup_none";
+        private const string PopupNoDataKey = "popup_no_data";
+        private const string PopupNoneResultKey = "popup_none_result";
+        private const string UniversalMapIcon = "icon_worldmap_01";
+        private const string PCMapIcon = "icon_mainhud_map_pc";
+
+        // Order: category, quick screenshot, chat, quick chat.
+        private static readonly Dictionary<string, string[]> LocalizedLabels =
+            new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+            {
+                {
+                    "en_US",
+                    new string[] { "Keybind", "Quick\nScreenshot", "Chat", "Quick Chat" }
+                },
+                {
+                    "ko_KR",
+                    new string[]
+                    {
+                        "\uD0A4 \uC124\uC815",
+                        "\uBE60\uB978 \uCD2C\uC601",
+                        "\uCC44\uD305",
+                        "\uBE60\uB978 \uCC44\uD305"
+                    }
+                },
+                {
+                    "es_MX",
+                    new string[] { "Teclas", "Captura\nr\u00E1pida", "Chat", "Chat r\u00E1pido" }
+                },
+                {
+                    "pt_BR",
+                    new string[] { "Teclas", "Captura\nr\u00E1pida", "Chat", "Chat r\u00E1pido" }
+                },
+                {
+                    "id_ID",
+                    new string[] { "Tombol", "Screenshot\ncepat", "Obrolan", "Obrolan cepat" }
+                },
+                {
+                    "ru_RU",
+                    new string[]
+                    {
+                        "\u041A\u043B\u0430\u0432\u0438\u0448\u0438",
+                        "\u0411\u044B\u0441\u0442\u0440\u044B\u0439\n\u0441\u043D\u0438\u043C\u043E\u043A",
+                        "\u0427\u0430\u0442",
+                        "\u0411\u044B\u0441\u0442\u0440\u044B\u0439 \u0447\u0430\u0442"
+                    }
+                },
+                {
+                    "th_TH",
+                    new string[]
+                    {
+                        "\u0E15\u0E31\u0E49\u0E07\u0E04\u0E48\u0E32\u0E1B\u0E38\u0E48\u0E21",
+                        "\u0E16\u0E48\u0E32\u0E22\u0E20\u0E32\u0E1E\u0E14\u0E48\u0E27\u0E19",
+                        "\u0E41\u0E0A\u0E15",
+                        "\u0E41\u0E0A\u0E15\u0E14\u0E48\u0E27\u0E19"
+                    }
+                },
+                {
+                    "de_DE",
+                    new string[] { "Tasten", "Schnell-\naufnahme", "Chat", "Schnellchat" }
+                },
+                {
+                    "fr_FR",
+                    new string[] { "Raccourcis", "Capture\nrapide", "Chat", "Chat rapide" }
+                },
+                {
+                    "zh_TW",
+                    new string[]
+                    {
+                        "\u6309\u9375\u8A2D\u5B9A",
+                        "\u5FEB\u901F\u622A\u5716",
+                        "\u804A\u5929",
+                        "\u5FEB\u901F\u804A\u5929"
+                    }
+                }
+            };
+
+        // Order: title, instruction, current key, set none, not editable,
+        // close, none, no editable data, set-none result.
+        private static readonly Dictionary<string, string[]> LocalizedPopupLabels =
+            new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+            {
+                {
+                    "en_US",
+                    new string[]
+                    {
+                        "Keybind: <em>{0}</em>",
+                        "Press any key to change this shortcut.",
+                        "Current Key: {0}",
+                        "Set to None",
+                        "No editable keybind",
+                        "Close",
+                        "None",
+                        "No editable keybind data.",
+                        "{0} keybind: None"
+                    }
+                },
+                {
+                    "ko_KR",
+                    new string[]
+                    {
+                        "\uB2E8\uCD95\uD0A4: <em>{0}</em>",
+                        "\uC544\uBB34 \uD0A4\uB098 \uB20C\uB7EC \uC774 \uB2E8\uCD95\uD0A4\uB97C \uBCC0\uACBD\uD558\uC138\uC694.",
+                        "\uD604\uC7AC \uD0A4: {0}",
+                        "\uC5C6\uC74C\uC73C\uB85C \uC124\uC815",
+                        "\uD3B8\uC9D1 \uAC00\uB2A5\uD55C \uB2E8\uCD95\uD0A4 \uC5C6\uC74C",
+                        "\uB2EB\uAE30",
+                        "\uC5C6\uC74C",
+                        "\uD3B8\uC9D1 \uAC00\uB2A5\uD55C \uB2E8\uCD95\uD0A4 \uB370\uC774\uD130\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.",
+                        "{0} \uB2E8\uCD95\uD0A4: \uC5C6\uC74C"
+                    }
+                },
+                {
+                    "es_MX",
+                    new string[]
+                    {
+                        "Atajo: <em>{0}</em>",
+                        "Presiona cualquier tecla para cambiar este atajo.",
+                        "Tecla actual: {0}",
+                        "Establecer como Ninguna",
+                        "No hay atajo editable",
+                        "Cerrar",
+                        "Ninguna",
+                        "No hay datos de atajo editables.",
+                        "Atajo de {0}: Ninguna"
+                    }
+                },
+                {
+                    "pt_BR",
+                    new string[]
+                    {
+                        "Atalho: <em>{0}</em>",
+                        "Pressione qualquer tecla para alterar este atalho.",
+                        "Tecla atual: {0}",
+                        "Definir como Nenhuma",
+                        "Nenhum atalho edit\u00E1vel",
+                        "Fechar",
+                        "Nenhuma",
+                        "N\u00E3o h\u00E1 dados de atalho edit\u00E1veis.",
+                        "Atalho de {0}: Nenhuma"
+                    }
+                },
+                {
+                    "id_ID",
+                    new string[]
+                    {
+                        "Pintasan: <em>{0}</em>",
+                        "Tekan tombol apa saja untuk mengubah pintasan ini.",
+                        "Tombol saat ini: {0}",
+                        "Atur ke Tidak Ada",
+                        "Tidak ada pintasan yang dapat diedit",
+                        "Tutup",
+                        "Tidak Ada",
+                        "Tidak ada data pintasan yang dapat diedit.",
+                        "Pintasan {0}: Tidak Ada"
+                    }
+                },
+                {
+                    "ru_RU",
+                    new string[]
+                    {
+                        "\u041A\u043B\u0430\u0432\u0438\u0448\u0430: <em>{0}</em>",
+                        "\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u043B\u044E\u0431\u0443\u044E \u043A\u043B\u0430\u0432\u0438\u0448\u0443, \u0447\u0442\u043E\u0431\u044B \u0438\u0437\u043C\u0435\u043D\u0438\u0442\u044C \u044D\u0442\u043E \u0441\u043E\u0447\u0435\u0442\u0430\u043D\u0438\u0435.",
+                        "\u0422\u0435\u043A\u0443\u0449\u0430\u044F \u043A\u043B\u0430\u0432\u0438\u0448\u0430: {0}",
+                        "\u041D\u0435 \u043D\u0430\u0437\u043D\u0430\u0447\u0430\u0442\u044C",
+                        "\u041D\u0435\u0442 \u0438\u0437\u043C\u0435\u043D\u044F\u0435\u043C\u043E\u0439 \u043F\u0440\u0438\u0432\u044F\u0437\u043A\u0438",
+                        "\u0417\u0430\u043A\u0440\u044B\u0442\u044C",
+                        "\u041D\u0435\u0442",
+                        "\u041D\u0435\u0442 \u0434\u0430\u043D\u043D\u044B\u0445 \u0434\u043B\u044F \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F \u043F\u0440\u0438\u0432\u044F\u0437\u043A\u0438.",
+                        "\u041A\u043B\u0430\u0432\u0438\u0448\u0430 \u00AB{0}\u00BB: \u043D\u0435 \u043D\u0430\u0437\u043D\u0430\u0447\u0435\u043D\u0430"
+                    }
+                },
+                {
+                    "th_TH",
+                    new string[]
+                    {
+                        "\u0E1B\u0E38\u0E48\u0E21\u0E25\u0E31\u0E14: <em>{0}</em>",
+                        "\u0E01\u0E14\u0E1B\u0E38\u0E48\u0E21\u0E43\u0E14\u0E01\u0E47\u0E44\u0E14\u0E49\u0E40\u0E1E\u0E37\u0E48\u0E2D\u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E1B\u0E38\u0E48\u0E21\u0E25\u0E31\u0E14\u0E19\u0E35\u0E49",
+                        "\u0E1B\u0E38\u0E48\u0E21\u0E1B\u0E31\u0E08\u0E08\u0E38\u0E1A\u0E31\u0E19: {0}",
+                        "\u0E15\u0E31\u0E49\u0E07\u0E40\u0E1B\u0E47\u0E19\u0E44\u0E21\u0E48\u0E21\u0E35",
+                        "\u0E44\u0E21\u0E48\u0E21\u0E35\u0E1B\u0E38\u0E48\u0E21\u0E25\u0E31\u0E14\u0E17\u0E35\u0E48\u0E41\u0E01\u0E49\u0E44\u0E02\u0E44\u0E14\u0E49",
+                        "\u0E1B\u0E34\u0E14",
+                        "\u0E44\u0E21\u0E48\u0E21\u0E35",
+                        "\u0E44\u0E21\u0E48\u0E21\u0E35\u0E02\u0E49\u0E2D\u0E21\u0E39\u0E25\u0E1B\u0E38\u0E48\u0E21\u0E25\u0E31\u0E14\u0E17\u0E35\u0E48\u0E41\u0E01\u0E49\u0E44\u0E02\u0E44\u0E14\u0E49",
+                        "\u0E1B\u0E38\u0E48\u0E21\u0E25\u0E31\u0E14 {0}: \u0E44\u0E21\u0E48\u0E21\u0E35"
+                    }
+                },
+                {
+                    "de_DE",
+                    new string[]
+                    {
+                        "Tastenbelegung: <em>{0}</em>",
+                        "Dr\u00FCcke eine beliebige Taste, um diese Belegung zu \u00E4ndern.",
+                        "Aktuelle Taste: {0}",
+                        "Nicht belegen",
+                        "Keine bearbeitbare Tastenbelegung",
+                        "Schlie\u00DFen",
+                        "Keine",
+                        "Keine bearbeitbaren Tastendaten vorhanden.",
+                        "Tastenbelegung f\u00FCr {0}: Keine"
+                    }
+                },
+                {
+                    "fr_FR",
+                    new string[]
+                    {
+                        "Raccourci : <em>{0}</em>",
+                        "Appuyez sur une touche pour modifier ce raccourci.",
+                        "Touche actuelle : {0}",
+                        "D\u00E9finir sur Aucun",
+                        "Aucun raccourci modifiable",
+                        "Fermer",
+                        "Aucun",
+                        "Aucune donn\u00E9e de raccourci modifiable.",
+                        "Raccourci {0} : Aucun"
+                    }
+                },
+                {
+                    "zh_TW",
+                    new string[]
+                    {
+                        "\u6309\u9375\u8A2D\u5B9A\uFF1A<em>{0}</em>",
+                        "\u6309\u4EFB\u610F\u9375\u4EE5\u8B8A\u66F4\u6B64\u5FEB\u901F\u9375\u3002",
+                        "\u76EE\u524D\u6309\u9375\uFF1A{0}",
+                        "\u8A2D\u70BA\u7121",
+                        "\u6C92\u6709\u53EF\u7DE8\u8F2F\u7684\u5FEB\u901F\u9375",
+                        "\u95DC\u9589",
+                        "\u7121",
+                        "\u6C92\u6709\u53EF\u7DE8\u8F2F\u7684\u5FEB\u901F\u9375\u8CC7\u6599\u3002",
+                        "{0} \u5FEB\u901F\u9375\uFF1A\u7121"
+                    }
+                }
+            };
 
         private static readonly string[] KeyOptions = new string[]
         {
@@ -364,6 +613,11 @@ namespace BaoX.DurangoOriginal.KeybindSettings
                 return null;
             }
 
+            if (IsNoneValue(value))
+            {
+                return GetLocalizedPopupLabel(PopupNoneKey);
+            }
+
             KeyCode code;
             return TryParseKeyCode(value, out code) ? InputKeyboard.KeyToCaption(code) : value;
         }
@@ -379,7 +633,7 @@ namespace BaoX.DurangoOriginal.KeybindSettings
             string value = GetValue(bind);
             if (IsNoneValue(value))
             {
-                return "None";
+                return GetLocalizedPopupLabel(PopupNoneKey);
             }
 
             KeyCode code;
@@ -439,6 +693,138 @@ namespace BaoX.DurangoOriginal.KeybindSettings
             return tile.DefaultKey ?? string.Empty;
         }
 
+        internal static string GetLocalizedLabel(string key)
+        {
+            int index;
+            if (string.Equals(key, CategoryLabelKey, StringComparison.Ordinal))
+            {
+                index = 0;
+            }
+            else if (string.Equals(key, QuickScreenshotLabelKey, StringComparison.Ordinal))
+            {
+                index = 1;
+            }
+            else if (string.Equals(key, ChatLabelKey, StringComparison.Ordinal))
+            {
+                index = 2;
+            }
+            else if (string.Equals(key, QuickChatLabelKey, StringComparison.Ordinal))
+            {
+                index = 3;
+            }
+            else
+            {
+                return key;
+            }
+
+            string[] labels;
+            string locale = LocalizeSystem.Locale;
+            if (string.IsNullOrEmpty(locale) || !LocalizedLabels.TryGetValue(locale, out labels))
+            {
+                labels = LocalizedLabels["en_US"];
+            }
+            return labels[index];
+        }
+
+        private static string GetLocalizedPopupLabel(string key)
+        {
+            int index;
+            if (key == PopupTitleKey) index = 0;
+            else if (key == PopupInstructionKey) index = 1;
+            else if (key == PopupCurrentKey) index = 2;
+            else if (key == PopupSetNoneKey) index = 3;
+            else if (key == PopupNotEditableKey) index = 4;
+            else if (key == PopupCloseKey) index = 5;
+            else if (key == PopupNoneKey) index = 6;
+            else if (key == PopupNoDataKey) index = 7;
+            else if (key == PopupNoneResultKey) index = 8;
+            else return key;
+
+            string[] labels;
+            string locale = LocalizeSystem.Locale;
+            if (string.IsNullOrEmpty(locale) || !LocalizedPopupLabels.TryGetValue(locale, out labels))
+            {
+                labels = LocalizedPopupLabels["en_US"];
+            }
+            return labels[index];
+        }
+
+        private static string GetTileLabel(IconTileDef tile)
+        {
+            if (tile == null)
+            {
+                return string.Empty;
+            }
+            if (string.Equals(tile.BindKey, "keybind_quick_screenshot", StringComparison.Ordinal))
+            {
+                return GetLocalizedLabel(QuickScreenshotLabelKey);
+            }
+            if (string.Equals(tile.BindKey, "keybind_chat", StringComparison.Ordinal))
+            {
+                return GetLocalizedLabel(ChatLabelKey);
+            }
+            if (string.Equals(tile.BindKey, "keybind_quick_chat", StringComparison.Ordinal))
+            {
+                return GetLocalizedLabel(QuickChatLabelKey);
+            }
+            return tile.Label;
+        }
+
+        private static string GetPopupTileLabel(IconTileDef tile, MenuWidget_PC widget)
+        {
+            if (widget != null)
+            {
+                UILabel menuLabel = GetField<UILabel>(widget, "_menuLabel");
+                if (menuLabel != null && !string.IsNullOrEmpty(menuLabel.text))
+                {
+                    return menuLabel.text.Replace("\n", " ");
+                }
+            }
+            return GetTileLabel(tile).Replace("\n", " ");
+        }
+
+        internal static void LocalizeCategoryTab(ConfigTabItem item)
+        {
+            if (item == null || item.Category != CategoryKey)
+            {
+                return;
+            }
+
+            UILabel label = GetField<UILabel>(item, "_nameLabel");
+            if (label != null)
+            {
+                label.text = GetLocalizedLabel(CategoryLabelKey);
+            }
+        }
+
+        internal static void RefreshLocalizedUi()
+        {
+            ExtendSettings();
+
+            UnityEngine.Object[] tabObjects = Resources.FindObjectsOfTypeAll(typeof(ConfigTabItem));
+            if (tabObjects != null)
+            {
+                for (int i = 0; i < tabObjects.Length; i++)
+                {
+                    LocalizeCategoryTab(tabObjects[i] as ConfigTabItem);
+                }
+            }
+
+            UnityEngine.Object[] widgetObjects = Resources.FindObjectsOfTypeAll(typeof(ConfigMainWidget));
+            if (widgetObjects == null)
+            {
+                return;
+            }
+            for (int i = 0; i < widgetObjects.Length; i++)
+            {
+                ConfigMainWidget widget = widgetObjects[i] as ConfigMainWidget;
+                if (widget != null && widget.transform.Find(IconStripName) != null)
+                {
+                    InstallKeybindIconStrip(widget, CategoryKey);
+                }
+            }
+        }
+
         internal static void InstallKeybindIconStrip(ConfigMainWidget widget, string category)
         {
             if (widget == null)
@@ -460,6 +846,25 @@ namespace BaoX.DurangoOriginal.KeybindSettings
             UIScrollView scrollView = GetField<UIScrollView>(widget, "_scrollView");
             UIPanel panel = scrollView == null ? null : scrollView.panel;
             int width = panel == null ? 760 : (int)panel.width;
+            bool mobileLayout = IsMobileUILayout();
+            int columns = IconGridColumns;
+            int tileWidth = IconTileWidth;
+            int tileHeight = IconTileHeight;
+            float columnStride = 120f;
+            float offsetX = IconGridOffsetX;
+            float offsetY = IconGridOffsetY;
+            if (mobileLayout)
+            {
+                int availableWidth = Mathf.Max(MobileMinTileWidth * 4, width - 80);
+                columns = Mathf.Clamp(availableWidth / MobileMinTileWidth, 4, MobileMaxGridColumns);
+                tileWidth = Mathf.Max(MobileMinTileWidth, availableWidth / columns);
+                tileHeight = MobileTileHeight;
+                columnStride = tileWidth;
+                offsetX = MobileGridOffsetX;
+                offsetY = MobileGridOffsetY;
+            }
+            int rows = (IconTiles.Length + columns - 1) / columns;
+            int gridHeight = mobileLayout ? rows * tileHeight + 30 : IconGridHeight;
             List<SettingItem> settingItems = GetField<List<SettingItem>>(widget, "_settingItems");
             if (settingItems != null)
             {
@@ -475,24 +880,35 @@ namespace BaoX.DurangoOriginal.KeybindSettings
             UIWidget emptyWidget = GetField<UIWidget>(widget, "_emptyWidget");
             if (emptyWidget != null)
             {
-                emptyWidget.transform.localPosition = new Vector3(0f, -IconGridHeight, 0f);
+                emptyWidget.transform.localPosition = new Vector3(0f, -gridHeight, 0f);
             }
 
             UILabel template = FindLabelTemplate(widget);
             GameObject strip = new GameObject(IconStripName);
             strip.transform.SetParent(widget.transform, false);
-            strip.transform.localPosition = new Vector3(IconGridOffsetX, IconGridOffsetY, 0f);
+            strip.layer = widget.gameObject.layer;
+            strip.transform.localPosition = new Vector3(offsetX, offsetY, 0f);
             UIWidget stripWidget = strip.AddComponent<UIWidget>();
             stripWidget.pivot = UIWidget.Pivot.TopLeft;
             stripWidget.width = width;
-            stripWidget.height = IconGridHeight;
+            stripWidget.height = gridHeight;
             stripWidget.depth = 30;
             UIDragScrollView stripDrag = strip.AddComponent<UIDragScrollView>();
             stripDrag.scrollView = scrollView;
 
             for (int i = 0; i < IconTiles.Length; i++)
             {
-                CreateIconTile(strip.transform, scrollView, template, IconTiles[i], i);
+                CreateIconTile(
+                    strip.transform,
+                    scrollView,
+                    template,
+                    IconTiles[i],
+                    i,
+                    columns,
+                    columnStride,
+                    tileWidth,
+                    tileHeight,
+                    mobileLayout);
             }
 
             UIWidget widgetField = GetField<UIWidget>(widget, "_widget");
@@ -507,13 +923,31 @@ namespace BaoX.DurangoOriginal.KeybindSettings
             }
         }
 
-        private static void CreateIconTile(Transform parent, UIScrollView scrollView, UILabel template, IconTileDef tile, int index)
+        private static bool IsMobileUILayout()
         {
-            int row = index / IconGridColumns;
-            int col = index % IconGridColumns;
-            float x = 34f + col * 120f;
-            float y = -4f - row * IconTileHeight;
+            return Platform.Instance != null && !Platform.Instance.UsePCUI;
+        }
 
+        private static void CreateIconTile(
+            Transform parent,
+            UIScrollView scrollView,
+            UILabel template,
+            IconTileDef tile,
+            int index,
+            int columns,
+            float columnStride,
+            int tileWidth,
+            int tileHeight,
+            bool mobileLayout)
+        {
+            int row = index / columns;
+            int col = index % columns;
+            float x = (mobileLayout ? 0f : 34f) + col * columnStride;
+            float y = -4f - row * tileHeight;
+
+            // Use the exact PC menu tile whenever its template is loaded. The
+            // Mobile scene normally has no PC template, so retain a synthetic
+            // PC-style fallback below.
             GameObject clone = CreateMenuWidgetClone(parent, scrollView, tile);
             if (clone != null)
             {
@@ -521,13 +955,15 @@ namespace BaoX.DurangoOriginal.KeybindSettings
                 return;
             }
 
+            string localizedTileLabel = GetTileLabel(tile);
             GameObject root = new GameObject("KeybindIcon_" + tile.Label.Replace("\n", "_"));
             root.transform.SetParent(parent, false);
+            root.layer = parent.gameObject.layer;
             root.transform.localPosition = new Vector3(x, y, 0f);
             UIWidget rootWidget = root.AddComponent<UIWidget>();
             rootWidget.pivot = UIWidget.Pivot.TopLeft;
-            rootWidget.width = IconTileWidth;
-            rootWidget.height = IconTileHeight;
+            rootWidget.width = tileWidth;
+            rootWidget.height = tileHeight;
             rootWidget.depth = 31;
             UIDragScrollView drag = root.AddComponent<UIDragScrollView>();
             drag.scrollView = scrollView;
@@ -537,16 +973,27 @@ namespace BaoX.DurangoOriginal.KeybindSettings
             keyLabel.height = 26;
             keyLabel.transform.localPosition = new Vector3(10f, -4f, 0f);
 
-            UISprite iconSprite = AddIconSprite(root.transform, tile);
-            if (iconSprite != null)
+            UISprite iconBackground = AddPCStyleIconBackground(root.transform);
+            if (iconBackground != null)
             {
-                iconSprite.transform.localPosition = new Vector3(28f, -24f, 0f);
+                iconBackground.transform.localPosition = new Vector3((tileWidth - 72f) * 0.5f, -18f, 0f);
             }
 
-            UILabel textLabel = AddLabel(root.transform, template, "Text", tile.Label, 18, new Color(0.9f, 0.87f, 0.78f, 1f));
-            textLabel.width = IconTileWidth;
+            UISprite iconSprite = AddIconSprite(root.transform, tile, true);
+            if (iconSprite != null)
+            {
+                iconSprite.transform.localPosition = new Vector3((tileWidth - 46f) * 0.5f, -31f, 0f);
+            }
+
+            UILabel textLabel = AddLabel(root.transform, template, "Text", localizedTileLabel, 18, new Color(0.9f, 0.87f, 0.78f, 1f));
+            textLabel.width = tileWidth;
             textLabel.height = 44;
-            textLabel.transform.localPosition = new Vector3(0f, -78f, 0f);
+            textLabel.transform.localPosition = new Vector3(0f, -92f, 0f);
+
+            // The first Mobile implementation was display-only. Add a real
+            // NGUI collider and the same editor popup used by PC tiles.
+            NGUITools.SetLayer(root, parent.gameObject.layer);
+            PrepareClickComponents(root, null, tile);
         }
 
         private static GameObject CreateMenuWidgetClone(Transform parent, UIScrollView scrollView, IconTileDef tile)
@@ -577,7 +1024,7 @@ namespace BaoX.DurangoOriginal.KeybindSettings
                     UILabel menuLabel = GetField<UILabel>(widget, "_menuLabel");
                     if (menuLabel != null)
                     {
-                        menuLabel.text = tile.Label.Replace("\n", " ");
+                        menuLabel.text = GetTileLabel(tile);
                     }
                 }
                 else if (tile.BindKey == "keybind_quick_screenshot")
@@ -585,7 +1032,7 @@ namespace BaoX.DurangoOriginal.KeybindSettings
                     UILabel menuLabel = GetField<UILabel>(widget, "_menuLabel");
                     if (menuLabel != null)
                     {
-                        menuLabel.text = "Quick " + menuLabel.text;
+                        menuLabel.text = GetTileLabel(tile);
                     }
                 }
                 SetShortcutText(widget, GetTileCaption(tile));
@@ -707,16 +1154,22 @@ namespace BaoX.DurangoOriginal.KeybindSettings
             SavePendingCapturedKey();
             ClearKeyCapture();
 
-            string label = tile.Label.Replace("\n", " ");
+            string label = GetPopupTileLabel(tile, widget);
             string currentKey = GetTileCaption(tile);
             if (string.IsNullOrEmpty(currentKey))
             {
-                currentKey = "None";
+                currentKey = GetLocalizedPopupLabel(PopupNoneKey);
             }
 
-            MessageBox.Button currentButton = new MessageBox.Button("Current Key: " + currentKey, PresetButton.Style.Border, null, false, PresetButton.Effect.None);
-            MessageBox.Button noneButton = new MessageBox.Button((!string.IsNullOrEmpty(tile.BindKey)) ? "Set to None" : "No editable keybind", PresetButton.Style.Border, null, string.IsNullOrEmpty(tile.BindKey), PresetButton.Effect.None);
-            MessageBox.Button cancelButton = new MessageBox.Button("Close", PresetButton.Style.Border, null, false, PresetButton.Effect.None);
+            MessageBox.Button currentButton = new MessageBox.Button(
+                string.Format(GetLocalizedPopupLabel(PopupCurrentKey), currentKey),
+                PresetButton.Style.Border, null, false, PresetButton.Effect.None);
+            MessageBox.Button noneButton = new MessageBox.Button(
+                GetLocalizedPopupLabel(!string.IsNullOrEmpty(tile.BindKey) ? PopupSetNoneKey : PopupNotEditableKey),
+                PresetButton.Style.Border, null, string.IsNullOrEmpty(tile.BindKey), PresetButton.Effect.None);
+            MessageBox.Button cancelButton = new MessageBox.Button(
+                GetLocalizedPopupLabel(PopupCloseKey),
+                PresetButton.Style.Border, null, false, PresetButton.Effect.None);
 
             _editingTile = tile;
             _editingWidget = widget;
@@ -725,8 +1178,8 @@ namespace BaoX.DurangoOriginal.KeybindSettings
             _captureStartAt = Time.time + 0.15f;
 
             UIManager.MessageBox.Show(
-                "Keybind: <em>" + label + "</em>",
-                "Press any key to change this shortcut.",
+                string.Format(GetLocalizedPopupLabel(PopupTitleKey), label),
+                GetLocalizedPopupLabel(PopupInstructionKey),
                 delegate(int index)
                 {
                     if (index == 1)
@@ -749,12 +1202,14 @@ namespace BaoX.DurangoOriginal.KeybindSettings
         {
             if (string.IsNullOrEmpty(tile.BindKey))
             {
-                UIManager.SystemMsg("No editable keybind data.", 2f);
+                UIManager.SystemMsg(GetLocalizedPopupLabel(PopupNoDataKey), 2f);
                 return;
             }
 
             SaveBindValue(tile, widget, "None");
-            UIManager.SystemMsg(tile.Label.Replace("\n", " ") + " keybind: None", 2f);
+            UIManager.SystemMsg(string.Format(
+                GetLocalizedPopupLabel(PopupNoneResultKey),
+                GetPopupTileLabel(tile, widget)), 2f);
         }
 
         private static void SavePendingCapturedKey()
@@ -784,7 +1239,34 @@ namespace BaoX.DurangoOriginal.KeybindSettings
             {
                 SetShortcutText(widget, IsNoneValue(value) ? string.Empty : GetTileCaption(tile));
             }
+            else
+            {
+                RefreshMobileShortcutLabel(tile);
+            }
             RefreshLiveMenuShortcutLabels();
+        }
+
+        private static void RefreshMobileShortcutLabel(IconTileDef tile)
+        {
+            if (tile == null)
+            {
+                return;
+            }
+
+            string rootName = "KeybindIcon_" + tile.Label.Replace("\n", "_");
+            UnityEngine.Object[] labels = Resources.FindObjectsOfTypeAll(typeof(UILabel));
+            for (int i = 0; i < labels.Length; i++)
+            {
+                UILabel label = labels[i] as UILabel;
+                if (label == null || label.gameObject.name != "Key" || label.transform.parent == null)
+                {
+                    continue;
+                }
+                if (label.transform.parent.gameObject.name == rootName)
+                {
+                    label.text = GetTileCaption(tile);
+                }
+            }
         }
 
         private static void ClearKeyCapture()
@@ -962,7 +1444,7 @@ namespace BaoX.DurangoOriginal.KeybindSettings
                 return;
             }
 
-            buttons[0].Text = "Current Key: " + caption;
+            buttons[0].Text = string.Format(GetLocalizedPopupLabel(PopupCurrentKey), caption);
         }
 
         internal static bool ShouldBlockKeybindButton(MessageBox messageBox)
@@ -998,7 +1480,7 @@ namespace BaoX.DurangoOriginal.KeybindSettings
             _editingValue = null;
             _editingDirty = false;
             _captureStartAt = Time.time + 0.15f;
-            UpdateCurrentKeyButton("None");
+            UpdateCurrentKeyButton(GetLocalizedPopupLabel(PopupNoneKey));
             return true;
         }
 
@@ -1017,6 +1499,28 @@ namespace BaoX.DurangoOriginal.KeybindSettings
 
             SetShortcutText(widget, GetTileCaption(tile));
             return true;
+        }
+
+        internal static void ApplyLivePCMenuIcon(MenuWidget widget, MenuType menu)
+        {
+            MenuWidget_PC pcWidget = widget as MenuWidget_PC;
+            if (pcWidget == null)
+            {
+                return;
+            }
+
+            IconTileDef tile = FindIconTile(menu);
+            UISprite icon = GetField<UISprite>(pcWidget, "_menuIcon");
+            if (tile == null || icon == null)
+            {
+                return;
+            }
+
+            string fallback;
+            string iconName = ResolveTileIcon(tile, false, out fallback);
+            icon.gameObject.SetActive(true);
+            icon.enabled = true;
+            icon.SetSprite(iconName, fallback);
         }
 
         private static void RefreshLiveMenuShortcutLabels()
@@ -1125,26 +1629,81 @@ namespace BaoX.DurangoOriginal.KeybindSettings
             icon.gameObject.SetActive(true);
             icon.enabled = true;
             icon.depth = depth;
-            string iconName = string.IsNullOrEmpty(tile.IconName)
-                ? IconMap.Get(tile.Menu, "icon_question")
-                : tile.IconName;
-            icon.SetSprite(iconName, "icon_question");
+            string fallback;
+            string iconName = ResolveTileIcon(tile, false, out fallback);
+            icon.SetSprite(iconName, fallback);
         }
 
-        private static UISprite AddIconSprite(Transform parent, IconTileDef tile)
+        private static UISprite AddPCStyleIconBackground(Transform parent)
         {
-            string iconName = string.IsNullOrEmpty(tile.IconName)
-                ? IconMap.Get(tile.Menu, "icon_question")
-                : tile.IconName;
+            GameObject go = new GameObject("PCIconBackground");
+            go.transform.SetParent(parent, false);
+            UISprite sprite = go.AddComponent<UISprite>();
+            sprite.SetSprite("bg_maincircle_03_pc", "bg_circle_big");
+            sprite.pivot = UIWidget.Pivot.TopLeft;
+            sprite.width = 72;
+            sprite.height = 72;
+            sprite.depth = 36;
+            sprite.color = new Color(0.55f, 0.55f, 0.55f, 0.95f);
+            return sprite;
+        }
+
+        private static UISprite AddIconSprite(Transform parent, IconTileDef tile, bool pcVisual)
+        {
+            string fallback;
+            string iconName = ResolveTileIcon(tile, !pcVisual, out fallback);
             GameObject go = new GameObject("Icon");
             go.transform.SetParent(parent, false);
             UISprite sprite = go.AddComponent<UISprite>();
-            sprite.spriteName = iconName;
+            sprite.SetSprite(iconName, fallback);
             sprite.pivot = UIWidget.Pivot.TopLeft;
-            sprite.width = 58;
-            sprite.height = 58;
+            sprite.width = pcVisual ? 46 : 58;
+            sprite.height = pcVisual ? 46 : 58;
             sprite.depth = 38;
             return sprite;
+        }
+
+        private static string ResolveTileIcon(IconTileDef tile, bool mobileLayout, out string fallback)
+        {
+            fallback = (tile.Menu == MenuType.WorldMap) ? UniversalMapIcon : "icon_question";
+            if (!string.IsNullOrEmpty(tile.IconName))
+            {
+                return tile.IconName;
+            }
+
+            if (tile.Menu == MenuType.WorldMap)
+            {
+                return mobileLayout ? UniversalMapIcon : PCMapIcon;
+            }
+
+            MemberInfo[] members = typeof(MenuType).GetMember(tile.Menu.ToString());
+            if (members != null && members.Length > 0)
+            {
+                object[] attributes = members[0].GetCustomAttributes(typeof(EnumIconAttribute), false);
+                if (attributes != null && attributes.Length > 0)
+                {
+                    EnumIconAttribute iconAttribute = attributes[0] as EnumIconAttribute;
+                    if (iconAttribute != null)
+                    {
+                        string selected = (!mobileLayout && !string.IsNullOrEmpty(iconAttribute.IconPC))
+                            ? iconAttribute.IconPC
+                            : iconAttribute.Icon;
+                        if (!mobileLayout && !string.IsNullOrEmpty(iconAttribute.Icon))
+                        {
+                            // A PC-only atlas can still be unavailable during
+                            // the first frame after a mode switch. Fall back to
+                            // the equivalent Mobile sprite, not a question mark.
+                            fallback = iconAttribute.Icon;
+                        }
+                        if (!string.IsNullOrEmpty(selected))
+                        {
+                            return selected;
+                        }
+                    }
+                }
+            }
+
+            return fallback;
         }
 
         private static UILabel AddLabel(Transform parent, UILabel template, string name, string text, int fontSize, Color color)
@@ -1217,8 +1776,13 @@ namespace BaoX.DurangoOriginal.KeybindSettings
 
         private static void EnsureCategory(List<Setting> list)
         {
-            if (FindSetting(list, "keybind_category") != null)
+            string label = GetLocalizedLabel(CategoryLabelKey);
+            ValueSetting existing = FindSetting(list, "keybind_category") as ValueSetting;
+            if (existing != null)
             {
+                existing.Default = label;
+                existing.Value = label;
+                existing.PrepareLabelText = label;
                 return;
             }
 
@@ -1226,9 +1790,9 @@ namespace BaoX.DurangoOriginal.KeybindSettings
             {
                 Key = "keybind_category",
                 Type = SettingType.Category,
-                Default = "Keybind",
-                Value = "Keybind",
-                PrepareLabelText = "Keybind"
+                Default = label,
+                Value = label,
+                PrepareLabelText = label
             });
         }
 
@@ -1568,17 +2132,16 @@ namespace BaoX.DurangoOriginal.KeybindSettings
     {
         private static void Postfix(ConfigTabItem __instance, string category)
         {
-            if (category != KeybindRuntime.CategoryKey)
-            {
-                return;
-            }
+            KeybindRuntime.LocalizeCategoryTab(__instance);
+        }
+    }
 
-            FieldInfo field = typeof(ConfigTabItem).GetField("_nameLabel", BindingFlags.Instance | BindingFlags.NonPublic);
-            UILabel label = field == null ? null : field.GetValue(__instance) as UILabel;
-            if (label != null)
-            {
-                label.text = "Keybind";
-            }
+    [HarmonyPatch(typeof(LocalizeSystem), "SetLocale")]
+    internal static class LocalizeSystemSetLocalePatch
+    {
+        private static void Postfix()
+        {
+            KeybindRuntime.RefreshLocalizedUi();
         }
     }
 
@@ -1606,6 +2169,15 @@ namespace BaoX.DurangoOriginal.KeybindSettings
         private static void Postfix(MenuWidget_PC __instance, MenuType menuType)
         {
             KeybindRuntime.TryApplyMenuShortcutLabel(__instance, menuType);
+        }
+    }
+
+    [HarmonyPatch(typeof(MenuWidget), "Set", new Type[] { typeof(MenuType) })]
+    internal static class MenuWidgetSetIconPatch
+    {
+        private static void Postfix(MenuWidget __instance, MenuType type)
+        {
+            KeybindRuntime.ApplyLivePCMenuIcon(__instance, type);
         }
     }
 

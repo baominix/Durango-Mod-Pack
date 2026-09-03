@@ -15,9 +15,10 @@ using OfflinePlayer = Durango.Offline.Player;
 namespace BaoX.DurangoOriginal.TradeAvailable
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class TradeAvailablePlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "com.baox.durango.original.tradeavailable";
+        public const string PluginGuid = "com.baominix.durango.original.tradeavailable";
         public const string PluginName = "Trade Available Plugin";
         public const string PluginVersion = "1.0.0";
 

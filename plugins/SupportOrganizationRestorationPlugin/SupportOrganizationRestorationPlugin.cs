@@ -8,7 +8,9 @@ using Durango;
 using Durango.Logic;
 using Durango.Network;
 using Durango.Offline;
+using Durango.Utils.Extensions;
 using HarmonyLib;
+using L10N;
 using Messages;
 using Shared.Economy;
 using Shared.Faction;
@@ -18,11 +20,12 @@ using OfflinePlayer = Durango.Offline.Player;
 namespace BaoX.DurangoOriginal.SupportOrganizationRestoration
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class SupportOrganizationRestorationPlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "com.baox.durango.original.supportorganization";
+        public const string PluginGuid = "com.baominix.durango.original.supportorganization";
         public const string PluginName = "Support Organization Restoration Plugin";
-        public const string PluginVersion = "0.1.0";
+        public const string PluginVersion = "0.1.1";
 
         internal static ManualLogSource Log;
         internal static ConfigEntry<bool> Enabled;
@@ -178,7 +181,7 @@ namespace BaoX.DurangoOriginal.SupportOrganizationRestoration
                 FactionType type = Types[i];
                 SupportRequest request = default(SupportRequest);
                 request.RequestId = "offline-support-" + ((int)type).ToString();
-                request.Name = "Offline Support: " + type;
+                request.Name = SupportOrganizationLocalization.Get("offline_support", ((Enum)(object)type).GetName());
                 request.FactionType = type;
                 request.Fee = new Money(0, Currency.TStone);
                 request.Level = 1;

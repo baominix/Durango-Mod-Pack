@@ -13,9 +13,10 @@ using UnityEngine;
 namespace BaoX.DurangoOriginal.IslandMapRestoration
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class IslandMapRestorationPlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "com.baox.durango.original.islandmaprestoration";
+        public const string PluginGuid = "com.baominix.durango.original.islandmaprestoration";
         public const string PluginName = "Island Map Restoration Plugin (Original)";
         public const string PluginVersion = "2.0.0";
 

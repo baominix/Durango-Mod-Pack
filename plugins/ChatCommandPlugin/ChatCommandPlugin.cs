@@ -6,11 +6,12 @@ using HarmonyLib;
 namespace BaoX.DurangoOriginal.ChatCommandMod
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class ChatCommandPlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "com.baox.durango.original.chatcommand";
+        public const string PluginGuid = "com.baominix.durango.original.chatcommand";
         public const string PluginName = "Chat Command Plugin";
-        public const string PluginVersion = "0.4.16";
+        public const string PluginVersion = "0.4.24";
 
         internal static ManualLogSource Log;
         private Harmony _harmony;

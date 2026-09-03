@@ -6,11 +6,12 @@ using HarmonyLib;
 namespace BaoX.DurangoOriginal.PlayerProgressionMod
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class PlayerProgressionPlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "com.baox.durango.original.playerprogression";
+        public const string PluginGuid = "com.baominix.durango.original.playerprogression";
         public const string PluginName = "Player Progression Plugin";
-        public const string PluginVersion = "0.2.3";
+        public const string PluginVersion = "0.2.9";
 
         internal static ManualLogSource Log;
         private Harmony _harmony;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using BepInEx;
 using BepInEx.Configuration;
@@ -16,12 +17,13 @@ using PacketHeader = Durango.Network.PacketHeader;
 namespace BaoX.DurangoOriginal.TamedIslandRestoration
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
-    [BepInDependency("com.baox.durango.original.harborsailingmap", BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.baominix.durango.original.harborsailingmap", BepInDependency.DependencyFlags.HardDependency)]
     public sealed class TamedIslandRestorationPlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "com.baox.durango.original.tamedislandrestoration";
+        public const string PluginGuid = "com.baominix.durango.original.tamedislandrestoration";
         public const string PluginName = "Tamed Island Restoration Plugin";
-        public const string PluginVersion = "0.7.0";
+        public const string PluginVersion = "0.9.6";
 
         internal static ManualLogSource Log;
         internal static ConfigEntry<bool> Enabled;
@@ -39,10 +41,12 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
             IslandName = Config.Bind("Tamed Island", "IslandName", "Tamed Grassland Island",
                 "Name shown for the offline personal region.");
             SelectedTerrainId = Config.Bind("Tamed Island", "SelectedTerrainId", "pe10gr_1",
-                "Personal terrain selected for this offline profile (pe10gr_1 through pe10gr_5).");
+                "Personal terrain selected for this offline profile (all packaged personal-region terrains).");
             EstateSize = Config.Bind("Tamed Island", "EstateSize", 1,
                 "Current estate size. This value is maintained by the offline estate backend.");
             PluginConfig = Config;
+            HarborIslandApi.RegisterPersonalTerrainProvider(
+                delegate { return TamedIslandData.SelectedTerrain; });
 
             _harmony = new Harmony(PluginGuid);
             _harmony.PatchAll(Assembly.GetExecutingAssembly());
@@ -52,6 +56,7 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
 
         private void OnDestroy()
         {
+            HarborIslandApi.RegisterPersonalTerrainProvider(null);
             if (_harmony != null)
             {
                 _harmony.UnpatchSelf();
@@ -62,6 +67,26 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
 
     internal static class TamedIslandData
     {
+        private static string _playerName = string.Empty;
+        private static readonly Dictionary<string, string> PlayerTerrains =
+            new Dictionary<string, string>();
+
+        internal static void SetPlayerName(string playerName)
+        {
+            _playerName = playerName ?? string.Empty;
+        }
+
+        internal static string IslandDisplayName
+        {
+            get
+            {
+                return string.IsNullOrEmpty(_playerName)
+                    ? TamedIslandLocalization.ResolveIslandName(
+                        TamedIslandRestorationPlugin.IslandName.Value)
+                    : _playerName;
+            }
+        }
+
         public static string SelectedTerrain
         {
             get
@@ -69,6 +94,24 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
                 string terrainId = TamedIslandRestorationPlugin.SelectedTerrainId.Value;
                 return HarborIslandApi.IsTamedTerrain(terrainId) ? terrainId : HarborIslandApi.TamedTerrainId;
             }
+        }
+
+        public static string GetSelectedTerrain(string ownerId)
+        {
+            string terrainId;
+            if (!string.IsNullOrEmpty(ownerId) &&
+                PlayerTerrains.TryGetValue(ownerId, out terrainId) &&
+                HarborIslandApi.IsTamedTerrain(terrainId))
+            {
+                return terrainId;
+            }
+            return SelectedTerrain;
+        }
+
+        public static void SetPlayerTerrain(string ownerId, string terrainId)
+        {
+            if (string.IsNullOrEmpty(ownerId) || !HarborIslandApi.IsTamedTerrain(terrainId)) return;
+            PlayerTerrains[ownerId] = terrainId;
         }
 
         public static void SelectTerrain(string terrainId)
@@ -80,16 +123,23 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
             TamedIslandRestorationPlugin.Log.LogInfo("Selected Tamed terrain " + terrainId);
         }
 
-        public static Messages.Region MakeRegion()
+        public static void SelectTerrain(string ownerId, string terrainId)
         {
-            string terrainId = SelectedTerrain;
+            if (!HarborIslandApi.IsTamedTerrain(terrainId)) return;
+            SetPlayerTerrain(ownerId, terrainId);
+            SelectTerrain(terrainId);
+        }
+
+        public static Messages.Region MakeRegion(string ownerId)
+        {
+            string terrainId = GetSelectedTerrain(ownerId);
             return new Messages.Region
             {
                 Id = HarborIslandApi.GetTamedRegionId(terrainId),
                 TerrainId = terrainId,
-                TemplateId = terrainId,
+                TemplateId = HarborIslandApi.GetTamedRegionTemplateId(terrainId),
                 Role = Role.Personal,
-                Name = TamedIslandRestorationPlugin.IslandName.Value,
+                Name = IslandDisplayName,
                 CreatedAt = Now()
             };
         }
@@ -98,7 +148,7 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
         {
             return new PersonalRegion
             {
-                Region = MakeRegion(),
+                Region = MakeRegion(ownerId),
                 OwnerId = ownerId,
                 PioneerExp = 0,
                 AdmissionCategories = new LicenseCategory[0]
@@ -107,7 +157,8 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
 
         public static EstateLicense MakeLicense(string ownerId)
         {
-            int size = TamedEstateState.GetUnits(ownerId, SelectedTerrain).Count;
+            string terrainId = GetSelectedTerrain(ownerId);
+            int size = TamedEstateState.GetUnits(ownerId, terrainId).Count;
             return new EstateLicense
             {
                 EstateId = "offline:tamed:estate:" + ownerId,
@@ -119,8 +170,8 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
                 Deposit = null,
                 AccessRights = null,
                 Size = size,
-                RegionId = HarborIslandApi.GetTamedRegionId(SelectedTerrain),
-                Tile = TamedEstateState.GetAnchorTile(ownerId, SelectedTerrain),
+                RegionId = HarborIslandApi.GetTamedRegionId(terrainId),
+                Tile = TamedEstateState.GetAnchorTile(ownerId, terrainId),
                 ProtectedUntil = null,
                 CycleStartsAt = null,
                 CycleEndsAt = null,
@@ -139,7 +190,8 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
 
         public static PersonalRegionInfo MakePersonalRegionInfo(string ownerId)
         {
-            EstateLicense? estate = TamedEstateState.IsDeclared(ownerId, SelectedTerrain)
+            string terrainId = GetSelectedTerrain(ownerId);
+            EstateLicense? estate = TamedEstateState.IsDeclared(ownerId, terrainId)
                 ? new EstateLicense?(MakeLicense(ownerId))
                 : null;
             return new PersonalRegionInfo
@@ -151,9 +203,10 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
 
         public static EstateLicenses MakeLicenses(string ownerId)
         {
-            int size = TamedEstateState.GetUnits(ownerId, SelectedTerrain).Count;
+            string terrainId = GetSelectedTerrain(ownerId);
+            int size = TamedEstateState.GetUnits(ownerId, terrainId).Count;
             int largestSize = Math.Max(size, TamedPioneerState.GetMaximumEstateSize(ownerId));
-            EstateLicense? estate = TamedEstateState.IsDeclared(ownerId, SelectedTerrain)
+            EstateLicense? estate = TamedEstateState.IsDeclared(ownerId, terrainId)
                 ? new EstateLicense?(MakeLicense(ownerId))
                 : null;
             return new EstateLicenses
@@ -191,6 +244,8 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
                 return;
             }
 
+            TamedIslandData.SetPlayerName(context.PlayerInfo.PlayerName);
+
             // Offline Player sends its initial Inventory from inside the original
             // constructor. Restore Pioneer-only server fields before that packet.
             // Tradable is owned by the separate Trade Available plugin.
@@ -212,10 +267,18 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
                 return;
             }
 
-            if (world != null && HarborIslandApi.IsTamedTerrain(world.TerrainInfo.region_template))
+            if (context != null)
             {
-                TamedIslandData.SelectTerrain(world.TerrainInfo.region_template);
+                TamedIslandData.SetPlayerName(context.PlayerInfo.PlayerName);
             }
+
+            string homeTerrainId = HarborIslandApi.GetHomeTamedTerrainId(__instance);
+            if (string.IsNullOrEmpty(homeTerrainId) && world != null &&
+                HarborIslandApi.IsCurrentTamedWorld(world))
+            {
+                homeTerrainId = HarborIslandApi.GetCurrentTamedTerrainId(world);
+            }
+            TamedIslandData.SetPlayerTerrain(entityId, homeTerrainId);
 
             connection.Recv<GetEstateLicenses>(delegate(GetEstateLicenses request, PacketHeader header)
             {
@@ -232,12 +295,12 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
             });
             connection.Recv<RecommendPersonalRegion>(delegate(RecommendPersonalRegion request, PacketHeader header)
             {
-                TamedIslandData.SelectTerrain(request.TemplateId);
+                TamedIslandData.SelectTerrain(entityId, request.TemplateId);
                 __instance.Send<PersonalRegion>(TamedIslandData.MakePersonalRegion(entityId), header.Seq);
             });
             connection.Recv<GetEstateLicenseById>(delegate(GetEstateLicenseById request, PacketHeader header)
             {
-                if (TamedEstateState.IsDeclared(entityId, TamedIslandData.SelectedTerrain))
+                if (TamedEstateState.IsDeclared(entityId, TamedIslandData.GetSelectedTerrain(entityId)))
                 {
                     __instance.Send<EstateLicense>(TamedIslandData.MakeLicense(entityId), header.Seq);
                 }
@@ -266,13 +329,19 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
             {
                 if (request.OwnerType != OwnerType.PersonalPlayer) return;
                 __instance.Send<OK>(default(OK), header.Seq);
-                HarborIslandApi.SailToTamedIsland(__instance, TamedIslandData.SelectedTerrain);
+                if (!HarborIslandApi.IsAtTamedHome(__instance))
+                {
+                    HarborIslandApi.SailToTamedIsland(__instance);
+                }
             });
             connection.Recv<ReturnToEstate>(delegate(ReturnToEstate request, PacketHeader header)
             {
                 if (request.OwnerType != OwnerType.PersonalPlayer) return;
                 __instance.Send<OK>(default(OK), header.Seq);
-                HarborIslandApi.SailToTamedIsland(__instance, TamedIslandData.SelectedTerrain);
+                if (!HarborIslandApi.IsAtTamedHome(__instance))
+                {
+                    HarborIslandApi.SailToTamedIsland(__instance);
+                }
             });
 
             TamedIslandRestorationPlugin.Log.LogInfo(

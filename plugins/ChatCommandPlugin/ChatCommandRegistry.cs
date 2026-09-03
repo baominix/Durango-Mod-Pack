@@ -38,6 +38,8 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
             Register("walk", "/walk <speed>", "Set player walk speed multiplier (1 = default).", WalkSpeedCommand.Execute);
             Register("walkspeed", "/walkspeed <speed>", "Set player walk speed multiplier (1 = default).", WalkSpeedCommand.Execute);
             Register("kill", "/kill me|myself", "Kill the local player.", KillCommand.Execute);
+            Register("gamemode", "/gamemode <survival|creative>", "Change the offline game mode.", GameModeCommand.Execute);
+            Register("gm", "/gm <s|c|0|1>", "Change the offline game mode.", GameModeCommand.Execute);
         }
 
         private static void Register(string name, string usage, string description, ChatCommandHandler handler)
@@ -89,26 +91,87 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
             catch (Exception exception)
             {
                 ChatCommandPlugin.Log.LogWarning("Command /" + command.Name + " failed: " + exception);
-                Reply("Command failed: " + exception.Message);
+                Reply(ChatCommandLocalization.Get("command_failed", exception.Message));
             }
             return true;
         }
 
         private static void ShowHelp(string[] args)
         {
-            Reply("Available commands:");
-            Reply("/help, /helps - Show available commands.");
-            Reply("/xp <amount> - Add character XP.");
-            Reply("/xp level <add|set> <amount> - Character XP.");
-            Reply("/xp <category> <add|set> <amount> - Skill category XP.");
-            Reply("/xp category all <add|set> <amount> - All skill categories.");
-            Reply("/combatstat, /cstat - Show combat stats and modifiers.");
-            Reply("/givepioneer [prototype] [level] [count] [tagLevel] - Give Pioneer Material test items.");
-            Reply("Example: /givepioneer flax 15 10 1");
-            Reply("/walk <speed> - Set walk speed multiplier (1 = default, range 0.1-10).");
-            Reply("Also supported: /walk speed <value>, /walkspeed <speed>, /walk reset.");
-            Reply("/kill me, /kill myself - Kill the local player.");
-            Reply("Categories: survival, melee, ranged, defense, butchery, gathering, cooking, weapon, tailoring, construction, farming, processing.");
+            Reply(ChatCommandLocalization.Get("available_commands"));
+
+            Reply("ChatCommandPlugin:");
+            Reply(Yellow("/help") + ", " + Yellow("/helps") +
+                " - " + ChatCommandLocalization.Get("show_commands"));
+            Reply(Yellow("/xp") + " <amount> - " +
+                ChatCommandLocalization.Get("add_character_xp"));
+            Reply(Yellow("/xp") +
+                " level <add|set> <amount> - " +
+                ChatCommandLocalization.Get("character_xp"));
+            Reply(Yellow("/xp") +
+                " <category> <add|set> <amount> - " +
+                ChatCommandLocalization.Get("skill_category_xp"));
+            Reply(Yellow("/xp") +
+                " category all <add|set> <amount> - " +
+                ChatCommandLocalization.Get("all_skill_categories"));
+            Reply(Yellow("/combatstat") + ", " + Yellow("/cstat") +
+                " - " + ChatCommandLocalization.Get("show_combat_stats"));
+            Reply(Yellow("/givepioneer") + ", " + Yellow("/gpioneer") +
+                " [prototype] [level] [count] [tagLevel] - " +
+                ChatCommandLocalization.Get("give_pioneer_desc"));
+            Reply(Yellow("/walk") +
+                " <speed> - " + ChatCommandLocalization.Get("walk_desc"));
+            Reply(Yellow("/walk") + " speed <value>, " +
+                Yellow("/walkspeed") + " <speed>, " +
+                Yellow("/walk") + " reset - " +
+                ChatCommandLocalization.Get("walk_variants"));
+            Reply(Yellow("/kill") +
+                " me|myself - " + ChatCommandLocalization.Get("kill_desc"));
+            Reply(Yellow("/gamemode") + " <survival|creative>, " +
+                Yellow("/gm") +
+                " <s|c|0|1> - " + ChatCommandLocalization.Get("gamemode_desc"));
+            Reply(ChatCommandLocalization.Get("xp_categories") +
+                " survival, melee, ranged, defense, butchery, gathering, cooking, weapon, tailoring, construction, farming, processing.");
+
+            if (FindType(
+                "Baominix.DurangoOriginal.DeveloperMode.DeveloperCommandRouter") != null)
+            {
+                Reply("DeveloperModePlugin:");
+                Reply(Yellow("/dev") + ", " + Yellow("/developermode") +
+                    " <on|off|toggle|status|reset|help> - " +
+                    ChatCommandLocalization.Get("developer_mode_desc"));
+                Reply(Yellow("/dev") +
+                    " attackalert <on|off|toggle|status> - " +
+                    ChatCommandLocalization.Get("attack_alert_desc"));
+                Reply(Yellow("/dev") +
+                    " animalbubble <on|off|toggle|status> - " +
+                    ChatCommandLocalization.Get("animal_bubble_desc"));
+                Reply(Yellow("/hp") +
+                    " <amount> - " + ChatCommandLocalization.Get("hp_desc"));
+                Reply(Yellow("/sp") +
+                    " <amount> - " + ChatCommandLocalization.Get("sp_desc"));
+                Reply(Yellow("/combatspawn") +
+                    " [type] [level] [rows columns] [spacing] - " +
+                    ChatCommandLocalization.Get("combatspawn_desc"));
+                Reply(Yellow("/combatwave") +
+                    " [type] [level] [count] [spacing] - " +
+                    ChatCommandLocalization.Get("combatwave_desc"));
+                Reply(Yellow("/combatstatus") +
+                    " - " + ChatCommandLocalization.Get("combatstatus_desc"));
+                Reply(Yellow("/combatcontext") +
+                    " [nearest|all|entityId] - " +
+                    ChatCommandLocalization.Get("combatcontext_desc"));
+                Reply(Yellow("/combatintent") +
+                    " [nearest|all|entityId] - " +
+                    ChatCommandLocalization.Get("combatintent_desc"));
+                Reply(Yellow("/combathelp") +
+                    " - " + ChatCommandLocalization.Get("combathelp_desc"));
+            }
+        }
+
+        private static string Yellow(string command)
+        {
+            return command;
         }
 
         private static void ModifyExperience(string[] args)
@@ -139,9 +202,11 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
             }
             else
             {
-                Reply("Usage: /xp level <add|set> <amount>");
-                Reply("Or: /xp <category> <add|set> <amount>");
-                Reply("Or: /xp category all <add|set> <amount>");
+                Reply(ChatCommandLocalization.Get("usage_prefix", "/xp level <add|set> <amount>"));
+                Reply(ChatCommandLocalization.Get("or_prefix",
+                    "/xp <category> <add|set> <amount>"));
+                Reply(ChatCommandLocalization.Get("or_prefix",
+                    "/xp category all <add|set> <amount>"));
                 return;
             }
 
@@ -163,13 +228,15 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
             MethodInfo method = apiType == null ? null : apiType.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
             if (method == null)
             {
-                Reply((isCharacter ? "PlayerProgressionPlugin" : "SkillSystemPlugin") + " is not available.");
+                Reply(ChatCommandLocalization.Get("plugin_unavailable", isCharacter ? "PlayerProgressionPlugin" : "SkillSystemPlugin"));
                 return;
             }
 
             bool success = (bool)method.Invoke(null, parameters);
             string response = parameters[parameters.Length - 1] as string;
-            Reply(string.IsNullOrEmpty(response) ? (success ? "XP updated." : "Unable to update XP.") : response);
+            Reply(string.IsNullOrEmpty(response)
+                ? ChatCommandLocalization.Get(success ? "xp_updated" : "xp_update_failed")
+                : ChatCommandLocalization.TranslateExternalResponse(response));
         }
 
         private static Type FindType(string fullName)
@@ -191,7 +258,7 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
             SocialSystem social = GameSystem<SocialSystem>.Instance();
             if (social != null)
             {
-                social.AddSystemChat(text, "System", false, ChannelType.System);
+                social.AddSystemChat(text, string.Empty, false, ChannelType.System);
             }
         }
     }

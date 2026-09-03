@@ -17,6 +17,8 @@ namespace BaoX.DurangoOriginal.SkillSystemMod
         private const string LegacyStorageKey = "baox_offline_skills_v2";
         private const string ProgressionVersionKey = "skill_progression_version";
         private static readonly Dictionary<PlayerContext, SkillSaveData> Attached = new Dictionary<PlayerContext, SkillSaveData>();
+        private static readonly HashSet<PlayerContext> Dirty = new HashSet<PlayerContext>();
+        private static readonly object Gate = new object();
 
         internal static SkillSaveData Load(PlayerContext context)
         {
@@ -44,6 +46,116 @@ namespace BaoX.DurangoOriginal.SkillSystemMod
         {
             Attached[context] = data;
             SaveStorage(context, data);
+        }
+
+        internal static void MarkDirty(PlayerContext context, SkillSaveData data)
+        {
+            if (context == null || data == null)
+            {
+                return;
+            }
+            data.Normalize();
+            Attached[context] = data;
+            SaveStorage(context, data);
+            lock (Gate)
+            {
+                Dirty.Add(context);
+            }
+        }
+
+        internal static void PrepareAttached(PlayerContext context)
+        {
+            SkillSaveData data;
+            if (context == null || !Attached.TryGetValue(context, out data) || data == null)
+            {
+                return;
+            }
+            SaveStorage(context, data);
+        }
+
+        internal static void MarkSaved(PlayerContext context)
+        {
+            if (context == null)
+            {
+                return;
+            }
+            lock (Gate)
+            {
+                Dirty.Remove(context);
+            }
+        }
+
+        internal static void SaveNow(PlayerContext context, SkillSaveData data)
+        {
+            if (context == null || data == null)
+            {
+                return;
+            }
+            Attach(context, data);
+            context.Save();
+            SaveAttached(context);
+            lock (Gate)
+            {
+                Dirty.Remove(context);
+            }
+        }
+
+        internal static void Flush(PlayerContext context)
+        {
+            if (context == null)
+            {
+                return;
+            }
+
+            SkillSaveData data;
+            lock (Gate)
+            {
+                if (!Dirty.Contains(context) ||
+                    !Attached.TryGetValue(context, out data))
+                {
+                    return;
+                }
+            }
+
+            Attach(context, data);
+            context.Save();
+            SaveAttached(context);
+            lock (Gate)
+            {
+                Dirty.Remove(context);
+            }
+            if (SkillSystemPlugin.Log != null)
+            {
+                SkillSystemPlugin.Log.LogInfo(
+                    "Deferred category XP flushed to disk.");
+            }
+        }
+
+        internal static void FlushAll()
+        {
+            PlayerContext[] contexts;
+            lock (Gate)
+            {
+                contexts = new PlayerContext[Dirty.Count];
+                Dirty.CopyTo(contexts);
+            }
+            for (int i = 0; i < contexts.Length; i++)
+            {
+                Flush(contexts[i]);
+            }
+        }
+
+        internal static void Detach(PlayerContext context)
+        {
+            if (context == null)
+            {
+                return;
+            }
+            lock (Gate)
+            {
+                Dirty.Remove(context);
+                Attached.Remove(context);
+            }
         }
 
         internal static void SaveAttached(PlayerContext context)
@@ -129,6 +241,9 @@ namespace BaoX.DurangoOriginal.SkillSystemMod
                             saved.Category = (int)category;
                             saved.Level = value["Level"] == null ? 1 : Math.Max(1, value["Level"].Value<int>());
                             saved.Exp = value["Exp"] == null ? 0 : Math.Max(0, value["Exp"].Value<int>());
+                            saved.GameplayExpRemainder = value["GameplayExpRemainder"] == null
+                                ? 0.0
+                                : Math.Max(0.0, value["GameplayExpRemainder"].Value<double>());
                             data.Categories.Add(saved);
                         }
                     }
@@ -254,6 +369,7 @@ namespace BaoX.DurangoOriginal.SkillSystemMod
                 JObject category = new JObject();
                 category["Level"] = saved.Level;
                 category["Exp"] = saved.Exp;
+                category["GameplayExpRemainder"] = saved.GameplayExpRemainder;
                 category["ResearchTime"] = new JValue((object)null);
                 category["Researching"] = new JValue((object)null);
                 result[((Category)saved.Category).ToString()] = category;
@@ -394,11 +510,26 @@ namespace BaoX.DurangoOriginal.SkillSystemMod
     }
 
     [HarmonyPatch(typeof(PlayerContext), "Save")]
-    internal static class PlayerContextDirectSkillSavePatch
+    internal static class PlayerContextSkillSavePatch
     {
+        private static void Prefix(PlayerContext __instance)
+        {
+            SkillPlayerDataPersistence.PrepareAttached(__instance);
+        }
+
         private static void Postfix(PlayerContext __instance)
         {
             SkillPlayerDataPersistence.SaveAttached(__instance);
+            SkillPlayerDataPersistence.MarkSaved(__instance);
+        }
+    }
+
+    [HarmonyPatch(typeof(Server), "EndServer")]
+    internal static class ServerEndSkillSavePatch
+    {
+        private static void Prefix()
+        {
+            SkillPlayerDataPersistence.FlushAll();
         }
     }
 }

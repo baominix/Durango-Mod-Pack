@@ -9,10 +9,11 @@ using UnityEngine;
 namespace BaoX.DurangoOriginal.TitleBarMenuDisable
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class TitleBarMenuDisablePlugin : BaseUnityPlugin
     {
         public const string PluginGuid =
-            "com.baox.durango.original.titlebarmenudisable";
+            "com.baominix.durango.original.titlebarmenudisable";
         public const string PluginName = "Title Bar Menu Disable Plugin";
         public const string PluginVersion = "1.0.0";
 

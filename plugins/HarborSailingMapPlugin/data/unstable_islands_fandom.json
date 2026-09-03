@@ -1,0 +1,692 @@
+{
+  "schema_version": 1,
+  "source": {
+    "title": "Unstable Islands",
+    "url": "https://durango-archive.fandom.com/wiki/Unstable_Islands",
+    "retrieved_at": "2026-07-29",
+    "license": "CC BY-SA"
+  },
+  "notes": [
+    "Unknown values written as <?> on the archived page are preserved as Unknown (archive).",
+    "The Lv.18 Tropical Sea route exists in the Original client catalog but is not listed in the archived Fandom table.",
+    "generated_island_name values were created for the offline restoration and are not names claimed by the archive."
+  ],
+  "routes": [
+    {
+      "terrain_id": "ri15sa",
+      "level": 15,
+      "sea": "Savanna Sea",
+      "generated_island_name": "Ambergrass Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Crabgrass Cache",
+        "Lavender Cache",
+        "Dinosaur Egg Nest",
+        "Rock Mine",
+        "Mud Pit",
+        "Baobab Tree Forest",
+        "Elephant Grass Cache"
+      ],
+      "indigenous_animals": [
+        "Lizard",
+        "Zebraceratops",
+        "Elephantulus",
+        "Acernychus"
+      ]
+    },
+    {
+      "terrain_id": "ri18tr",
+      "level": 18,
+      "sea": "Tropical Sea",
+      "generated_island_name": "Verdant Fang Island",
+      "archive_listed": false,
+      "crater_resources": [],
+      "indigenous_animals": []
+    },
+    {
+      "terrain_id": "ri20te",
+      "level": 20,
+      "sea": "Temperate Sea",
+      "generated_island_name": "Silverwood Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Flax Cache",
+        "Bamboo Forest",
+        "Mud Pit",
+        "Oviraptor Nest",
+        "Wild Rose Bush",
+        "White Sandalwood Forest"
+      ],
+      "indigenous_animals": [
+        "Protoceratops",
+        "Oviraptor",
+        "Macrauchenia",
+        "Phenacodus",
+        "Compsognathus"
+      ]
+    },
+    {
+      "terrain_id": "ri25tr",
+      "level": 25,
+      "sea": "Tropical Sea",
+      "generated_island_name": "Emerald Canopy Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Warp Remnants",
+        "Mango Tree Forest",
+        "Banana Tree Forest",
+        "Animal Graveyard",
+        "Sugar Cane Cache",
+        "Aphelandra Forest",
+        "Tropical Flax Forest",
+        "Saurolophus Nest",
+        "Mud Pit"
+      ],
+      "indigenous_animals": [
+        "Zebraceratops",
+        "Saurolophus",
+        "Raptor",
+        "Striped Compsognathus",
+        "Light Pink Protoceratops",
+        "Pictaraptor"
+      ]
+    },
+    {
+      "terrain_id": "ri30tu",
+      "level": 30,
+      "sea": "Tundra Sea",
+      "generated_island_name": "Frostwind Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Warp Remnants",
+        "Cotton Plant Cache",
+        "Flax Cache",
+        "Mud Pit",
+        "Mushroom Log Forest",
+        "Syringa Garden",
+        "Fir Forest"
+      ],
+      "indigenous_animals": [
+        "Coelophysis",
+        "Direwolf",
+        "Female Megaloceros",
+        "Young Megaloceros",
+        "Dodophysis",
+        "Phenacodus",
+        "Direwolf Cub",
+        "Centrosaurus",
+        "Male Megaloceros"
+      ]
+    },
+    {
+      "terrain_id": "ri35de",
+      "level": 35,
+      "sea": "Desert Sea",
+      "generated_island_name": "Sunscar Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Animal Graveyard",
+        "Obsidian Mine",
+        "Saguaro Cactus",
+        "Joshua Tree Cache",
+        "Mud Pit",
+        "Agave Cache",
+        "Warp Remnants"
+      ],
+      "indigenous_animals": [
+        "Kentrosaurus",
+        "Young Kentrosaurus",
+        "Utahraptor",
+        "Gallimimus",
+        "Oviraptor",
+        "Sand Lizard",
+        "Young Gallimimus"
+      ]
+    },
+    {
+      "terrain_id": "ri35te",
+      "level": 35,
+      "sea": "Temperate Sea",
+      "generated_island_name": "Willowmist Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Flax Cache",
+        "Bamboo Forest",
+        "Tea Tree Forest",
+        "Mud Pit",
+        "Oviraptor",
+        "Cotton Plant Forest",
+        "Wild Rose Bush",
+        "Warp Remnants"
+      ],
+      "indigenous_animals": [
+        "Protoceratops",
+        "Pavomimus",
+        "Stegosaurus",
+        "Oviraptor",
+        "Young Stegosaurus",
+        "Macrauchenia",
+        "Compsognathus"
+      ]
+    },
+    {
+      "terrain_id": "ri40tr",
+      "level": 40,
+      "sea": "Tropical Sea",
+      "generated_island_name": "Rainfang Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Mine",
+        "Olive Tree Forest",
+        "Mahogany Forest",
+        "Marble Mine",
+        "Animal Graveyard",
+        "Centrosaurus Nest",
+        "St. Paul's Wort Cache",
+        "Sugar Cane Cache",
+        "Tropical Flax Forest",
+        "Warp Remnants"
+      ],
+      "indigenous_animals": [
+        "Unknown (archive)",
+        "Sabertooth",
+        "Zebraceratops",
+        "Saurophus",
+        "Deinonychus",
+        "Raptor",
+        "Striped Compsognathus",
+        "Light Pink Protoceratops",
+        "Pictaraptor",
+        "Unknown (archive)"
+      ]
+    },
+    {
+      "terrain_id": "ri40tu",
+      "level": 40,
+      "sea": "Tundra Sea",
+      "generated_island_name": "Whitehorn Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Mine",
+        "Fir Forest",
+        "Cranberry Bush",
+        "Cotton Plant Cache",
+        "Mud Pit",
+        "Red Fir Forest",
+        "Mushroom Log Forest",
+        "Tea Tree Forest",
+        "Warp Remnants"
+      ],
+      "indigenous_animals": [
+        "Coelophysis",
+        "Direwolf",
+        "Bonusaurus",
+        "Female Megaloceros",
+        "Young Megaloceros",
+        "Dodophysis",
+        "Direwolf Cub",
+        "Centrosaurus",
+        "Male Megalosaurus"
+      ]
+    },
+    {
+      "terrain_id": "ri45sw",
+      "level": 45,
+      "sea": "Swamp Sea",
+      "generated_island_name": "Blackwater Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Bug-Infested Tree Cache",
+        "Mud Pit",
+        "Cattail Cache",
+        "Fir Tree Cache",
+        "Warp Remnants"
+      ],
+      "indigenous_animals": [
+        "Skunkodus",
+        "Young Triceratops",
+        "Dimetrodon",
+        "Triceratops",
+        "Giant Rat",
+        "Coelophysis"
+      ]
+    },
+    {
+      "terrain_id": "ri45sa",
+      "level": 45,
+      "sea": "Savanna Sea",
+      "generated_island_name": "Golden Baobab Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Boabab Tree Forest",
+        "Dinosaur Egg Nest",
+        "Zinc Mine",
+        "Mud Pit",
+        "Crabgrass Cache",
+        "Lavender Cache",
+        "Marble Mine",
+        "Elephant Grass Cache",
+        "Mushroom Log Forest",
+        "Warp Remnants"
+      ],
+      "indigenous_animals": [
+        "Iguanodon",
+        "Styracosaurus",
+        "Unknown (archive)",
+        "Zebraceratops",
+        "Edmontosaurus",
+        "Elephantulus",
+        "Acernychus",
+        "Young Styracosaurus",
+        "Lizard",
+        "Unknown (archive)"
+      ]
+    },
+    {
+      "terrain_id": "ri50de",
+      "level": 50,
+      "sea": "Desert Sea",
+      "generated_island_name": "Ruby Dune Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Purple Tulip Colony",
+        "Animal Graveyard",
+        "Warp Remnants",
+        "Agave Cache",
+        "Saguaro Cache",
+        "Mud Pit",
+        "Antler Cactus Forest",
+        "Ruby Mine"
+      ],
+      "indigenous_animals": [
+        "Kentrosaurus",
+        "Young Kentrosaurus",
+        "Utahraptor",
+        "Gallimimus",
+        "Tuojiangosaurus",
+        "Oviraptor",
+        "Young Ankylosaurus",
+        "Ankylosaurus",
+        "Sand Lizard",
+        "Young Gallimimus",
+        "Young Tuojiangosaurus"
+      ]
+    },
+    {
+      "terrain_id": "ri50sn",
+      "level": 50,
+      "sea": "Snowfield Sea",
+      "generated_island_name": "Ivory Frost Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Icy Floor",
+        "Warp Remnants",
+        "Mine",
+        "Cranberry Bush (aka Guelder-rose bush)",
+        "White Sandalwood Forest",
+        "Red Fir Forest",
+        "Fir Forest",
+        "Silver Mine",
+        "Tea Tree Forest"
+      ],
+      "indigenous_animals": [
+        "Female White-bellied Megaloceros",
+        "Young White-bellied Megaloceros",
+        "Direwolf",
+        "Coelophysis",
+        "Snowfield Coelophysis",
+        "Dodophysis",
+        "Sabertooth",
+        "Mammoth",
+        "Albiraptor",
+        "Male White-bellied Megaloceros"
+      ]
+    },
+    {
+      "terrain_id": "ri55tu",
+      "level": 55,
+      "sea": "Tundra Sea",
+      "generated_island_name": "Red Fir Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Mud Pit",
+        "Mushroom Log Forest",
+        "Mine",
+        "Fir Forest",
+        "Cranberry Bush (aka Guelder-rose bush)",
+        "Warp Remnants",
+        "Unknown (archive)",
+        "Cotton Plant Cache",
+        "Red Fir Forest"
+      ],
+      "indigenous_animals": [
+        "Coelophysis",
+        "Direwolf",
+        "Young Ornithomimus",
+        "Female Megaloceros",
+        "Young Megaloceros",
+        "Dodophysis",
+        "Direwolf Cub",
+        "Centrosaurus",
+        "Male Megaloceros",
+        "Ornithomimus"
+      ]
+    },
+    {
+      "terrain_id": "ri55sw",
+      "level": 55,
+      "sea": "Swamp Sea",
+      "generated_island_name": "Lotus Mire Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Unknown (archive)",
+        "Mud Pit",
+        "Fir Tree Cache",
+        "Cattail Cache",
+        "Warp Remnants"
+      ],
+      "indigenous_animals": [
+        "Skunkodus",
+        "Young Triceratops",
+        "Dimetrodon",
+        "Triceratops",
+        "Giant Rat",
+        "Coelophysis"
+      ]
+    },
+    {
+      "terrain_id": "ri55tr",
+      "level": 55,
+      "sea": "Tropical Blue Sea",
+      "generated_island_name": "Blue Canopy Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Mine",
+        "Animal Graveyard",
+        "Marble Mine",
+        "Oak Forest",
+        "Sugar Cane Cache",
+        "Guzmania Cache",
+        "Unknown (archive)",
+        "Gem Mine",
+        "Rubber Tree Forest",
+        "Warp Remnants"
+      ],
+      "indigenous_animals": [
+        "Unknown (archive)",
+        "Lesser Horned Elephant",
+        "Saurolophus",
+        "Deinonychus",
+        "Light Pink Protoceratops",
+        "Parasaurolophus",
+        "Red-spotted Lizard",
+        "Unknown (archive)"
+      ]
+    },
+    {
+      "terrain_id": "ua60sn",
+      "level": 60,
+      "sea": "Snowfield Sea",
+      "generated_island_name": "Mammoth Frost Island",
+      "archive_listed": true,
+      "unstable_index": true,
+      "crater_resources": [
+        "Unknown (archive)",
+        "Unknown (archive)",
+        "Unknown (archive)",
+        "Unknown (archive)",
+        "Guelder-rose Forest"
+      ],
+      "indigenous_animals": [
+        "Female White-bellied Megaloceros",
+        "Unknown (archive)",
+        "Direwolf",
+        "Coelophysis",
+        "Snowfield Coelophysis",
+        "Young White-bellied Megaloceros",
+        "Dodophysis",
+        "Sabertooth",
+        "Mammoth",
+        "Albiraptor",
+        "Male White-bellied Megaloceros"
+      ]
+    },
+    {
+      "terrain_id": "ua60de",
+      "level": 60,
+      "sea": "Desert Sea",
+      "generated_island_name": "Crimson Mesa Island",
+      "archive_listed": true,
+      "unstable_index": true,
+      "crater_resources": [
+        "Purple Tulip Colony",
+        "Animal Graveyard",
+        "Unknown (archive)",
+        "Unknown (archive)",
+        "Agave Cache",
+        "Saguaro Cactus",
+        "Mud Pit",
+        "Antler Cactus Forest",
+        "Ruby Mine",
+        "Warp Remnants"
+      ],
+      "indigenous_animals": [
+        "Kentrosaurus",
+        "Young Kentrosaurus",
+        "Utahraptor",
+        "Gallimimus",
+        "Tuojiangosaurus",
+        "Oviraptor",
+        "Young Ankylosaurus",
+        "Ankylosaurus",
+        "Sand Lizard",
+        "Young Gallimimus",
+        "Young Tuojiangosaurus"
+      ]
+    },
+    {
+      "terrain_id": "ua60sw",
+      "level": 60,
+      "sea": "Swamp Sea",
+      "generated_island_name": "Ironroot Marsh Island",
+      "archive_listed": true,
+      "unstable_index": true,
+      "crater_resources": [
+        "Bug-Infested Tree Cache",
+        "Mud Pit",
+        "Lotus Flower Cache",
+        "Unknown (archive)",
+        "Rubber Tree Cache",
+        "Fir Tree Cache",
+        "Cattail Cache",
+        "Unknown (archive; Index 3+)"
+      ],
+      "indigenous_animals": [
+        "Skunkodus",
+        "Young Triceratops",
+        "Dimetrodon",
+        "Triceratops",
+        "Giant Rat",
+        "Coelophysis"
+      ]
+    },
+    {
+      "terrain_id": "ua60tr",
+      "level": 60,
+      "sea": "Tropical Sea",
+      "generated_island_name": "Emerald Titan Island",
+      "archive_listed": true,
+      "unstable_index": true,
+      "crater_resources": [
+        "Iron Mine",
+        "Gem Mine",
+        "Animal Graveyard",
+        "Marble Mine",
+        "Heliconia Forest",
+        "Rubber Tree Cache",
+        "Saurolophus Nest",
+        "Banana Tree Forest",
+        "Coffee Plant Forest"
+      ],
+      "indigenous_animals": [
+        "Kentrosaurus",
+        "Unknown (archive)",
+        "Lesser Horned Elephant",
+        "Sabertooth",
+        "Saurolophus",
+        "Deinonychus",
+        "Raptor",
+        "Brachiosaurus",
+        "Light Pink Protoceratops",
+        "Parasaurolophus",
+        "Lizard",
+        "Red-spotted Lizard",
+        "Unknown (archive)"
+      ]
+    },
+    {
+      "terrain_id": "ua60tu",
+      "level": 60,
+      "sea": "Tundra Sea",
+      "generated_island_name": "Stormpine Island",
+      "archive_listed": true,
+      "unstable_index": true,
+      "crater_resources": [
+        "Tin Mine",
+        "Sapphire Mine",
+        "Fir Forest",
+        "Cranberry Bush (aka Guelder-rose bush)",
+        "Cotton Plant Cache",
+        "Mud Pit",
+        "Flax Cache",
+        "Mushroom Log Forest",
+        "Red Fir Forest"
+      ],
+      "indigenous_animals": [
+        "Coelophysis",
+        "Direwolf",
+        "Young Ornithomimus",
+        "Female Megaloceros",
+        "Young Megaloceros",
+        "Dodophysis",
+        "Direwolf Cub",
+        "Centrosaurus",
+        "Male Megaloceros",
+        "Ornithomimus",
+        "Unknown (archive; Index 1 only?)"
+      ]
+    },
+    {
+      "terrain_id": "ua60vol",
+      "level": 60,
+      "sea": "Volcano Sea",
+      "generated_island_name": "Ashen Caldera Island",
+      "archive_listed": true,
+      "unstable_index": true,
+      "crater_resources": [
+        "Warp Remnants",
+        "Gray Mud Pit",
+        "Animal Graveyard",
+        "Unknown (archive)",
+        "Scorched Forest",
+        "Unknown (archive)"
+      ],
+      "indigenous_animals": [
+        "White-Striped Iguana",
+        "Lava Hadrosaurus",
+        "Unknown (archive)",
+        "Andrewsarchus",
+        "Horseshoe Crab",
+        "Unknown (archive)",
+        "Sulfuric Skunkodus",
+        "Black-capped Utahraptor"
+      ]
+    },
+    {
+      "terrain_id": "op60te",
+      "level": 60,
+      "sea": "Temperate Savage Island Sea",
+      "generated_island_name": "Savage Ironwood Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Warp Remnants",
+        "Unknown (archive)",
+        "Mud Pit",
+        "Fir Forest",
+        "Pine Tree Forest",
+        "Red Fir Forest",
+        "Unknown (archive)",
+        "Unknown (archive)",
+        "Mushroom Log Forest"
+      ],
+      "indigenous_animals": [
+        "Direwolf",
+        "Lesser Horned Elephant",
+        "Unknown (archive)",
+        "Gallimimus",
+        "Utahraptor",
+        "Deinonychus",
+        "Bonusaurus",
+        "Pavominus",
+        "Young Megaloceros",
+        "Dodophysis",
+        "Young Ankylosaurus",
+        "Young Euoplocephalus",
+        "Direwolf (black fur)",
+        "Direwolf Cub",
+        "Female Megaloceros",
+        "Centrosaurus",
+        "Ankylosaurus",
+        "Euoplocephalus",
+        "Young Gallimimus",
+        "Male Megaloceros",
+        "Sabertooth"
+      ]
+    },
+    {
+      "terrain_id": "op60tr",
+      "level": 60,
+      "sea": "Tropical Savage Island Sea",
+      "generated_island_name": "Savage Heliconia Island",
+      "archive_listed": true,
+      "crater_resources": [
+        "Warp Remnants",
+        "Banana Tree Forest",
+        "Mine",
+        "Gem Mine",
+        "Animal Graveyard",
+        "Marble Mine",
+        "Silver Mine",
+        "Heliconia Forest",
+        "Unknown (archive)",
+        "Rubber Tree Cache",
+        "Unknown (archive)",
+        "Unknown (archive)"
+      ],
+      "indigenous_animals": [
+        "Young Brachiosaurus",
+        "Unknown (archive)",
+        "Direwolf Cub",
+        "Young Stegosaurus",
+        "Young Gallimimus",
+        "Pictaraptor",
+        "Kentrosaurus",
+        "Young Kentrosaurus",
+        "Sabertooth",
+        "Stegosaurus",
+        "Raptor",
+        "Oviraptor",
+        "Brachiosaurus",
+        "Parasaurolophus",
+        "Unknown (archive)",
+        "Macrauchenia",
+        "Direwolf",
+        "Utahraptor",
+        "Gallimimus",
+        "Saurophus",
+        "Striped Compsognathus",
+        "Lizard"
+      ]
+    }
+  ]
+}

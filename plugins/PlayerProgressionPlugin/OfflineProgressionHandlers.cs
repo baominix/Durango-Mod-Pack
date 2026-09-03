@@ -35,11 +35,13 @@ namespace BaoX.DurangoOriginal.PlayerProgressionMod
 
             player.Closed += delegate()
             {
+                ProgressionPersistence.Flush(state.Context);
                 States.Remove(player);
                 if (_localPlayer == player)
                 {
                     _localPlayer = null;
                 }
+                ProgressionPersistence.Detach(state.Context);
             };
         }
 
@@ -65,6 +67,13 @@ namespace BaoX.DurangoOriginal.PlayerProgressionMod
                 return false;
             }
 
+            if (add && state.Level >= PlayerProgressionState.MaximumLevel)
+            {
+                response = "Character is already at maximum level (Lv." + PlayerProgressionState.MaximumLevel + "). XP unchanged.";
+                PlayerProgressionPlugin.Log.LogInfo("XP add skipped: maximum level reached level=" + state.Level + " exp=" + state.Experience);
+                return true;
+            }
+
             int previousLevel = state.Level;
             int changedLevels = set ? state.SetExperience(amount) : state.AddExperience(amount);
 
@@ -81,8 +90,11 @@ namespace BaoX.DurangoOriginal.PlayerProgressionMod
             }
 
             SendStatistics(_localPlayer, state);
-            SendSurvival(_localPlayer, null);
-            RefreshSkillSystem();
+            if (changedLevels != 0)
+            {
+                SendSurvival(_localPlayer, null);
+                RefreshSkillSystem();
+            }
 
             for (int level = previousLevel + 1; level <= previousLevel + Math.Max(0, changedLevels); level++)
             {
@@ -108,6 +120,11 @@ namespace BaoX.DurangoOriginal.PlayerProgressionMod
                     },
                     Reward = reward
                 }, 0U);
+            }
+
+            if (changedLevels > 0)
+            {
+                ProgressionPersistence.Flush(state.Context);
             }
 
             PlayerProgressionPlugin.Log.LogInfo("XP command: " + operation + " " + amount + " level=" + state.Level + " exp=" + state.Experience);

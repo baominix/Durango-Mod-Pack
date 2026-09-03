@@ -1,0 +1,590 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca623cbf980f338b9506b97c6ddc38aa, type: 3}
+  m_Name: Trex_framework
+  m_EditorClassIdentifier:
+  normal_motions:
+  - key: stand
+    motion: TRex_Stand
+    _clipObj: {fileID: 7400000, guid: ba86224caf2b25b46922b83dfb417465, type: 2}
+  - key: idle
+    motion: TRex_Stand
+    _clipObj: {fileID: 7400000, guid: ba86224caf2b25b46922b83dfb417465, type: 2}
+  - key: eat
+    motion: TRex_Eat
+    _clipObj: {fileID: 7400000, guid: c71f90cb8661ba44f97d39bbe32713a5, type: 2}
+  - key: alert
+    motion:
+    _clipObj: {fileID: 0}
+  - key: dead
+    motion: TRex_Die
+    _clipObj: {fileID: 7400000, guid: 34395a68af5116e4db59ab86c208e32b, type: 2}
+  normal_3states:
+  - key: sleep_motions
+    begin: TRex_Sleep_Begin
+    during: TRex_Sleep_Looping
+    end: TRex_Sleep_End
+    _clipObjBegin: {fileID: 7400000, guid: 7420208266ef5c14daff9bd05d231839, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: e88a7e5e900036445bea2e9bd7262d51, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 8aee81bc002fe1847acb9659a3eb3683, type: 2}
+  weighted_motions:
+  - key: rest_motions
+    elems:
+    - weight: 1
+      motion: TRex_Stand
+      duration: {x: 3, y: 3}
+      _clipObj: {fileID: 7400000, guid: ba86224caf2b25b46922b83dfb417465, type: 2}
+  weighted_3states:
+  - key: seq_rest_motions
+    elems: []
+  move_sets:
+  - key: move_motion_sets
+    elems:
+    - name: trex_move_set
+      motions:
+      - motion: TRex_Limp
+        rot_motion_cw: Trex_Rotate_CW
+        rot_motion_ccw: Trex_Rotate_CCW
+        turn_reverse_motion:
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 569
+        rot_speed: 90
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 7e58b855ed5b70042a6287c5b80cd0e8, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 61f1c8095736d324ba267a7495e9ca8a, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 72581eff0a7fdf5469abdc428a7df158, type: 2}
+        _clipObjTurnReverse: {fileID: 0}
+      - motion: TRex_Walk
+        rot_motion_cw: Trex_Rotate_CW
+        rot_motion_ccw: Trex_Rotate_CCW
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<600'
+        base_move_speed: 462
+        rot_speed: 90
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: e1ea65b38475c5e4798e2d6d0994e25a, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 61f1c8095736d324ba267a7495e9ca8a, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 72581eff0a7fdf5469abdc428a7df158, type: 2}
+        _clipObjTurnReverse: {fileID: 0}
+      - motion: TRex_Run
+        rot_motion_cw: Trex_Rotate_CW
+        rot_motion_ccw: Trex_Rotate_CCW
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 1176
+        rot_speed: 90
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: a064a6d41515b83488334e13283beb25, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 61f1c8095736d324ba267a7495e9ca8a, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 72581eff0a7fdf5469abdc428a7df158, type: 2}
+        _clipObjTurnReverse: {fileID: 0}
+    - name: trex_move_p2_set
+      motions:
+      - motion: TRex_Limp
+        rot_motion_cw: Trex_Rotate_CW
+        rot_motion_ccw: Trex_Rotate_CCW
+        turn_reverse_motion:
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 654.023
+        rot_speed: 90
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 7e58b855ed5b70042a6287c5b80cd0e8, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 61f1c8095736d324ba267a7495e9ca8a, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 72581eff0a7fdf5469abdc428a7df158, type: 2}
+        _clipObjTurnReverse: {fileID: 0}
+      - motion: TRex_Walk
+        rot_motion_cw: Trex_Rotate_CW
+        rot_motion_ccw: Trex_Rotate_CCW
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<500'
+        base_move_speed: 531.0345
+        rot_speed: 90
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: e1ea65b38475c5e4798e2d6d0994e25a, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 61f1c8095736d324ba267a7495e9ca8a, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 72581eff0a7fdf5469abdc428a7df158, type: 2}
+        _clipObjTurnReverse: {fileID: 0}
+      - motion: TRex_Run
+        rot_motion_cw: Trex_Rotate_CW
+        rot_motion_ccw: Trex_Rotate_CCW
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 1351.7241
+        rot_speed: 90
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: a064a6d41515b83488334e13283beb25, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 61f1c8095736d324ba267a7495e9ca8a, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 72581eff0a7fdf5469abdc428a7df158, type: 2}
+        _clipObjTurnReverse: {fileID: 0}
+    - name: trex_pet_move_set
+      motions:
+      - motion: Trex_Walk_Pet
+        rot_motion_cw: Trex_Rotate_CW
+        rot_motion_ccw: Trex_Rotate_CCW
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 462
+        rot_speed: 90
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 362d1e5189934bc43986cc2b8088109d, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 61f1c8095736d324ba267a7495e9ca8a, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 72581eff0a7fdf5469abdc428a7df158, type: 2}
+        _clipObjTurnReverse: {fileID: 0}
+  comabt_motions:
+  - key: battle_idle
+    motion: Trex_Battle_Idle
+    _clipObj: {fileID: 7400000, guid: a676e9082e387d449bdf003b60175233, type: 2}
+  - key: battle_stand
+    motion: Trex_Battle_Idle
+    _clipObj: {fileID: 7400000, guid: a676e9082e387d449bdf003b60175233, type: 2}
+  - key: evade
+    motion:
+    _clipObj: {fileID: 0}
+  - key: groggy
+    motion: TRex_Groggy
+    _clipObj: {fileID: 7400000, guid: 3879b542153c9f94baf2efb3f4771191, type: 2}
+  - key: blow
+    motion: Trex_Damage_Blow_Begin
+    _clipObj: {fileID: 7400000, guid: 074afc2d839d319479ac2890a77b4fa1, type: 2}
+  combat_directions:
+  - key: knock_back_motion_map
+    front: Trex_Damage_S
+    back: Trex_Damage_N
+    left: Trex_Damage_E
+    right: Trex_Damage_W
+    _clipObjFront: {fileID: 7400000, guid: f22c8e5daf208174ea4a45098a6b5042, type: 2}
+    _clipObjBack: {fileID: 7400000, guid: 7a20d46a27c7acd4ab8bf62bf193ef60, type: 2}
+    _clipObjLeft: {fileID: 7400000, guid: d951c004b4c9250438f4b05881d7d70c, type: 2}
+    _clipObjRight: {fileID: 7400000, guid: 510c25ceb88ae3640b05441740f96935, type: 2}
+  combat_3states:
+  - key: knock_down_motions
+    begin: Trex_Damage_Blow_Begin
+    during: Trex_Damage_Blow_Looping
+    end: Trex_Damage_Blow_End
+    _clipObjBegin: {fileID: 7400000, guid: 074afc2d839d319479ac2890a77b4fa1, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 94844bb7edae0a24282d3b7a4e8d2144, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: ee0e3ac1fb557f04392915ff4e2e13dc, type: 2}
+  combat_attacks:
+  - key: trex_stamp
+    meta:
+      motion: TRex_Attack_Stamp
+      bound_enemy: 0
+      rot_speed: 180
+      _clipObj: {fileID: 7400000, guid: 89032191b86c5ed488f4caf267286246, type: 2}
+    attack_info:
+    - frame: 26
+      sub_action_id: trex_stamp_0
+      damage_type: 1
+      radius: 230
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 180, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 43
+      sub_action_id: trex_stamp_1
+      damage_type: 1
+      radius: 230
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: -180, y: -75}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 78
+      sub_action_id: trex_stamp_2
+      damage_type: 1
+      radius: 300
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: -100, y: 300}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: trex_tail
+    meta:
+      motion: TRex_Attack01_Tail
+      bound_enemy: 0
+      rot_speed: 180
+      _clipObj: {fileID: 7400000, guid: d4ea8273156b97048b54be07e4ce5935, type: 2}
+    attack_info:
+    - frame: 41
+      sub_action_id: trex_tail_0
+      damage_type: 1
+      radius: 350
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: -100, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 43
+      sub_action_id: trex_tail_1
+      damage_type: 1
+      radius: 500
+      radius_min: 0
+      angles: {x: 110, y: 250}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: trex_bite_normal
+    meta:
+      motion: TRex_Attack_Bite_Normal
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 2995d4ce14cd2a74791ca05c944b20fa, type: 2}
+    attack_info:
+    - frame: 28
+      sub_action_id: trex_bite_normal_0
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: trex_roar
+    meta:
+      motion: TRex_Attack_Roar
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: b2ad547a1e157b946ba9be8e34195255, type: 2}
+    attack_info:
+    - frame: 48
+      sub_action_id: trex_roar_0
+      damage_type: 1
+      radius: 0
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 108
+      sub_action_id: trex_roar_1
+      damage_type: 1
+      radius: 1500
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: trex_bite
+    meta:
+      motion: TRex_Attack02_Bite
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: ab1fc147da301b04cb494b3625f91cc5, type: 2}
+    attack_info:
+    - frame: 29
+      sub_action_id: trex_bite_0
+      damage_type: 2
+      radius: 260
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 500}
+      offset: {x: 0, y: 0}
+      damage_angle: 90
+      use_target_origin: 0
+    SameAbove: 0
+  - key: trex_wounded_tail
+    meta:
+      motion: TRex_Attack03_Wounded_Tail
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 18bbce51c060b2b4fbc2b526ed4a5fba, type: 2}
+    attack_info:
+    - frame: 41
+      sub_action_id: trex_wounded_tail_0
+      damage_type: 1
+      radius: 350
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: -100, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 43
+      sub_action_id: trex_wounded_tail_1
+      damage_type: 1
+      radius: 500
+      radius_min: 0
+      angles: {x: 120, y: 230}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: trex_head
+    meta:
+      motion: TRex_Attack_Head
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: e5a1e1d5dd2a5d541a422971b52aa48a, type: 2}
+    attack_info:
+    - frame: 40
+      sub_action_id: trex_head_0
+      damage_type: 1
+      radius: 300
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 150}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: trex_tail_back
+    meta:
+      motion: TRex_Attack_Tail_Back
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 0ffba26d78778044296f861498e18277, type: 2}
+    attack_info:
+    - frame: 42
+      sub_action_id: trex_tail_back_0
+      damage_type: 1
+      radius: 500
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -400}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: trex_stamp_right
+    meta:
+      motion: TRex_Attack_Stamp_Right
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 5cf903bc76719a34f844ce1828a9849e, type: 2}
+    attack_info:
+    - frame: 28
+      sub_action_id: trex_stamp_right_0
+      damage_type: 1
+      radius: 400
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 200, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: trex_stamp_left
+    meta:
+      motion: TRex_Attack_Stamp_Left
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 9e5daa577b0966745a55b54fd3e60295, type: 2}
+    attack_info:
+    - frame: 28
+      sub_action_id: trex_stamp_left_0
+      damage_type: 1
+      radius: 400
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: -200, y: -100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: trex_stamp_foot
+    meta:
+      motion: TRex_Attack_Stamp_Foot
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: bfdc28beb6759a74d881aba8955a07ae, type: 2}
+    attack_info:
+    - frame: 122
+      sub_action_id: trex_stamp_foot_0
+      damage_type: 1
+      radius: 600
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 250, y: 500}
+      offset: {x: 0, y: 0}
+      damage_angle: 130
+      use_target_origin: 0
+    - frame: 150
+      sub_action_id: trex_stamp_foot_1
+      damage_type: 1
+      radius: 600
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -100}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 166
+      sub_action_id: trex_stamp_foot_2
+      damage_type: 1
+      radius: 600
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -200}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 191
+      sub_action_id: trex_stamp_foot_3
+      damage_type: 1
+      radius: 600
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 150, y: -350}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: trex_roar_02
+    meta:
+      motion: TRex_Attack_Roar
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: b2ad547a1e157b946ba9be8e34195255, type: 2}
+    attack_info:
+    - frame: 48
+      sub_action_id: trex_roar_0
+      damage_type: 1
+      radius: 0
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 108
+      sub_action_id: trex_roar_1
+      damage_type: 1
+      radius: 1500
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: trex_roar_04
+    meta:
+      motion: TRex_Attack_Roar
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: b2ad547a1e157b946ba9be8e34195255, type: 2}
+    attack_info:
+    - frame: 48
+      sub_action_id: trex_roar_0
+      damage_type: 1
+      radius: 0
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 108
+      sub_action_id: trex_roar_1
+      damage_type: 1
+      radius: 1500
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: trex_roar_03
+    meta:
+      motion: TRex_Attack_Roar
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: b2ad547a1e157b946ba9be8e34195255, type: 2}
+    attack_info:
+    - frame: 48
+      sub_action_id: trex_roar_0
+      damage_type: 1
+      radius: 0
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 108
+      sub_action_id: trex_roar_1
+      damage_type: 1
+      radius: 1500
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: trex_attack_turn
+    meta:
+      motion: TRex_Attack_Turn_Tail
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 4ada1a0331c84924697f96771ab07edd, type: 2}
+    attack_info:
+    - frame: 143
+      sub_action_id: trex_attack_turn_0
+      damage_type: 1
+      radius: 1500
+      radius_min: 400
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  active_skills:
+  - key: active_default
+    motion: Trex_Active_Default
+    _clipObj: {fileID: 7400000, guid: 883efb33a24533e4190bc57fb3b1f545, type: 2}
+  etc_motions:
+  - key: trex_idle_walk
+    motion: Trex_Idle_Walk
+    _clipObj: {fileID: 7400000, guid: 772b488c81f26e74c83aec3c4ccbd189, type: 2}
+  - key: trex_run_stop
+    motion: TRex_Run_Stop
+    _clipObj: {fileID: 7400000, guid: 23c64726ec022964daed78b9a8f7fe5e, type: 2}
+  - key: trex_walk_pet
+    motion: Trex_Walk_Pet
+    _clipObj: {fileID: 7400000, guid: 362d1e5189934bc43986cc2b8088109d, type: 2}

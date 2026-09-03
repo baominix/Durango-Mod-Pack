@@ -1,0 +1,1405 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using BepInEx;
+using Durango.Logic.Item;
+using Durango.Network;
+using Durango.Offline;
+using Durango.UI;
+using Durango.UI.Control;
+using Durango.Utils;
+using HarmonyLib;
+using Newtonsoft.Json;
+using L10N;
+using Messages;
+using NestedPrefab;
+using Shared.Ability;
+using Shared.Animal;
+using Shared.Display;
+using Shared.Item;
+using Shared.Pet;
+using Shared.Economy;
+using UnityEngine;
+using Yaml;
+using Yaml.Util;
+
+namespace AnimalHandlingPlugin
+{
+	[BepInPlugin("com.antigravity.animalhandling", "Animal Handling Plugin", "1.1.0")]
+	public class AnimalHandlingPlugin : BaseUnityPlugin
+	{
+		public sealed class PlayerAnimalData
+		{
+			public GenDict SaveData = new GenDict();
+			public List<Messages.Pet> Pets = new List<Messages.Pet>();
+			public Dictionary<string, List<Item>> PetInventories = new Dictionary<string, List<Item>>();
+			public AppearPet ActivePet = default(AppearPet);
+			public Dictionary<string, string> PendingMilestones = new Dictionary<string, string>();
+		}
+
+		private static readonly Dictionary<string, PlayerAnimalData> PlayerData =
+			new Dictionary<string, PlayerAnimalData>();
+		private static Durango.Offline.Player LocalPlayer;
+
+		private void Awake()
+		{
+			new Harmony("com.antigravity.animalhandling").PatchAll(Assembly.GetExecutingAssembly());
+			Logger.LogInfo("AnimalHandlingPlugin loaded (Animal Handling only).");
+		}
+
+		private static PlayerAnimalData GetData(Durango.Offline.Player player)
+		{
+			if (player == null)
+			{
+				return null;
+			}
+
+			PlayerAnimalData data;
+			if (!PlayerData.TryGetValue(player.EntityId, out data))
+			{
+				data = new PlayerAnimalData();
+				PlayerData[player.EntityId] = data;
+			}
+			return data;
+		}
+
+		private static PlayerContext GetContext(Durango.Offline.Player player)
+		{
+			return (PlayerContext)AccessTools.Field(typeof(Durango.Offline.Player), "_context").GetValue(player);
+		}
+
+		private static World GetWorld(Durango.Offline.Player player)
+		{
+			return (World)AccessTools.Field(typeof(Durango.Offline.Player), "_world").GetValue(player);
+		}
+
+		private static void InvokeOnContextChanged(Durango.Offline.Player player)
+		{
+			MethodInfo method = typeof(Durango.Offline.Player).GetMethod(
+				"OnContextChanged",
+				BindingFlags.NonPublic | BindingFlags.Instance);
+			method.Invoke(player, null);
+		}
+
+		private static string GetSavePath(PlayerContext context)
+		{
+			return Path.Combine(Path.GetDirectoryName(context.Path), context.PlayerSlot + ".gen");
+		}
+
+		private static void SanitizePet(ref Messages.Pet pet)
+		{
+			if (pet.Statistics.RequiredExp == 0)
+			{
+				pet.Statistics.RequiredExp = 1;
+			}
+			if (pet.Statistics.MilestonesInformation == null || pet.Statistics.MilestonesInformation.Length == 0)
+			{
+				pet.Statistics.MilestonesInformation = new MilestoneInfo[]
+				{
+					new MilestoneInfo { Level = 10, MilestoneTableId = 10, TagId = null, Acquired = false },
+					new MilestoneInfo { Level = 20, MilestoneTableId = 20, TagId = null, Acquired = false },
+					new MilestoneInfo { Level = 30, MilestoneTableId = 30, TagId = null, Acquired = false },
+					new MilestoneInfo { Level = 40, MilestoneTableId = 40, TagId = null, Acquired = false },
+					new MilestoneInfo { Level = 50, MilestoneTableId = 50, TagId = null, Acquired = false },
+					new MilestoneInfo { Level = 60, MilestoneTableId = 60, TagId = null, Acquired = false }
+				};
+			}
+			if (pet.Statistics.AvailableActiveSkill == null)
+			{
+				pet.Statistics.AvailableActiveSkill = new Messages.PetActiveSkill[0];
+			}
+			if (pet.Statistics.DerivedAbilities == null)
+			{
+				pet.Statistics.DerivedAbilities = new Dictionary<Derived, float>();
+			}
+			if (!pet.Statistics.DerivedAbilities.ContainsKey(Derived.Speed) || pet.Statistics.DerivedAbilities[Derived.Speed] < 10f)
+			{
+				CustomRein custom = GetCustomReinByEntityType(pet.EntityType);
+				pet.Statistics.DerivedAbilities[Derived.Speed] = custom != null ? custom.speed : GetDefaultSpeed(pet.EntityType);
+			}
+			if (!pet.Statistics.DerivedAbilities.ContainsKey(Derived.InventoryCapacity) || pet.Statistics.DerivedAbilities[Derived.InventoryCapacity] < 10f)
+			{
+				CustomRein custom = GetCustomReinByEntityType(pet.EntityType);
+				pet.Statistics.DerivedAbilities[Derived.InventoryCapacity] = custom != null ? custom.capacity : GetDefaultCapacity(pet.EntityType);
+			}
+		}
+
+		private static void LoadData(Durango.Offline.Player player)
+		{
+			try
+			{
+				PlayerContext context = GetContext(player);
+				PlayerAnimalData data = GetData(player);
+				string savePath = GetSavePath(context);
+
+				if (!File.Exists(savePath))
+				{
+					SaveData(player);
+					return;
+				}
+
+				data.SaveData = Json.Read<GenDict>(File.ReadAllBytes(savePath), false) ?? new GenDict();
+				data.Pets = data.SaveData.PetList ?? new List<Messages.Pet>();
+				data.PetInventories = data.SaveData.PetInventories ??
+					new Dictionary<string, List<Item>>();
+				data.ActivePet = data.SaveData.ActivePet;
+				data.PendingMilestones = data.SaveData.PendingMilestones ?? new Dictionary<string, string>();
+
+				for (int i = 0; i < data.Pets.Count; i++)
+				{
+					Messages.Pet pet = data.Pets[i];
+					SanitizePet(ref pet);
+					data.Pets[i] = pet;
+				}
+
+				if (data.ActivePet.PetData != null)
+				{
+					Messages.Pet activePetData = data.ActivePet.PetData.Value;
+					SanitizePet(ref activePetData);
+					data.ActivePet.PetData = new Messages.Pet?(activePetData);
+				}
+			}
+			catch (Exception exception)
+			{
+				UnityEngine.Debug.LogException(exception);
+			}
+		}
+
+		private static void SaveData(Durango.Offline.Player player)
+		{
+			try
+			{
+				PlayerContext context = GetContext(player);
+				PlayerAnimalData data = GetData(player);
+				data.SaveData.PlayerSlot = context.PlayerSlot;
+				data.SaveData.PetList = data.Pets;
+				data.SaveData.PetInventories = data.PetInventories;
+				data.SaveData.ActivePet = data.ActivePet;
+				data.SaveData.PendingMilestones = data.PendingMilestones;
+				File.WriteAllBytes(GetSavePath(context), Json.WriteToBytes(data.SaveData, true, null));
+			}
+			catch (Exception exception)
+			{
+				UnityEngine.Debug.LogException(exception);
+			}
+		}
+
+		[HarmonyPatch(typeof(Durango.Offline.Player), MethodType.Constructor, new Type[] { typeof(string), typeof(Durango.Offline.Connection), typeof(Durango.Offline.World), typeof(Durango.Offline.PlayerContext), typeof(bool) })]
+		private static class PlayerConstructorPatch
+		{
+			private static void Postfix(
+				Durango.Offline.Player __instance,
+				Durango.Offline.Connection connection,
+				World world,
+				PlayerContext context,
+				bool isLocalPlayer)
+			{
+				if (isLocalPlayer)
+				{
+					LocalPlayer = __instance;
+				}
+
+				connection.Recv<GetPetsInfo>(delegate(GetPetsInfo message, PacketHeader header)
+				{
+					SendPetsInfo(__instance, header.Seq);
+				});
+
+				connection.Recv<SpawnPet>(delegate(SpawnPet message, PacketHeader header)
+				{
+					SummonPet(__instance, message);
+				});
+
+				connection.Recv<ReturnPet>(delegate(ReturnPet message, PacketHeader header)
+				{
+					DismissPet(__instance, message);
+				});
+
+				connection.Recv<Mount>(delegate(Mount message, PacketHeader header)
+				{
+					MountPlayer(__instance);
+				});
+
+				connection.Recv<Unmount>(delegate(Unmount message, PacketHeader header)
+				{
+					DismountPlayer(__instance);
+				});
+
+				connection.Recv<GetPetInventory>(delegate(GetPetInventory message, PacketHeader header)
+				{
+					SendPetInventory(__instance, message, header.Seq);
+				});
+
+				connection.Recv<PutInItemsIntoPet>(delegate(PutInItemsIntoPet message, PacketHeader header)
+				{
+					PutItemsIntoPet(__instance, message);
+					__instance.Send<OK>(default(OK), header.Seq);
+				});
+
+				connection.Recv<TakeOutItemsFromPet>(delegate(TakeOutItemsFromPet message, PacketHeader header)
+				{
+					TakeItemsFromPet(__instance, message);
+					if (world.ArtifactManager.TakeOutItems(message.PetId, message.ItemIds))
+					{
+						__instance.Send<OK>(default(OK), header.Seq);
+					}
+					else
+					{
+						__instance.Send<Abort>(default(Abort), header.Seq);
+					}
+				});
+
+				connection.Recv<ReleasePet>(delegate(ReleasePet message, PacketHeader header)
+				{
+					ReleasePet(__instance, message, header.Seq);
+				});
+
+				connection.Recv<GrazePets>(delegate(GrazePets message, PacketHeader header)
+				{
+					GrazePets(__instance, message);
+				});
+
+				connection.Recv<RenamePet>(delegate(RenamePet message, PacketHeader header)
+				{
+					RenamePet(__instance, message, header.Seq);
+				});
+
+				connection.Recv<Feeding>(delegate(Feeding message, PacketHeader header)
+				{
+					FeedPet(__instance, message);
+				});
+
+				connection.Recv<GetMilestoneCandidate>(delegate(GetMilestoneCandidate message, PacketHeader header)
+				{
+					GetMilestoneCandidates(__instance, message, header.Seq);
+				});
+
+				connection.Recv<PickMilestone>(delegate(PickMilestone message, PacketHeader header)
+				{
+					PickMilestone(__instance, message, header.Seq);
+				});
+
+				connection.Recv<PickMilestoneAgain>(delegate(PickMilestoneAgain message, PacketHeader header)
+				{
+					PickMilestoneAgain(__instance, message, header.Seq);
+				});
+
+				connection.Recv<AcceptMilestone>(delegate(AcceptMilestone message, PacketHeader header)
+				{
+					AcceptMilestone(__instance, message, header.Seq);
+				});
+
+				connection.Recv<DrawActiveSkill>(delegate(DrawActiveSkill message, PacketHeader header)
+				{
+					DrawActiveSkill(__instance, message, header.Seq);
+				});
+
+				connection.Recv<RedrawActiveSkill>(delegate(RedrawActiveSkill message, PacketHeader header)
+				{
+					RedrawActiveSkill(__instance, message, header.Seq);
+				});
+
+				LoadData(__instance);
+			}
+		}
+
+		[HarmonyPatch(typeof(Durango.Logic.Item.Inventory), "CheckEnableUseType")]
+		private static class EnableTamingActionPatch
+		{
+			private static void Postfix(UseType useType, ref bool __result)
+			{
+				if (useType == UseType.Taming)
+				{
+					__result = true;
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(InventoryContainerBase), "ItemAction")]
+		private static class TamingMaterialActionPatch
+		{
+			private static bool Prefix(UseType type, IList<ItemData> items)
+			{
+				if (type != UseType.Taming && type != UseType.Imprint && type != UseType.Grazing)
+				{
+					return true;
+				}
+				if (LocalPlayer == null || items == null || items.Count == 0)
+				{
+					return false;
+				}
+
+				// Check if this item is a taming material/crate
+				PlayerContext context = GetContext(LocalPlayer);
+				int itemIndex = context.InventoryItems.FindIndex(delegate(Item item) { return item.Id == items[0].Id; });
+				if (itemIndex >= 0)
+				{
+					PerformanceYaml.Rein rein = PerformanceYaml.GetRein(context.InventoryItems[itemIndex].Prototype);
+					if (rein != null)
+					{
+						ShowTameConfirmation(LocalPlayer, items[0].Id);
+						return false; // Bypass original ItemAction (Show custom confirmation dialog)
+					}
+				}
+
+				return true;
+			}
+		}
+
+		private static void ShowTameConfirmation(Durango.Offline.Player player, string itemId)
+		{
+			PlayerContext context = GetContext(player);
+			int itemIndex = context.InventoryItems.FindIndex(delegate(Item item) { return item.Id == itemId; });
+			if (itemIndex < 0)
+			{
+				UIManager.SystemMsg("Animal Handling", "Taming Material was not found.", 3f);
+				return;
+			}
+
+			Item material = context.InventoryItems[itemIndex];
+			PerformanceYaml.Rein rein = PerformanceYaml.GetRein(material.Prototype);
+			if (rein == null)
+			{
+				UIManager.SystemMsg("Animal Handling", "This item has no animal data.", 3f);
+				return;
+			}
+
+			// Render 3D animal model preview in dialog box
+			try
+			{
+				Yaml.Pet pet = SingletonDict<int, Yaml.Pet>.Get((int)rein.PetEntityType, null);
+				string path = (pet != null) ? AnimalYaml.GetPrefabPath(pet.VehicleEntityType) : null;
+				if (!string.IsNullOrEmpty(path))
+				{
+					MessageBox msgBox = UIManager.MessageBox;
+					UIWidget modelViewer = msgBox.ModelViewer;
+					UIModelViewer componentInChildren = modelViewer.GetComponentInChildren<UIModelViewer>(true);
+					componentInChildren.SetPlainModel(path, new UIModelViewer.Arguments
+					{
+						CameraAngle = 35f,
+						Rotation = 140f,
+						Loaded = componentInChildren.DefaultAnimalPlay("idle", "stand", false)
+					});
+					msgBox.SetCustomWidget(modelViewer, MessageBox.Position.Top);
+				}
+			}
+			catch (Exception ex)
+			{
+				UnityEngine.Debug.LogWarning("Failed to render 3D animal model: " + ex);
+			}
+
+			UIManager.MessageBox.Show(
+				string.Format("Do you wish to bond with {0}?", rein.PetName),
+				"Once a bond is formed, an animal cannot be sold or given to others until that bond is broken.",
+				delegate(int index)
+				{
+					if (index == 0)
+					{
+						AddPetFromTamingMaterial(player, itemId);
+					}
+				},
+				new MessageBox.Button[]
+				{
+					new MessageBox.Button { Text = "Yes", Style = PresetButton.Style.Solid },
+					new MessageBox.Button { Text = "No", Style = PresetButton.Style.Border }
+				});
+		}
+
+		private static void AddPetFromTamingMaterial(Durango.Offline.Player player, string itemId)
+		{
+			PlayerContext context = GetContext(player);
+			PlayerAnimalData data = GetData(player);
+			int itemIndex = context.InventoryItems.FindIndex(delegate(Item item) { return item.Id == itemId; });
+			if (itemIndex < 0 || data.Pets.Any(delegate(Messages.Pet pet) { return pet.EntityId == itemId; }))
+			{
+				return;
+			}
+
+			Item material = context.InventoryItems[itemIndex];
+			PerformanceYaml.Rein rein = PerformanceYaml.GetRein(material.Prototype);
+			if (rein == null)
+			{
+				return;
+			}
+
+			float lifeValue = UnityEngine.Random.Range(15420f, 38219f);
+			Gauge life = new Gauge(lifeValue, 0f, new GaugeNode[]
+			{
+				new GaugeNode { Time = 0.0, Value = lifeValue }
+			});
+			Messages.Reins? materialReins = null;
+			if (material.Ext is Messages.Reins)
+			{
+				materialReins = new Messages.Reins?((Messages.Reins)material.Ext);
+			}
+			CustomRein customRein = GetCustomRein(material.Prototype);
+			float petSpeed = customRein != null ? customRein.speed : GetDefaultSpeed(rein.PetEntityType);
+			float petCapacity = customRein != null ? customRein.capacity : GetDefaultCapacity(rein.PetEntityType);
+			int petSize = customRein != null ? customRein.size : (materialReins == null ? 100 : materialReins.Value.Size);
+
+			Dictionary<Derived, float> abilities = new Dictionary<Derived, float>();
+			abilities[Derived.Speed] = petSpeed;
+			abilities[Derived.InventoryCapacity] = petCapacity;
+			abilities[Derived.Attack] = UnityEngine.Random.Range(456f, 1234f);
+			abilities[Derived.Defense] = UnityEngine.Random.Range(456f, 1234f);
+			abilities[Derived.Accuracy] = UnityEngine.Random.Range(456f, 1234f);
+
+			Messages.Pet petData = new Messages.Pet
+			{
+				EntityId = itemId,
+				EntityType = (ushort)rein.PetEntityType,
+				TamerEntityId = context.AppearPlayer.EntityId,
+				Name = rein.PetName,
+				Rank = (PetRank)UnityEngine.Random.Range(10, 15),
+				Stat = new PetStats
+				{
+					PlaybackRate = rein.PlaybackRate,
+					Size = petSize,
+					Life = life,
+					IsOld = false,
+					Hungry = life,
+					AgingSince = Times.UnixTimeNow(),
+					AgingUntil = Times.UnixTimeNow() + 2592000000.0
+				},
+				Statistics = new PetStatistics
+				{
+					Level = material.Level,
+					Exp = 0,
+					RequiredExp = 1,
+					DerivedAbilities = abilities,
+					MilestonesInformation = new MilestoneInfo[]
+					{
+						new MilestoneInfo { Level = 10, MilestoneTableId = 10, TagId = null, Acquired = false },
+						new MilestoneInfo { Level = 20, MilestoneTableId = 20, TagId = null, Acquired = false },
+						new MilestoneInfo { Level = 30, MilestoneTableId = 30, TagId = null, Acquired = false },
+						new MilestoneInfo { Level = 40, MilestoneTableId = 40, TagId = null, Acquired = false },
+						new MilestoneInfo { Level = 50, MilestoneTableId = 50, TagId = null, Acquired = false },
+						new MilestoneInfo { Level = 60, MilestoneTableId = 60, TagId = null, Acquired = false }
+					},
+					AvailableActiveSkill = new Messages.PetActiveSkill[0]
+				}
+			};
+
+			data.Pets.Add(petData);
+			data.PetInventories[itemId] = new List<Item>();
+			context.InventoryItems.RemoveAt(itemIndex);
+			player.Send<InventoryUpdated>(new InventoryUpdated
+			{
+				EntityId = context.AppearPlayer.EntityId,
+				RemovedItemIds = new string[] { itemId }
+			}, 0U);
+			player.Send<Messages.Pets>(new Messages.Pets { Data = data.Pets.ToArray() }, 0U);
+			InvokeOnContextChanged(player);
+			context.Save();
+			SaveData(player);
+
+			SoundManager.PlayEvent("ui_button_animal_bind");
+			UIManager.Alarm.ShowNotify(
+				string.Format("{0} was added to Animal Handling.", rein.PetName),
+				"act_domesticate_1",
+				true,
+				1.8f,
+				null,
+				null,
+				null);
+			PetGroup petGroup = UIManager.FindScript<PetGroup>();
+			if (petGroup != null)
+			{
+				petGroup.Open(petData.EntityId);
+			}
+		}
+
+		private static float GetOptionalReinValue(PerformanceYaml.Rein rein, string fieldName, float fallback)
+		{
+			FieldInfo field = AccessTools.Field(rein.GetType(), fieldName);
+			if (field == null)
+			{
+				return fallback;
+			}
+			object value = field.GetValue(rein);
+			return value == null ? fallback : Convert.ToSingle(value);
+		}
+
+		private static float GetDefaultSpeed(int entityType)
+		{
+			string name = Yaml.AnimalYaml.GetName(entityType).ToLower();
+			if (name.Contains("raptor") || name.Contains("deino") || name.Contains("ostrich") || name.Contains("zebra"))
+			{
+				return 420f;
+			}
+			if (name.Contains("megaloceros") || name.Contains("elk") || name.Contains("deer") || name.Contains("horse"))
+			{
+				return 380f;
+			}
+			if (name.Contains("compy") || name.Contains("carnivore") || name.Contains("wolf") || name.Contains("smilodon"))
+			{
+				return 350f;
+			}
+			if (name.Contains("stego") || name.Contains("tri") || name.Contains("anky") || name.Contains("brachio") || name.Contains("mammoth"))
+			{
+				return 280f;
+			}
+			return 350f;
+		}
+
+		private static float GetDefaultCapacity(int entityType)
+		{
+			string name = Yaml.AnimalYaml.GetName(entityType).ToLower();
+			if (name.Contains("stego") || name.Contains("tri") || name.Contains("anky") || name.Contains("brachio") || name.Contains("mammoth"))
+			{
+				return 400f;
+			}
+			if (name.Contains("megaloceros") || name.Contains("elk") || name.Contains("deer") || name.Contains("horse"))
+			{
+				return 200f;
+			}
+			if (name.Contains("raptor") || name.Contains("deino") || name.Contains("compy"))
+			{
+				return 100f;
+			}
+			return 150f;
+		}
+
+		private static Dictionary<string, Dictionary<string, CustomRein>> LoadedCustomReins;
+
+		private static void LoadCustomReins()
+		{
+			if (LoadedCustomReins != null) return;
+			try
+			{
+				TextAsset asset = Resources.Load<TextAsset>("offline/assets/performance");
+				if (asset != null)
+				{
+					var wrapper = Newtonsoft.Json.JsonConvert.DeserializeObject<CustomPerformanceWrapper>(asset.text);
+					if (wrapper != null)
+					{
+						LoadedCustomReins = wrapper.ReinsDict;
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				UnityEngine.Debug.LogWarning("Failed to load custom reins: " + ex);
+			}
+			if (LoadedCustomReins == null)
+			{
+				LoadedCustomReins = new Dictionary<string, Dictionary<string, CustomRein>>();
+			}
+		}
+
+		private static CustomRein GetCustomRein(string prototypeId)
+		{
+			LoadCustomReins();
+			Dictionary<string, CustomRein> levelDict;
+			if (LoadedCustomReins.TryGetValue(prototypeId, out levelDict))
+			{
+				foreach (var kvp in levelDict)
+				{
+					return kvp.Value;
+				}
+			}
+			return null;
+		}
+
+		private static CustomRein GetCustomReinByEntityType(int entityType)
+		{
+			LoadCustomReins();
+			foreach (var kvp in LoadedCustomReins)
+			{
+				string protoId = kvp.Key;
+				PerformanceYaml.Rein rein = PerformanceYaml.GetRein(protoId);
+				if (rein != null && rein.PetEntityType == entityType)
+				{
+					foreach (var subKvp in kvp.Value)
+					{
+						return subKvp.Value;
+					}
+				}
+			}
+			return null;
+		}
+
+		public class CustomRein
+		{
+			public float speed;
+			public float capacity;
+			public int size;
+		}
+
+		public class CustomPerformanceWrapper
+		{
+			[JsonProperty("reins")]
+			public Dictionary<string, Dictionary<string, CustomRein>> ReinsDict;
+		}
+
+		private static string GetGameObjectPath(GameObject obj)
+		{
+			string path = "/" + obj.name;
+			while (obj.transform.parent != null)
+			{
+				obj = obj.transform.parent.gameObject;
+				path = "/" + obj.name + path;
+			}
+			return path;
+		}
+
+		private static int FindPetIndex(PlayerAnimalData data, string petId)
+		{
+			return data.Pets.FindIndex(delegate(Messages.Pet p) { return p.EntityId == petId; });
+		}
+
+
+		private static void GetMilestoneCandidates(Durango.Offline.Player player, GetMilestoneCandidate message, uint replyOf)
+		{
+			PlayerAnimalData data = GetData(player);
+			int index = FindPetIndex(data, message.PetId);
+			if (index < 0) return;
+
+			Messages.Pet pet = data.Pets[index];
+
+			MilestoneCandidates candidates = new MilestoneCandidates();
+			candidates.Result = new Pair<string, float>[]
+			{
+				new Pair<string, float>("max_life_plus", 500f),
+				new Pair<string, float>("attack_plus", 30f),
+				new Pair<string, float>("defense_plus", 30f)
+			};
+			candidates.Original = new Pair<string, float>[]
+			{
+				new Pair<string, float>("max_life_plus", pet.Stat.Life.Max()),
+				new Pair<string, float>("attack_plus", pet.Statistics.DerivedAbilities.Get(Derived.Attack, 0f)),
+				new Pair<string, float>("defense_plus", pet.Statistics.DerivedAbilities.Get(Derived.Defense, 0f))
+			};
+
+			player.Send<MilestoneCandidates>(candidates, replyOf);
+		}
+
+		private static void RollMilestoneChoice(Durango.Offline.Player player, string petId, uint replyOf)
+		{
+			PlayerAnimalData data = GetData(player);
+			int index = FindPetIndex(data, petId);
+			if (index < 0) return;
+
+			Messages.Pet pet = data.Pets[index];
+			string[] tags = { "max_life_plus", "attack_plus", "defense_plus", "accuracy_plus", "speed_plus" };
+			string selectedTag = tags[UnityEngine.Random.Range(0, tags.Length)];
+
+			data.PendingMilestones[petId] = selectedTag;
+			SaveData(player);
+
+			var originalStat = new Dictionary<Derived, float>();
+			var newStat = new Dictionary<Derived, float>();
+
+			originalStat[Derived.LifeMax] = pet.Stat.Life.Max();
+			originalStat[Derived.Attack] = pet.Statistics.DerivedAbilities.Get(Derived.Attack, 0f);
+			originalStat[Derived.Defense] = pet.Statistics.DerivedAbilities.Get(Derived.Defense, 0f);
+			originalStat[Derived.Accuracy] = pet.Statistics.DerivedAbilities.Get(Derived.Accuracy, 0f);
+			originalStat[Derived.Speed] = pet.Statistics.DerivedAbilities.Get(Derived.Speed, 0f);
+
+			newStat[Derived.LifeMax] = originalStat[Derived.LifeMax] + (selectedTag == "max_life_plus" ? 500f : 0f);
+			newStat[Derived.Attack] = originalStat[Derived.Attack] + (selectedTag == "attack_plus" ? 30f : 0f);
+			newStat[Derived.Defense] = originalStat[Derived.Defense] + (selectedTag == "defense_plus" ? 30f : 0f);
+			newStat[Derived.Accuracy] = originalStat[Derived.Accuracy] + (selectedTag == "accuracy_plus" ? 30f : 0f);
+			newStat[Derived.Speed] = originalStat[Derived.Speed] + (selectedTag == "speed_plus" ? 0.1f : 0f);
+
+			MilestoneResult result = new MilestoneResult
+			{
+				SelectedTagId = selectedTag,
+				OriginalStat = originalStat,
+				NewStat = newStat,
+				RetryCost = new Money(0, Shared.Economy.Currency.TStone)
+			};
+
+			player.Send<MilestoneResult>(result, replyOf);
+		}
+
+		private static void PickMilestone(Durango.Offline.Player player, PickMilestone message, uint replyOf)
+		{
+			RollMilestoneChoice(player, message.PetId, replyOf);
+		}
+
+		private static void PickMilestoneAgain(Durango.Offline.Player player, PickMilestoneAgain message, uint replyOf)
+		{
+			RollMilestoneChoice(player, message.PetId, replyOf);
+		}
+
+		private static void SetPrivateField(object obj, string fieldName, object value)
+		{
+			FieldInfo field = obj.GetType().GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+			field.SetValue(obj, value);
+		}
+
+		private static void AcceptMilestone(Durango.Offline.Player player, AcceptMilestone message, uint replyOf)
+		{
+			PlayerAnimalData data = GetData(player);
+			int index = FindPetIndex(data, message.PetId);
+			if (index < 0) return;
+
+			Messages.Pet pet = data.Pets[index];
+			string selectedTag;
+			if (!data.PendingMilestones.TryGetValue(message.PetId, out selectedTag))
+			{
+				selectedTag = "max_life_plus";
+			}
+
+			float lifeIncrement = selectedTag == "max_life_plus" ? 500f : 0f;
+			float attackIncrement = selectedTag == "attack_plus" ? 30f : 0f;
+			float defenseIncrement = selectedTag == "defense_plus" ? 30f : 0f;
+			float accuracyIncrement = selectedTag == "accuracy_plus" ? 30f : 0f;
+			float speedIncrement = selectedTag == "speed_plus" ? 0.1f : 0f;
+
+			var originalStat = new Dictionary<Derived, float>();
+			var newStat = new Dictionary<Derived, float>();
+
+			originalStat[Derived.LifeMax] = pet.Stat.Life.Max();
+			originalStat[Derived.Attack] = pet.Statistics.DerivedAbilities.Get(Derived.Attack, 0f);
+			originalStat[Derived.Defense] = pet.Statistics.DerivedAbilities.Get(Derived.Defense, 0f);
+			originalStat[Derived.Accuracy] = pet.Statistics.DerivedAbilities.Get(Derived.Accuracy, 0f);
+			originalStat[Derived.Speed] = pet.Statistics.DerivedAbilities.Get(Derived.Speed, 0f);
+
+			if (lifeIncrement > 0f)
+			{
+				float oldMax = pet.Stat.Life.Max();
+				float newMax = oldMax + lifeIncrement;
+				SetPrivateField(pet.Stat.Life, "_max", newMax);
+				if (pet.Stat.Life.Determination != null && pet.Stat.Life.Determination.Length > 0)
+				{
+					pet.Stat.Life.Determination[0].Value += lifeIncrement;
+				}
+			}
+			if (attackIncrement > 0f) pet.Statistics.DerivedAbilities[Derived.Attack] = originalStat[Derived.Attack] + attackIncrement;
+			if (defenseIncrement > 0f) pet.Statistics.DerivedAbilities[Derived.Defense] = originalStat[Derived.Defense] + defenseIncrement;
+			if (accuracyIncrement > 0f) pet.Statistics.DerivedAbilities[Derived.Accuracy] = originalStat[Derived.Accuracy] + accuracyIncrement;
+			if (speedIncrement > 0f) pet.Statistics.DerivedAbilities[Derived.Speed] = originalStat[Derived.Speed] + speedIncrement;
+
+			newStat[Derived.LifeMax] = pet.Stat.Life.Max();
+			newStat[Derived.Attack] = pet.Statistics.DerivedAbilities.Get(Derived.Attack, 0f);
+			newStat[Derived.Defense] = pet.Statistics.DerivedAbilities.Get(Derived.Defense, 0f);
+			newStat[Derived.Accuracy] = pet.Statistics.DerivedAbilities.Get(Derived.Accuracy, 0f);
+			newStat[Derived.Speed] = pet.Statistics.DerivedAbilities.Get(Derived.Speed, 0f);
+
+			if (pet.Statistics.MilestonesInformation != null)
+			{
+				for (int i = 0; i < pet.Statistics.MilestonesInformation.Length; i++)
+				{
+					if (pet.Statistics.Level >= pet.Statistics.MilestonesInformation[i].Level && !pet.Statistics.MilestonesInformation[i].Acquired)
+					{
+						pet.Statistics.MilestonesInformation[i].Acquired = true;
+						pet.Statistics.MilestonesInformation[i].TagId = selectedTag;
+						break;
+					}
+				}
+			}
+			pet.Stat.LastMilestoneAccepted = true;
+
+			data.Pets[index] = pet;
+			data.PendingMilestones.Remove(message.PetId);
+			
+			if (data.ActivePet.PetData != null && data.ActivePet.PetData.Value.EntityId == message.PetId)
+			{
+				data.ActivePet.PetData = new Messages.Pet?(pet);
+			}
+			SaveData(player);
+
+			MilestoneResult result = new MilestoneResult
+			{
+				SelectedTagId = selectedTag,
+				OriginalStat = originalStat,
+				NewStat = newStat,
+				RetryCost = new Money(0, Shared.Economy.Currency.TStone)
+			};
+			player.Send<MilestoneResult>(result, replyOf);
+		}
+
+		private static void DrawActiveSkill(Durango.Offline.Player player, DrawActiveSkill message, uint replyOf)
+		{
+			PlayerAnimalData data = GetData(player);
+			int index = FindPetIndex(data, message.PetId);
+			if (index < 0) return;
+
+			Messages.Pet pet = data.Pets[index];
+			List<Pair<Messages.PetActiveSkill, float>> candidates = PetUtil.GetActiveSkillCandidates(pet);
+			Messages.PetActiveSkill selectedSkill;
+			if (candidates != null && candidates.Count > 0)
+			{
+				selectedSkill = candidates[UnityEngine.Random.Range(0, candidates.Count)].Item1;
+			}
+			else
+			{
+				selectedSkill = new Messages.PetActiveSkill { SkillId = "bite", Rank = SkillRank.C };
+			}
+
+			pet.Statistics.AvailableActiveSkill = new Messages.PetActiveSkill[] { selectedSkill };
+			data.Pets[index] = pet;
+			
+			if (data.ActivePet.PetData != null && data.ActivePet.PetData.Value.EntityId == message.PetId)
+			{
+				data.ActivePet.PetData = new Messages.Pet?(pet);
+			}
+			SaveData(player);
+
+			DrawSkillResult result = new DrawSkillResult
+			{
+				Skill = selectedSkill,
+				RetryCost = new Money(0, Shared.Economy.Currency.TStone)
+			};
+			player.Send<DrawSkillResult>(result, replyOf);
+		}
+
+		private static void RedrawActiveSkill(Durango.Offline.Player player, RedrawActiveSkill message, uint replyOf)
+		{
+			PlayerAnimalData data = GetData(player);
+			int index = FindPetIndex(data, message.PetId);
+			if (index < 0) return;
+
+			Messages.Pet pet = data.Pets[index];
+			List<Pair<Messages.PetActiveSkill, float>> candidates = PetUtil.GetActiveSkillCandidates(pet);
+			Messages.PetActiveSkill selectedSkill;
+			if (candidates != null && candidates.Count > 0)
+			{
+				selectedSkill = candidates[UnityEngine.Random.Range(0, candidates.Count)].Item1;
+			}
+			else
+			{
+				selectedSkill = new Messages.PetActiveSkill { SkillId = "bite", Rank = SkillRank.C };
+			}
+
+			pet.Statistics.AvailableActiveSkill = new Messages.PetActiveSkill[] { selectedSkill };
+			data.Pets[index] = pet;
+
+			if (data.ActivePet.PetData != null && data.ActivePet.PetData.Value.EntityId == message.PetId)
+			{
+				data.ActivePet.PetData = new Messages.Pet?(pet);
+			}
+			SaveData(player);
+
+			DrawSkillResult result = new DrawSkillResult
+			{
+				Skill = selectedSkill,
+				RetryCost = new Money(0, Shared.Economy.Currency.TStone)
+			};
+			player.Send<DrawSkillResult>(result, replyOf);
+		}
+
+		private static void SendPetsInfo(Durango.Offline.Player player, uint replyOf)
+		{
+			PlayerAnimalData data = GetData(player);
+			PetsInfo info = default(PetsInfo);
+			info.Pets.Data = data.Pets.ToArray();
+			List<Messages.Pet> grazedPets = GetWorld(player).GetGrazedPets();
+			info.GrazedPets.Data = grazedPets == null ? new Messages.Pet[0] : grazedPets.ToArray();
+			info.GrazableCount = 8;
+			player.Send<PetsInfo>(info, replyOf);
+		}
+
+		private static void SummonPet(Durango.Offline.Player player, SpawnPet message)
+		{
+			PlayerAnimalData data = GetData(player);
+			if (data.ActivePet.PetData != null)
+			{
+				PetManager.ReturnMyPet(data.ActivePet.EntityId, null);
+				PetManager.SpawnMyPet(message.PetId, null);
+				return;
+			}
+
+			if (!data.PetInventories.ContainsKey(message.PetId))
+			{
+				data.PetInventories.Add(message.PetId, new List<Item>());
+			}
+
+			Messages.Pet selectedPet = default(Messages.Pet);
+			for (int i = 0; i < data.Pets.Count; i++)
+			{
+				if (data.Pets[i].EntityId == message.PetId)
+				{
+					selectedPet = data.Pets[i];
+					selectedPet.IsSpawned = true;
+					data.Pets[i] = selectedPet;
+					break;
+				}
+			}
+
+			Gauge life = new Gauge(15240f, 0f, new GaugeNode[]
+			{
+				new GaugeNode { Time = 0.0, Value = 15240f }
+			});
+			Survival survival = default(Survival);
+			survival.Life = life;
+
+			AppearPet appearPet = new AppearPet
+			{
+				EntityId = selectedPet.EntityId,
+				IsAlive = true,
+				PetData = new Messages.Pet?(selectedPet),
+				Move = null,
+				EntityType = selectedPet.EntityType,
+				Survival = survival
+			};
+
+			player.Send<AppearPet>(appearPet, 0U);
+			data.ActivePet = appearPet;
+			InvokeOnContextChanged(player);
+			SaveData(player);
+		}
+
+		private static void MountPlayer(Durango.Offline.Player player)
+		{
+			PlayerContext context = GetContext(player);
+			PlayerAnimalData data = GetData(player);
+			context.AppearPlayer.Display.BoardingOn = BoardingOn.Pet;
+			context.AppearPlayer.Display.VehicleEntityId = data.ActivePet.EntityId;
+			player.Send<PlayerDisplay>(context.AppearPlayer.Display, 0U);
+			InvokeOnContextChanged(player);
+		}
+
+		private static void DismountPlayer(Durango.Offline.Player player)
+		{
+			PlayerContext context = GetContext(player);
+			context.AppearPlayer.Display.BoardingOn = BoardingOn.None;
+			context.AppearPlayer.Display.VehicleEntityId = null;
+			player.Send<PlayerDisplay>(context.AppearPlayer.Display, 0U);
+			InvokeOnContextChanged(player);
+		}
+
+		private static void DismissPet(Durango.Offline.Player player, ReturnPet message)
+		{
+			PlayerAnimalData data = GetData(player);
+			string tamerEntityId = null;
+			if (data.ActivePet.PetData != null)
+			{
+				tamerEntityId = data.ActivePet.PetData.Value.TamerEntityId;
+			}
+
+			player.Send<DisappearPet>(new DisappearPet
+			{
+				TamerEntityId = tamerEntityId,
+				EntityId = message.PetId
+			}, 0U);
+
+			data.ActivePet = default(AppearPet);
+			InvokeOnContextChanged(player);
+			SaveData(player);
+		}
+
+		private static void ReleasePet(Durango.Offline.Player player, ReleasePet message, uint sequence)
+		{
+			PlayerAnimalData data = GetData(player);
+			if (data.ActivePet.EntityId == message.PetId)
+			{
+				PetManager.ReturnMyPet(data.ActivePet.EntityId, null);
+				data.ActivePet = default(AppearPet);
+			}
+
+			Connections.Frontend.Send<Cheat>(new Cheat
+			{
+				_Cheat = "remove_pet " + message.PetId
+			}, false, 0U);
+
+			data.Pets.RemoveAll(delegate(Messages.Pet pet) { return pet.EntityId == message.PetId; });
+			data.PetInventories.Remove(message.PetId);
+			player.Send<OK>(default(OK), sequence);
+			SaveData(player);
+		}
+
+		private static void SendPetInventory(Durango.Offline.Player player, GetPetInventory message, uint seq)
+		{
+			PlayerAnimalData data = GetData(player);
+			Messages.Pet selectedPet = default(Messages.Pet);
+			for (int i = 0; i < data.Pets.Count; i++)
+			{
+				if (data.Pets[i].EntityId == message.EntityId)
+				{
+					selectedPet = data.Pets[i];
+					break;
+				}
+			}
+
+			List<Item> items;
+			if (!data.PetInventories.TryGetValue(message.EntityId, out items))
+			{
+				items = new List<Item>();
+				data.PetInventories[message.EntityId] = items;
+			}
+
+			float capacity = selectedPet.Statistics.DerivedAbilities.Get(Derived.InventoryCapacity, 200f);
+			PetInventory inventory = default(PetInventory);
+			inventory.Inven.EntityId = message.EntityId;
+			inventory.Inven.InventoryInfos.EntityId = message.EntityId;
+			inventory.Inven.InventoryItems.EntityId = message.EntityId;
+			inventory.Inven.InventoryItems.Items = items.ToArray();
+			inventory.Inven.InventoryInfos.MaxSize = (int)capacity;
+			player.Send<PetInventory>(inventory, seq);
+		}
+
+		private static void GrazePets(Durango.Offline.Player player, GrazePets message)
+		{
+			PlayerAnimalData data = GetData(player);
+			if (message.PetIdsToGraze.Contains(data.ActivePet.EntityId))
+			{
+				PetManager.ReturnMyPet(data.ActivePet.EntityId, null);
+				data.ActivePet = default(AppearPet);
+			}
+
+			foreach (string petId in message.PetIdsToGraze)
+			{
+				Connections.Frontend.Send<Cheat>(new Cheat
+				{
+					_Cheat = "remove_pet " + petId
+				}, false, 0U);
+				Connections.Frontend.Send<Cheat>(new Cheat
+				{
+					_Cheat = "pet_grazing " + petId
+				}, false, 0U);
+			}
+
+			SaveData(player);
+		}
+
+		private static void PutItemsIntoPet(Durango.Offline.Player player, PutInItemsIntoPet message)
+		{
+			PlayerContext context = GetContext(player);
+			PlayerAnimalData data = GetData(player);
+			List<Item> petItems;
+			if (!data.PetInventories.TryGetValue(message.PetId, out petItems))
+			{
+				petItems = new List<Item>();
+				data.PetInventories[message.PetId] = petItems;
+			}
+
+			petItems.AddRange(context.InventoryItems.FindAll(
+				delegate(Item item) { return message.ItemIds.Any(delegate(string id) { return id == item.Id; }); }));
+			context.InventoryItems.RemoveAll(
+				delegate(Item item) { return message.ItemIds.Any(delegate(string id) { return id == item.Id; }); });
+
+			player.Send<InventoryUpdated>(new InventoryUpdated
+			{
+				EntityId = context.AppearPlayer.EntityId,
+				RemovedItemIds = message.ItemIds
+			}, 0U);
+			player.Send<InventoryUpdated>(new InventoryUpdated
+			{
+				EntityId = message.PetId,
+				Items = petItems.ToArray()
+			}, 0U);
+
+			UpdatePetInventoryUsage(player, message.PetId, petItems.Count);
+			InvokeOnContextChanged(player);
+			context.Save();
+			SaveData(player);
+		}
+
+		private static void TakeItemsFromPet(Durango.Offline.Player player, TakeOutItemsFromPet message)
+		{
+			PlayerContext context = GetContext(player);
+			PlayerAnimalData data = GetData(player);
+			List<Item> petItems;
+			if (!data.PetInventories.TryGetValue(message.PetId, out petItems))
+			{
+				petItems = new List<Item>();
+				data.PetInventories[message.PetId] = petItems;
+			}
+
+			context.InventoryItems.AddRange(petItems.FindAll(
+				delegate(Item item) { return message.ItemIds.Any(delegate(string id) { return id == item.Id; }); }));
+			petItems.RemoveAll(
+				delegate(Item item) { return message.ItemIds.Any(delegate(string id) { return id == item.Id; }); });
+
+			player.Send<InventoryUpdated>(new InventoryUpdated
+			{
+				EntityId = message.PetId,
+				RemovedItemIds = message.ItemIds
+			}, 0U);
+			player.Send<InventoryUpdated>(new InventoryUpdated
+			{
+				EntityId = context.AppearPlayer.EntityId,
+				Items = context.InventoryItems.ToArray()
+			}, 0U);
+
+			UpdatePetInventoryUsage(player, message.PetId, petItems.Count);
+			InvokeOnContextChanged(player);
+			context.Save();
+			SaveData(player);
+		}
+
+		private static void UpdatePetInventoryUsage(Durango.Offline.Player player, string petId, int count)
+		{
+			PlayerAnimalData data = GetData(player);
+			player.Send<PetStats>(new PetStats { InventoryUsage = count }, 0U);
+
+			int index = data.Pets.FindIndex(delegate(Messages.Pet pet) { return pet.EntityId == petId; });
+			if (index < 0)
+			{
+				return;
+			}
+
+			Messages.Pet updatedPet = data.Pets[index];
+			updatedPet.Stat.InventoryUsage = count;
+			data.Pets[index] = updatedPet;
+		}
+
+		private static void FeedPet(Durango.Offline.Player player, Feeding message)
+		{
+			// The original offline build has no complete feeding calculation.
+		}
+
+		private static void RenamePet(Durango.Offline.Player player, RenamePet message, uint sequence)
+		{
+			PlayerAnimalData data = GetData(player);
+			int index = data.Pets.FindIndex(delegate(Messages.Pet pet) { return pet.EntityId == message.PetId; });
+			if (index >= 0)
+			{
+				Messages.Pet updatedPet = data.Pets[index];
+				updatedPet.Name = message.Name;
+				data.Pets[index] = updatedPet;
+				player.Send<Messages.Pet>(updatedPet, 0U);
+			}
+
+			player.Send<OK>(default(OK), sequence);
+			InvokeOnContextChanged(player);
+			SaveData(player);
+		}
+
+		[HarmonyPatch(typeof(PetGroup), "Start")]
+		private static class PetGroupStartPatch
+		{
+			private static bool Prefix(PetGroup __instance)
+			{
+				AccessTools.Field(typeof(PetGroup), "_openCloseSound").SetValue(__instance, UISound.GroupType.Pet);
+
+				NestedPrefabLinker tabLinker = (NestedPrefabLinker)AccessTools.Field(
+					typeof(PetGroup), "_petListTabLinker").GetValue(__instance);
+				HorizontalTabList tabs = tabLinker.Object.GetComponent<HorizontalTabList>();
+				AccessTools.Field(typeof(PetGroup), "_petListTabs").SetValue(__instance, tabs);
+				tabs.BeginLoad();
+				PetGroup.PetOwnType[] ownTypes = Enums<PetGroup.PetOwnType>.All();
+				for (int i = 0; i < ownTypes.Length; i++)
+				{
+					tabs.AddText(ownTypes[i].GetName());
+				}
+				tabs.EndLoadByFitOnWidget();
+				tabs.Clicked += CreateDelegate<Action<int>>(__instance, "SelectTab");
+
+				UITitle title = (UITitle)AccessTools.Field(typeof(PetGroup), "_titleWidget").GetValue(__instance);
+				title.Object.SetTitle(T._("Animal Handling"));
+
+				PetListWidget petList = (PetListWidget)AccessTools.Field(typeof(PetGroup), "_petList").GetValue(__instance);
+				petList.PetSelected += CreateDelegate<Action<Messages.Pet>>(__instance, "OnPetSelect");
+
+				PetInfoWidget petInfo = (PetInfoWidget)AccessTools.Field(typeof(PetGroup), "_petInfoWidget").GetValue(__instance);
+				petInfo.PetActionClicked += CreateDelegate<Action<PetInfoWidget.PetAction, Messages.Pet>>(
+					__instance, "OnPetActionClick");
+
+				PetPreviewWidget preview = (PetPreviewWidget)AccessTools.Field(typeof(PetGroup), "_petPreview").GetValue(__instance);
+				preview.Renamed += CreateDelegate<Action<Messages.Pet>>(__instance, "RenamePet");
+				preview.MilestonePicked += CreateDelegate<Action<Messages.Pet, int>>(__instance, "PetMilestonePick");
+				preview.ActiveSkillPicked += CreateDelegate<Action<Messages.Pet>>(__instance, "PetActiveSkillPick");
+				preview.MilestoneHelpClicked += CreateDelegate<Action<Messages.Pet>>(__instance, "ShowPetMilestonHelp");
+
+				Durango.Utils.Singleton<PetManager>.Instance().PetActiveSkillUsed +=
+					CreateDelegate<Action<PetActiveSkillUsed>>(__instance, "OnPetActiveSkillUsed");
+				__instance.OnOpenSucceed += CreateDelegate<Action>(__instance, "Opened");
+
+
+
+				GameObject[] helpButtons = (GameObject[])AccessTools.Field(
+					typeof(PetGroup), "_cardInfoButtons").GetValue(__instance);
+				if (helpButtons != null)
+				{
+					UIEventListener.VoidDelegate helpHandler =
+						CreateDelegate<UIEventListener.VoidDelegate>(__instance, "OnClickHelpButton");
+					foreach (GameObject button in helpButtons)
+					{
+						if (button != null)
+						{
+							UIEventListener listener = UIEventListener.Get(button);
+							listener.onClick = (UIEventListener.VoidDelegate)Delegate.Combine(listener.onClick, helpHandler);
+						}
+					}
+				}
+
+
+
+				MethodInfo setChildrenActive = typeof(UIBase).GetMethod(
+					"SetChildrenActive",
+					BindingFlags.NonPublic | BindingFlags.Instance);
+				setChildrenActive.Invoke(__instance, new object[] { false });
+				return false;
+			}
+
+
+
+			private static T CreateDelegate<T>(object target, string methodName) where T : class
+			{
+				MethodInfo method = target.GetType().GetMethod(
+					methodName,
+					BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+				return Delegate.CreateDelegate(typeof(T), target, method) as T;
+			}
+
+			private static void SetButtonHandler(PetGroup group, string fieldName, string methodName)
+			{
+				GameObject button = (GameObject)AccessTools.Field(typeof(PetGroup), fieldName).GetValue(group);
+				MethodInfo method = typeof(PetGroup).GetMethod(methodName, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+				UIEventListener.Get(button).onClick = (UIEventListener.VoidDelegate)Delegate.CreateDelegate(
+					typeof(UIEventListener.VoidDelegate), method);
+			}
+		}
+
+		[HarmonyPatch(typeof(PetGroup), "Opened")]
+		private static class PetGroupOpenedPatch
+		{
+			private static void Postfix(PetGroup __instance)
+			{
+				try
+				{
+					GameObject petCountBtn = (GameObject)AccessTools.Field(typeof(PetGroup), "_petCountButton").GetValue(__instance);
+					GameObject grazedBtn = (GameObject)AccessTools.Field(typeof(PetGroup), "_grazedPetCountButton").GetValue(__instance);
+					GameObject voucherBtn = (GameObject)AccessTools.Field(typeof(PetGroup), "_petVoucherButton").GetValue(__instance);
+
+					if (petCountBtn != null) petCountBtn.SetActive(false);
+					if (grazedBtn != null) grazedBtn.SetActive(false);
+					if (voucherBtn != null) voucherBtn.SetActive(false);
+
+					Transform uiTitle = __instance.transform.Find("Container/UITitle");
+					if (uiTitle != null)
+					{
+						Transform mobileCurrency = uiTitle.Find("Currency");
+						if (mobileCurrency != null)
+						{
+							mobileCurrency.gameObject.SetActive(false);
+						}
+
+						UITitle titleWidget = (UITitle)AccessTools.Field(typeof(PetGroup), "_titleWidget").GetValue(__instance);
+						if (titleWidget != null && titleWidget.Object != null)
+						{
+							UITitleWidget pcTitleWidget = titleWidget.Object;
+							GameObject[] pcCurrencies = (GameObject[])AccessTools.Field(pcTitleWidget.GetType(), "_currencies").GetValue(pcTitleWidget);
+							if (pcCurrencies != null)
+							{
+								if (pcCurrencies.Length > 0 && pcCurrencies[0] != null) pcCurrencies[0].SetActive(false);
+								if (pcCurrencies.Length > 1 && pcCurrencies[1] != null) pcCurrencies[1].SetActive(true);
+								if (pcCurrencies.Length > 2 && pcCurrencies[2] != null) pcCurrencies[2].SetActive(true);
+							}
+						}
+					}
+				}
+				catch (Exception ex)
+				{
+					UnityEngine.Debug.LogException(ex);
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(PetGroup), "RefreshPetCountLabel")]
+		private static class PetGroupRefreshPetCountLabelPatch
+		{
+			private static void Postfix(PetGroup __instance)
+			{
+				try
+				{
+					UITitle titleWidget = (UITitle)AccessTools.Field(typeof(PetGroup), "_titleWidget").GetValue(__instance);
+					if (titleWidget == null || titleWidget.Object == null) return;
+
+					UITitleWidget pcTitleWidget = titleWidget.Object;
+					UILabel pcPetCountLabel = (UILabel)AccessTools.Field(typeof(UITitleWidget_PC), "_petCountLabel").GetValue(pcTitleWidget);
+					if (pcPetCountLabel == null) return;
+
+					PetsInfo? info = (PetsInfo?)AccessTools.Field(typeof(PetGroup), "_info").GetValue(__instance);
+					PetGroup.PetOwnType currentTabType = (PetGroup.PetOwnType)AccessTools.Field(typeof(PetGroup), "_currentTabType").GetValue(__instance);
+
+					if (currentTabType == PetGroup.PetOwnType.Holding)
+					{
+						int num = (info != null) ? KUtility.GetSize<Messages.Pet>(info.Value.Pets.Data) : 0;
+						int num2 = (int)GameSystem<StatisticsSystem>.Instance().GetDeriveds(Derived.MaxTamingPet, 99f);
+						pcPetCountLabel.text = string.Format("<em>{0}</em> <weak>/ {1}</weak>", num, num2);
+					}
+					else if (currentTabType == PetGroup.PetOwnType.Grazing)
+					{
+						int num3 = (info != null) ? KUtility.GetSize<Messages.Pet>(info.Value.GrazedPets.Data) : 0;
+						int num4 = (info != null) ? info.Value.GrazableCount : 0;
+						pcPetCountLabel.text = string.Format("<em>{0}</em> <weak>/ {1}</weak>", num3, num4);
+					}
+				}
+				catch (Exception ex)
+				{
+					UnityEngine.Debug.LogException(ex);
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(UITitleWidget_PC), "UpdatePetCount")]
+		private static class TitleWidgetPCUpdatePetCountPatch
+		{
+			private static void Postfix(UITitleWidget_PC __instance)
+			{
+				try
+				{
+					PetGroup petGroup = UIManager.FindScript<PetGroup>();
+					if (petGroup != null && petGroup.IsOpened)
+					{
+						MethodInfo refreshMethod = typeof(PetGroup).GetMethod("RefreshPetCountLabel", BindingFlags.NonPublic | BindingFlags.Instance);
+						refreshMethod.Invoke(petGroup, null);
+					}
+				}
+				catch (Exception ex)
+				{
+					UnityEngine.Debug.LogException(ex);
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(PetManager), "TrySetTamerPlayer")]
+		private static class PetManagerTrySetTamerPlayerPatch
+		{
+			private static bool Prefix(PetAI petAi, Messages.Pet msg, ref bool __result)
+			{
+				try
+				{
+					PlayerBehavior localPlayer = PlayerBehavior.LocalPlayer;
+					if (localPlayer == null)
+					{
+						__result = false;
+						return false;
+					}
+					
+					if (localPlayer.Driver.IsVehicleKindOf<VehicleAirBalloon>())
+					{
+						__result = false;
+						return false;
+					}
+					VehicleBase vehicle = petAi.GetComponent<VehicleBase>();
+					if (vehicle != null)
+					{
+						localPlayer.Driver.SetVehicle(vehicle, true);
+						if (vehicle.MoveSpeed < 10f)
+						{
+							CustomRein custom = GetCustomReinByEntityType(msg.EntityType);
+							vehicle.MoveSpeed = custom != null ? custom.speed : GetDefaultSpeed(msg.EntityType);
+						}
+					}
+					petAi.SetMaster(localPlayer.gameObject, msg.IsBoarding);
+					
+					__result = true;
+					return false;
+				}
+				catch (Exception ex)
+				{
+					UnityEngine.Debug.LogException(ex);
+					__result = false;
+					return true;
+				}
+			}
+		}
+	}
+
+	public class GenDict
+	{
+		public int PlayerSlot;
+		public List<Messages.Pet> PetList;
+		public Dictionary<string, List<Item>> PetInventories;
+		public AppearPet ActivePet;
+		public Dictionary<string, string> PendingMilestones;
+	}
+}

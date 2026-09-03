@@ -16,6 +16,8 @@ namespace BaoX.DurangoOriginal.PlayerProgressionMod
         private const string ExpKey = "character_exp";
         private const string VersionKey = "character_progression_version";
         private static readonly Dictionary<PlayerContext, PlayerProgressionState> Attached = new Dictionary<PlayerContext, PlayerProgressionState>();
+        private static readonly HashSet<PlayerContext> Dirty = new HashSet<PlayerContext>();
+        private static readonly object Gate = new object();
 
         internal static bool IsProgressionMode(PlayerContext context)
         {
@@ -110,6 +112,82 @@ namespace BaoX.DurangoOriginal.PlayerProgressionMod
             return Load(context, out isNew);
         }
 
+        internal static void MarkDirty(PlayerContext context)
+        {
+            if (context == null)
+            {
+                return;
+            }
+            lock (Gate)
+            {
+                Dirty.Add(context);
+            }
+        }
+
+        internal static void MarkSaved(PlayerContext context)
+        {
+            if (context == null)
+            {
+                return;
+            }
+            lock (Gate)
+            {
+                Dirty.Remove(context);
+            }
+        }
+
+        internal static void Flush(PlayerContext context)
+        {
+            if (context == null)
+            {
+                return;
+            }
+
+            lock (Gate)
+            {
+                if (!Dirty.Contains(context))
+                {
+                    return;
+                }
+            }
+
+            context.Save();
+            SaveAttached(context);
+            lock (Gate)
+            {
+                Dirty.Remove(context);
+            }
+            PlayerProgressionPlugin.Log.LogInfo(
+                "Deferred character XP flushed to disk.");
+        }
+
+        internal static void FlushAll()
+        {
+            PlayerContext[] contexts;
+            lock (Gate)
+            {
+                contexts = new PlayerContext[Dirty.Count];
+                Dirty.CopyTo(contexts);
+            }
+            for (int i = 0; i < contexts.Length; i++)
+            {
+                Flush(contexts[i]);
+            }
+        }
+
+        internal static void Detach(PlayerContext context)
+        {
+            if (context == null)
+            {
+                return;
+            }
+            lock (Gate)
+            {
+                Dirty.Remove(context);
+                Attached.Remove(context);
+            }
+        }
+
         internal static void SaveAttached(PlayerContext context)
         {
             PlayerProgressionState state;
@@ -145,6 +223,16 @@ namespace BaoX.DurangoOriginal.PlayerProgressionMod
         }
     }
 
+    [HarmonyPatch(typeof(PlayerContext), "Save")]
+    internal static class PlayerContextProgressionSavePatch
+    {
+        private static void Postfix(PlayerContext __instance)
+        {
+            ProgressionPersistence.SaveAttached(__instance);
+            ProgressionPersistence.MarkSaved(__instance);
+        }
+    }
+
     [HarmonyPatch(typeof(PlayerContext), "Initialize")]
     internal static class PlayerContextProgressionInitializePatch
     {
@@ -159,20 +247,18 @@ namespace BaoX.DurangoOriginal.PlayerProgressionMod
             PlayerProgressionState state = ProgressionPersistence.Load(__instance, out isNew);
             state.ApplyToContext(isNew);
             __instance.Save();
+            ProgressionPersistence.SaveAttached(__instance);
 
             PlayerProgressionPlugin.Log.LogInfo("Progression initialized: level=" + state.Level + " exp=" + state.Experience + " new=" + isNew);
         }
     }
 
-    [HarmonyPatch(typeof(PlayerContext), "Save")]
-    internal static class PlayerContextProgressionSavePatch
+    [HarmonyPatch(typeof(Server), "EndServer")]
+    internal static class ServerEndProgressionSavePatch
     {
-        private static void Postfix(PlayerContext __instance)
+        private static void Prefix()
         {
-            if (ProgressionPersistence.IsProgressionMode(__instance))
-            {
-                ProgressionPersistence.SaveAttached(__instance);
-            }
+            ProgressionPersistence.FlushAll();
         }
     }
 }

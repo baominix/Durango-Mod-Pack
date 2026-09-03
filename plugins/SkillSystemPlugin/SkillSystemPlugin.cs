@@ -6,11 +6,12 @@ using HarmonyLib;
 namespace BaoX.DurangoOriginal.SkillSystemMod
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class SkillSystemPlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "com.baox.durango.original.skillsystem";
+        public const string PluginGuid = "com.baominix.durango.original.skillsystem";
         public const string PluginName = "Skill System Plugin";
-        public const string PluginVersion = "0.5.22";
+        public const string PluginVersion = "0.5.32";
 
         internal static ManualLogSource Log;
         private Harmony _harmony;

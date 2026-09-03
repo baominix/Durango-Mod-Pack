@@ -14,6 +14,8 @@ namespace BaoX.DurangoOriginal.HarborSailingMap
         public string CurrentSaveKey = string.Empty;
         public string CurrentTerrainId = string.Empty;
         public string HomeTerrainId = string.Empty;
+        public string LastExploringSaveKey = string.Empty;
+        public string LastExploringTerrainId = string.Empty;
     }
 
     internal static class HarborRuntime
@@ -21,6 +23,17 @@ namespace BaoX.DurangoOriginal.HarborSailingMap
         private static readonly FieldInfo PlayerWorldField = AccessTools.Field(typeof(Durango.Offline.Player), "_world");
         private static readonly FieldInfo PlayerContextField = AccessTools.Field(typeof(Durango.Offline.Player), "_context");
         private static readonly FieldInfo WorldContextField = AccessTools.Field(typeof(World), "_context");
+        private static Durango.Offline.Player _localPlayer;
+
+        public static void BindLocalPlayer(Durango.Offline.Player player)
+        {
+            if (player != null) _localPlayer = player;
+        }
+
+        public static Durango.Offline.Player GetLocalPlayer()
+        {
+            return _localPlayer;
+        }
 
         public static World GetWorld(Durango.Offline.Player player)
         {
@@ -42,12 +55,90 @@ namespace BaoX.DurangoOriginal.HarborSailingMap
             return world == null || WorldContextField == null ? null : WorldContextField.GetValue(world) as WorldContext;
         }
 
+        internal static SailTarget GetCurrentTarget(World world)
+        {
+            WorldContext context = GetWorldContext(world);
+            if (context == null || string.IsNullOrEmpty(context.Path)) return null;
+
+            // Character creation writes the selected personal terrain directly
+            // to <slot>.world. No Harbor state exists until the player sails for
+            // the first time, so every packaged Personal candidate must be
+            // recognized here before the duplicate Unstable route is considered.
+            if (!File.Exists(StatePath(context)))
+            {
+                return HarborRoutes.FindTamedTarget(context.TerrainId);
+            }
+
+            HarborSaveState state = LoadState(context);
+            SailTarget target = HarborRoutes.FindBySaveKey(state.CurrentSaveKey);
+            return target != null && target.TerrainId == context.TerrainId ? target : null;
+        }
+
         public static bool IsAwayFromHome(Durango.Offline.Player player)
         {
             WorldContext world = GetWorldContext(player);
             if (world == null || string.IsNullOrEmpty(world.Path)) return false;
             HarborSaveState state = LoadState(world);
             return !string.IsNullOrEmpty(state.CurrentSaveKey) && state.CurrentTerrainId == world.TerrainId;
+        }
+
+        internal static SailTarget GetHomeTamedTarget(Durango.Offline.Player player)
+        {
+            WorldContext world = GetWorldContext(player);
+            if (world == null || string.IsNullOrEmpty(world.Path)) return null;
+
+            HarborSaveState state = LoadState(world);
+            string terrainId = state.HomeTerrainId;
+            if (string.IsNullOrEmpty(terrainId) && string.IsNullOrEmpty(state.CurrentSaveKey))
+            {
+                terrainId = world.TerrainId;
+            }
+            return HarborRoutes.FindTamedTarget(terrainId);
+        }
+
+        public static bool IsAtTamedHome(Durango.Offline.Player player)
+        {
+            WorldContext world = GetWorldContext(player);
+            SailTarget home = GetHomeTamedTarget(player);
+            if (world == null || home == null || world.TerrainId != home.TerrainId)
+            {
+                return false;
+            }
+
+            HarborSaveState state = LoadState(world);
+            if (string.IsNullOrEmpty(state.CurrentSaveKey)) return true;
+
+            // Older plugin versions represented the player's own island as a
+            // routed Tamed snapshot. Treat the matching terrain as home too.
+            SailTarget current = HarborRoutes.FindBySaveKey(state.CurrentSaveKey);
+            return current != null && current.Kind == HarborIslandKind.Tamed;
+        }
+
+        public static bool CanReturnToTamedHome(Durango.Offline.Player player)
+        {
+            WorldContext world = GetWorldContext(player);
+            return world != null &&
+                GetHomeTamedTarget(player) != null &&
+                !IsAtTamedHome(player) &&
+                File.Exists(HomeSnapshotPath(world));
+        }
+
+        public static bool CanReturnToExploring(Durango.Offline.Player player)
+        {
+            WorldContext world = GetWorldContext(player);
+            if (world == null || string.IsNullOrEmpty(world.Path)) return false;
+
+            HarborSaveState state = LoadState(world);
+            if (string.IsNullOrEmpty(state.LastExploringSaveKey) ||
+                state.CurrentSaveKey == state.LastExploringSaveKey)
+            {
+                return false;
+            }
+
+            SailTarget target = HarborRoutes.FindBySaveKey(state.LastExploringSaveKey);
+            return target != null &&
+                target.Kind == HarborIslandKind.Unstable &&
+                File.Exists(RouteSnapshotPath(world, state.LastExploringSaveKey));
         }
 
         public static bool Sail(Durango.Offline.Player player, SailTarget target)
@@ -64,6 +155,12 @@ namespace BaoX.DurangoOriginal.HarborSailingMap
             try
             {
                 HarborSaveState state = LoadState(current);
+                SailTarget currentTarget = HarborRoutes.FindBySaveKey(state.CurrentSaveKey);
+                if (currentTarget != null && currentTarget.Kind == HarborIslandKind.Unstable)
+                {
+                    RememberExploring(state, currentTarget);
+                }
+
                 PersistWorld(current);
                 if (string.IsNullOrEmpty(state.CurrentSaveKey))
                 {
@@ -76,10 +173,15 @@ namespace BaoX.DurangoOriginal.HarborSailingMap
                 }
 
                 string targetSnapshot = RouteSnapshotPath(current, target.SaveKey);
-                WorldContext loaded = File.Exists(targetSnapshot) ? LoadSnapshotIntoCurrent(targetSnapshot, current.Path) : CreateEmptyCurrent(current.Path, current.PlayerSlot, target.TerrainId);
+                WorldContext loaded = LoadOrCreateTarget(targetSnapshot, current.Path,
+                    current.PlayerSlot, target);
                 CopyWorld(loaded, current);
                 state.CurrentSaveKey = target.SaveKey;
                 state.CurrentTerrainId = target.TerrainId;
+                if (target.Kind == HarborIslandKind.Unstable)
+                {
+                    RememberExploring(state, target);
+                }
                 SaveState(current, state);
                 ResetPlayerToEntry(playerContext);
                 PersistWorld(current);
@@ -96,6 +198,25 @@ namespace BaoX.DurangoOriginal.HarborSailingMap
             }
         }
 
+        public static bool ReturnToExploring(Durango.Offline.Player player)
+        {
+            if (player == null) return false;
+            WorldContext current = GetWorldContext(player);
+            if (current == null || string.IsNullOrEmpty(current.Path)) return false;
+
+            HarborSaveState state = LoadState(current);
+            SailTarget target = HarborRoutes.FindBySaveKey(state.LastExploringSaveKey);
+            if (target == null || target.Kind != HarborIslandKind.Unstable ||
+                !File.Exists(RouteSnapshotPath(current, target.SaveKey)))
+            {
+                HarborSailingMapPlugin.Log.LogWarning(
+                    "Return to exploring failed: no unstable-island snapshot exists.");
+                return false;
+            }
+
+            return Sail(player, target);
+        }
+
         public static bool ReturnHome(Durango.Offline.Player player)
         {
             if (player == null) return false;
@@ -106,6 +227,11 @@ namespace BaoX.DurangoOriginal.HarborSailingMap
             try
             {
                 HarborSaveState state = LoadState(current);
+                SailTarget currentTarget = HarborRoutes.FindBySaveKey(state.CurrentSaveKey);
+                if (currentTarget != null && currentTarget.Kind == HarborIslandKind.Unstable)
+                {
+                    RememberExploring(state, currentTarget);
+                }
                 string home = HomeSnapshotPath(current);
                 if (string.IsNullOrEmpty(state.CurrentSaveKey) || !File.Exists(home))
                 {
@@ -154,6 +280,32 @@ namespace BaoX.DurangoOriginal.HarborSailingMap
             if (loaded == null) throw new InvalidDataException("Could not load Harbor snapshot: " + snapshotPath);
             loaded.Persistent = false;
             return loaded;
+        }
+
+        private static WorldContext LoadOrCreateTarget(string snapshotPath,
+            string currentPath, int playerSlot, SailTarget target)
+        {
+            if (File.Exists(snapshotPath))
+            {
+                try
+                {
+                    WorldContext loaded = LoadSnapshotIntoCurrent(snapshotPath, currentPath);
+                    if (loaded.TerrainId == target.TerrainId) return loaded;
+
+                    HarborSailingMapPlugin.Log.LogWarning(
+                        "Ignoring mismatched Harbor snapshot " + snapshotPath +
+                        ": expected=" + target.TerrainId + ", actual=" +
+                        (loaded.TerrainId ?? string.Empty));
+                }
+                catch (Exception ex)
+                {
+                    HarborSailingMapPlugin.Log.LogWarning(
+                        "Ignoring unreadable Harbor snapshot " + snapshotPath +
+                        ": " + ex.Message);
+                }
+            }
+
+            return CreateEmptyCurrent(currentPath, playerSlot, target.TerrainId);
         }
 
         private static void CopyWorld(WorldContext source, WorldContext destination)
@@ -210,6 +362,8 @@ namespace BaoX.DurangoOriginal.HarborSailingMap
                 if (key == "current_save_key") state.CurrentSaveKey = value;
                 else if (key == "current_terrain_id") state.CurrentTerrainId = value;
                 else if (key == "home_terrain_id") state.HomeTerrainId = value;
+                else if (key == "last_exploring_save_key") state.LastExploringSaveKey = value;
+                else if (key == "last_exploring_terrain_id") state.LastExploringTerrainId = value;
             }
             return state;
         }
@@ -218,11 +372,19 @@ namespace BaoX.DurangoOriginal.HarborSailingMap
         {
             File.WriteAllLines(StatePath(context), new string[]
             {
-                "version=1",
+                "version=2",
                 "current_save_key=" + (state.CurrentSaveKey ?? string.Empty),
                 "current_terrain_id=" + (state.CurrentTerrainId ?? string.Empty),
-                "home_terrain_id=" + (state.HomeTerrainId ?? string.Empty)
+                "home_terrain_id=" + (state.HomeTerrainId ?? string.Empty),
+                "last_exploring_save_key=" + (state.LastExploringSaveKey ?? string.Empty),
+                "last_exploring_terrain_id=" + (state.LastExploringTerrainId ?? string.Empty)
             });
+        }
+
+        private static void RememberExploring(HarborSaveState state, SailTarget target)
+        {
+            state.LastExploringSaveKey = target.SaveKey;
+            state.LastExploringTerrainId = target.TerrainId;
         }
 
         private static string StatePath(WorldContext context)

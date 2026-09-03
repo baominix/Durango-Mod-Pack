@@ -1,0 +1,341 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca623cbf980f338b9506b97c6ddc38aa, type: 3}
+  m_Name: Sabertooth_framework
+  m_EditorClassIdentifier:
+  normal_motions:
+  - key: stand
+    motion: Sabertooth_Stand
+    _clipObj: {fileID: 7400000, guid: b839178ce29c16841bda09b0da9200ce, type: 2}
+  - key: idle
+    motion: Sabertooth_Idle
+    _clipObj: {fileID: 7400000, guid: 5e0e9187c160d1046a3cc52e4e215ff4, type: 2}
+  - key: eat
+    motion: Sabertooth_Eat
+    _clipObj: {fileID: 7400000, guid: fedfd9389fdc2634fa1bb64c311e7bf5, type: 2}
+  - key: alert
+    motion: Sabertooth_Alert
+    _clipObj: {fileID: 7400000, guid: 39c3b7ca2f709994081c7ff48b8167e0, type: 2}
+  - key: dead
+    motion: Sabertooth_Die
+    _clipObj: {fileID: 7400000, guid: 1dc0d6e63d1fa9746a086559c64b5e70, type: 2}
+  normal_3states:
+  - key: sleep_motions
+    begin: Sabertooth_Sleep_Begin
+    during: Sabertooth_Sleep_Looping
+    end: Sabertooth_Sleep_End
+    _clipObjBegin: {fileID: 7400000, guid: baf57ff10939a6e47a24cd85686e11ec, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 23346485d490d9f4d8430ada1c94a193, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 626365df17c779a49918defe4c8b6093, type: 2}
+  weighted_motions:
+  - key: rest_motions
+    elems:
+    - weight: 1
+      motion: Sabertooth_Stand
+      duration: {x: 3, y: 3}
+      _clipObj: {fileID: 7400000, guid: b839178ce29c16841bda09b0da9200ce, type: 2}
+    - weight: 1
+      motion: Sabertooth_Idle
+      duration: {x: 6.2, y: 6.2}
+      _clipObj: {fileID: 7400000, guid: 5e0e9187c160d1046a3cc52e4e215ff4, type: 2}
+    - weight: 0.2
+      motion: Sabertooth_Alert
+      duration: {x: 4.7, y: 4.7}
+      _clipObj: {fileID: 7400000, guid: 39c3b7ca2f709994081c7ff48b8167e0, type: 2}
+  weighted_3states:
+  - key: seq_rest_motions
+    elems:
+    - weight: 1
+      begin: Sabertooth_Sit_Begin
+      loopings:
+      - weight: 0.7
+        motion: Sabertooth_Sit_Looping_A
+        duration: {x: 3, y: 10}
+        _clipObj: {fileID: 7400000, guid: 8a5f696e528b6974e879755717bd5452, type: 2}
+      - weight: 0.3
+        motion: Sabertooth_Sit_Looping_B
+        duration: {x: 7.6, y: 7.6}
+        _clipObj: {fileID: 7400000, guid: 8aaa0f086749ee14ba99027e7c5c48e3, type: 2}
+      end: Sabertooth_Sit_End
+      _clipObjBegin: {fileID: 7400000, guid: 314f3f930fcf81a408c820ec9a4651bd, type: 2}
+      _clipObjEnd: {fileID: 7400000, guid: 0b21d571db81db542965159c5a9b7905, type: 2}
+  move_sets:
+  - key: move_motion_sets
+    elems:
+    - name: sabertooth_move_set
+      motions:
+      - motion: Sabertooth_Limp
+        rot_motion_cw: Sabertooth_Rotate_CW
+        rot_motion_ccw: Sabertooth_Rotate_CCW
+        turn_reverse_motion: Sabertooth_Turn
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 77.77778
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: dbcb27571db913c4bb80b61342eac82d, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 8c6a81c6c2058f14fb891879f2308e31, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 558e823da63d1c943b606f8d6b0ff931, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 378fbfdbe7ad6c3488266ff3e1674946, type: 2}
+      - motion: Sabertooth_Walk
+        rot_motion_cw: Sabertooth_Rotate_CW
+        rot_motion_ccw: Sabertooth_Rotate_CCW
+        turn_reverse_motion: Sabertooth_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<600'
+        base_move_speed: 102
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 4c7101291211f4c46bf5ce89692ca2be, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 8c6a81c6c2058f14fb891879f2308e31, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 558e823da63d1c943b606f8d6b0ff931, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 378fbfdbe7ad6c3488266ff3e1674946, type: 2}
+      - motion: Sabertooth_Run
+        rot_motion_cw: Sabertooth_Rotate_CW
+        rot_motion_ccw: Sabertooth_Rotate_CCW
+        turn_reverse_motion: Sabertooth_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 388.8889
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 2b88b9ade9870bf42830f6b35154ebd0, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 8c6a81c6c2058f14fb891879f2308e31, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 558e823da63d1c943b606f8d6b0ff931, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 378fbfdbe7ad6c3488266ff3e1674946, type: 2}
+    - name: sabertooth_move_p2_set
+      motions:
+      - motion: Sabertooth_Limp
+        rot_motion_cw: Sabertooth_Rotate_CW
+        rot_motion_ccw: Sabertooth_Rotate_CCW
+        turn_reverse_motion: Sabertooth_Turn
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 77.77778
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: dbcb27571db913c4bb80b61342eac82d, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 8c6a81c6c2058f14fb891879f2308e31, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 558e823da63d1c943b606f8d6b0ff931, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 378fbfdbe7ad6c3488266ff3e1674946, type: 2}
+      - motion: Sabertooth_Walk
+        rot_motion_cw: Sabertooth_Rotate_CW
+        rot_motion_ccw: Sabertooth_Rotate_CCW
+        turn_reverse_motion: Sabertooth_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<200'
+        base_move_speed: 102
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 4c7101291211f4c46bf5ce89692ca2be, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 8c6a81c6c2058f14fb891879f2308e31, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 558e823da63d1c943b606f8d6b0ff931, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 378fbfdbe7ad6c3488266ff3e1674946, type: 2}
+      - motion: Sabertooth_Run
+        rot_motion_cw: Sabertooth_Rotate_CW
+        rot_motion_ccw: Sabertooth_Rotate_CCW
+        turn_reverse_motion: Sabertooth_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 388.8889
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 2b88b9ade9870bf42830f6b35154ebd0, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 8c6a81c6c2058f14fb891879f2308e31, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 558e823da63d1c943b606f8d6b0ff931, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 378fbfdbe7ad6c3488266ff3e1674946, type: 2}
+    - name: sabertooth_pet_move_set
+      motions:
+      - motion: Sabertooth_Run_Pet
+        rot_motion_cw: Sabertooth_Rotate_CW
+        rot_motion_ccw: Sabertooth_Rotate_CCW
+        turn_reverse_motion: Sabertooth_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 600
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: c36f78c7864d04c4fbaad04c237c00af, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 8c6a81c6c2058f14fb891879f2308e31, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 558e823da63d1c943b606f8d6b0ff931, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 378fbfdbe7ad6c3488266ff3e1674946, type: 2}
+  comabt_motions:
+  - key: battle_idle
+    motion: Sabertooth_Battle_Idle
+    _clipObj: {fileID: 7400000, guid: ecbdf3480ecdbe24dbef7f3fa619f2f0, type: 2}
+  - key: battle_stand
+    motion: Sabertooth_Battle_Idle
+    _clipObj: {fileID: 7400000, guid: ecbdf3480ecdbe24dbef7f3fa619f2f0, type: 2}
+  - key: evade
+    motion: Sabertooth_Evade
+    _clipObj: {fileID: 7400000, guid: 13292d76935bb77409f4c00501f2c1e2, type: 2}
+  - key: groggy
+    motion: Sabertooth_Groggy
+    _clipObj: {fileID: 7400000, guid: a9f94b6f3371fea4ab44a1cbba6ff561, type: 2}
+  - key: blow
+    motion: Sabertooth_Damage_Blow_Begin
+    _clipObj: {fileID: 7400000, guid: 9ae6e62fbb3e1a84dbf0185edcc011df, type: 2}
+  combat_directions:
+  - key: knock_back_motion_map
+    front: Sabertooth_Damage_S
+    back: Sabertooth_Damage_N
+    left: Sabertooth_Damage_E
+    right: Sabertooth_Damage_W
+    _clipObjFront: {fileID: 7400000, guid: c979957e9dfd4864691cb976234c7c2b, type: 2}
+    _clipObjBack: {fileID: 7400000, guid: a0bf1d5de20c3014c848d7aeb961f804, type: 2}
+    _clipObjLeft: {fileID: 7400000, guid: 677ba2faae222204e9aef8087c47c777, type: 2}
+    _clipObjRight: {fileID: 7400000, guid: 3742091ced755744fb6f1dccad857958, type: 2}
+  combat_3states:
+  - key: knock_down_motions
+    begin: Sabertooth_Damage_Blow_Begin
+    during: Sabertooth_Damage_Blow_Looping
+    end: Sabertooth_Damage_Blow_End
+    _clipObjBegin: {fileID: 7400000, guid: 9ae6e62fbb3e1a84dbf0185edcc011df, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 8f9c3f06437a02f4fa6760d6a81df1be, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 3632207a3eb45f44f8e5510f0703637c, type: 2}
+  combat_attacks:
+  - key: sabertooth_attack
+    meta:
+      motion: Sabertooth_Attack
+      bound_enemy: 1
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: bf5c6413f5fc1c24dada9774ba7c89d8, type: 2}
+    attack_info:
+    - frame: 24
+      sub_action_id: sabertooth_attack_0
+      damage_type: 2
+      radius: 80
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 100, y: 80}
+      offset: {x: 0, y: 30}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: sabertooth_jumphigh
+    meta:
+      motion: Sabertooth_Attack_JumpHigh
+      bound_enemy: 1
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: cf21967d1162b38499f32b3c2e7f490f, type: 2}
+    attack_info:
+    - frame: 38
+      sub_action_id: sabertooth_jumphigh_0
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: sabertooth_jump
+    meta:
+      motion: Sabertooth_Attack_Jump
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 8c59188fb90918847beed09eb82dd344, type: 2}
+    attack_info:
+    - frame: 11
+      sub_action_id: sabertooth_jump_0
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 60, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: sabertooth_counter
+    meta:
+      motion: Sabertooth_Attack_Counter
+      bound_enemy: 1
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 513e2c3acea074a4387cae5a07827cf2, type: 2}
+    attack_info:
+    - frame: 36
+      sub_action_id: _0
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 20, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: sabertooth_attack_claw
+    meta:
+      motion: Sabertooth_Attack_Claw
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: bdc8b14112970954bab294a402550089, type: 2}
+    attack_info:
+    - frame: 28
+      sub_action_id: sabertooth_attack_claw_0
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -70}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 31
+      sub_action_id: sabertooth_attack_claw_1
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  active_skills:
+  - key: active_default
+    motion: Sabertooth_Active_Default
+    _clipObj: {fileID: 7400000, guid: 3a406d9c6c8374a40a7e02af6955e9f7, type: 2}
+  etc_motions:
+  - key: sabertooth_run_pet
+    motion: Sabertooth_Run_Pet
+    _clipObj: {fileID: 7400000, guid: c36f78c7864d04c4fbaad04c237c00af, type: 2}
+  - key: sabertooth_run_stop
+    motion: Sabertooth_Run_Stop
+    _clipObj: {fileID: 7400000, guid: d8e1b71444b090f46a6507a0d76f0e7b, type: 2}
+  - key: sabertooth_sitcat_begin
+    motion: Sabertooth_SitCat_Begin
+    _clipObj: {fileID: 7400000, guid: be140deb5ddd26649bc231ef1cc4bb99, type: 2}
+  - key: sabertooth_sitcat_end
+    motion: Sabertooth_SitCat_End
+    _clipObj: {fileID: 7400000, guid: 547fe5feb6106be4b856628a824145f0, type: 2}
+  - key: sabertooth_sitcat_looping
+    motion: Sabertooth_SitCat_Looping
+    _clipObj: {fileID: 7400000, guid: 638556017f5bce84da11534b683ca142, type: 2}
+  - key: sabertooth_trot
+    motion: Sabertooth_Trot
+    _clipObj: {fileID: 7400000, guid: 66752bfdcb0abaf4b9a9bd1ce4e2775f, type: 2}

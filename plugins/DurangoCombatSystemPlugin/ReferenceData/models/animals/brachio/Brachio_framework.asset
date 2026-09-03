@@ -1,0 +1,271 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca623cbf980f338b9506b97c6ddc38aa, type: 3}
+  m_Name: Brachio_framework
+  m_EditorClassIdentifier:
+  normal_motions:
+  - key: stand
+    motion: Brachio_Stand
+    _clipObj: {fileID: 7400000, guid: 8b9e93947505492458fd416c75525ffc, type: 2}
+  - key: idle
+    motion: Brachio_Stand
+    _clipObj: {fileID: 7400000, guid: 8b9e93947505492458fd416c75525ffc, type: 2}
+  - key: eat
+    motion: Brachio_Eat
+    _clipObj: {fileID: 7400000, guid: d20b96ab540904c4f82553d06729827c, type: 2}
+  - key: alert
+    motion:
+    _clipObj: {fileID: 0}
+  - key: dead
+    motion: Brachio_Die
+    _clipObj: {fileID: 7400000, guid: 680de68ad593b894cad56cba6063e83b, type: 2}
+  normal_3states:
+  - key: sleep_motions
+    begin: Brachio_Sleep_Begin
+    during: Brachio_Sleep_Looping
+    end: Brachio_Sleep_End
+    _clipObjBegin: {fileID: 7400000, guid: 1535e37d29971904882093072931872f, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: aab88e53aa78259478f17414d1ca6553, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 070b80ea63853e64e9ab1a7ababc0099, type: 2}
+  weighted_motions:
+  - key: rest_motions
+    elems:
+    - weight: 1
+      motion: Brachio_Stand
+      duration: {x: 3, y: 3}
+      _clipObj: {fileID: 7400000, guid: 8b9e93947505492458fd416c75525ffc, type: 2}
+    - weight: 1
+      motion: Brachio_Eat_Lower
+      duration: {x: 3, y: 3}
+      _clipObj: {fileID: 7400000, guid: b80f8ac445a0ade499b347b4bdeada03, type: 2}
+    - weight: 1
+      motion: Brachio_Eat
+      duration: {x: 3, y: 3}
+      _clipObj: {fileID: 7400000, guid: d20b96ab540904c4f82553d06729827c, type: 2}
+    - weight: 1
+      motion: Brachio_Eat_Lower
+      duration: {x: 3, y: 3}
+      _clipObj: {fileID: 7400000, guid: b80f8ac445a0ade499b347b4bdeada03, type: 2}
+  weighted_3states:
+  - key: seq_rest_motions
+    elems: []
+  move_sets:
+  - key: move_motion_sets
+    elems:
+    - name: brachio_move_set
+      motions:
+      - motion: Brachio_Limp
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion: Brachio_Turn
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 281
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 4b5ea4953713e4140b78c6f8304bafdd, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 870ef9b8a8148174ead08619f23e556f, type: 2}
+      - motion: Brachio_Walk
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion: Brachio_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<300'
+        base_move_speed: 152
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: bc64cdef515eb6c41b6d83c7ad8cb3a8, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 870ef9b8a8148174ead08619f23e556f, type: 2}
+      - motion: Brachio_Run
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion: Brachio_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 380
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: aa2b04abcb1a0d94b8f32cb41f961d55, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 870ef9b8a8148174ead08619f23e556f, type: 2}
+    - name: brachio_pet_move_set
+      motions:
+      - motion: Brachio_Walk_Pet
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion: Brachio_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 220
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 6ba78a3d6e4d83f4784269faad80e7cd, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 870ef9b8a8148174ead08619f23e556f, type: 2}
+  comabt_motions:
+  - key: battle_idle
+    motion: Brachio_BattleStand
+    _clipObj: {fileID: 7400000, guid: 1b312f67c678d1c41aea3de7f346cbe2, type: 2}
+  - key: battle_stand
+    motion: Brachio_BattleStand
+    _clipObj: {fileID: 7400000, guid: 1b312f67c678d1c41aea3de7f346cbe2, type: 2}
+  - key: evade
+    motion:
+    _clipObj: {fileID: 0}
+  - key: groggy
+    motion: Brachio_Groggy
+    _clipObj: {fileID: 7400000, guid: 370d704d583ebe94baddc2edd9585eb7, type: 2}
+  - key: blow
+    motion: Brachio_Damage_Blow_Begin
+    _clipObj: {fileID: 7400000, guid: e4e08d38835fa8749a5ab84fcd05df28, type: 2}
+  combat_directions:
+  - key: knock_back_motion_map
+    front: Brachio_Damage_S
+    back: Brachio_Damage_N
+    left: Brachio_Damage_E
+    right: Brachio_Damage_W
+    _clipObjFront: {fileID: 7400000, guid: 7ade3b93b2f1d4546852acb21959ed79, type: 2}
+    _clipObjBack: {fileID: 7400000, guid: 87f57f50cd53db3479943f05f9c00b39, type: 2}
+    _clipObjLeft: {fileID: 7400000, guid: c87f166fa1a8e674385715196f48cf3d, type: 2}
+    _clipObjRight: {fileID: 7400000, guid: 354badadcdcd4dd4d8c7d3e415dfc540, type: 2}
+  combat_3states:
+  - key: knock_down_motions
+    begin: Brachio_Damage_Blow_Begin
+    during: Brachio_Damage_Blow_Looping
+    end: Brachio_Damage_Blow_End
+    _clipObjBegin: {fileID: 7400000, guid: e4e08d38835fa8749a5ab84fcd05df28, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 5134a4ff6f406fa49bd49dc077015c4b, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 3ebf46f306d6e5c49bfa322479039801, type: 2}
+  combat_attacks:
+  - key: brachio_baby_tail
+    meta:
+      motion: Brachio_Attack_Tail_Offspring
+      bound_enemy: 0
+      rot_speed: 180
+      _clipObj: {fileID: 7400000, guid: fe166316cabdf934bb891ea9e31156fb, type: 2}
+    attack_info:
+    - frame: 54
+      sub_action_id: brachio_baby_tail_0
+      damage_type: 1
+      radius: 850
+      radius_min: 0
+      angles: {x: 110, y: 240}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: -100, y: -200}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: brachio_attack
+    meta:
+      motion: Brachio_Attack
+      bound_enemy: 0
+      rot_speed: 60
+      _clipObj: {fileID: 7400000, guid: 77ffc5ab6a7d98d40a1a063aeb0b2d63, type: 2}
+    attack_info:
+    - frame: 113
+      sub_action_id: brachio_attack_0
+      damage_type: 1
+      radius: 450
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 450}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: brachio_tail
+    meta:
+      motion: Brachio_Attack_Tail
+      bound_enemy: 0
+      rot_speed: 60
+      _clipObj: {fileID: 7400000, guid: 7e7403f6db5648f4882de6114aff42e7, type: 2}
+    attack_info:
+    - frame: 71
+      sub_action_id: brachio_tail_0
+      damage_type: 1
+      radius: 750
+      radius_min: 0
+      angles: {x: 90, y: 280}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -240}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: brachio_wounded_tail
+    meta:
+      motion: Brachio_Attack_WoundedTail
+      bound_enemy: 0
+      rot_speed: 60
+      _clipObj: {fileID: 7400000, guid: 738e6a41ff3e8dc49a5db01f8b1f6310, type: 2}
+    attack_info:
+    - frame: 86
+      sub_action_id: brachio_wounded_tail_0
+      damage_type: 2
+      radius: 800
+      radius_min: 0
+      angles: {x: 90, y: 150}
+      rect_half_size: {x: 400, y: 200}
+      offset: {x: 300, y: -500}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: brachio_baby_attack
+    meta:
+      motion: Brachio_Attack_Offspring
+      bound_enemy: 0
+      rot_speed: 180
+      _clipObj: {fileID: 7400000, guid: c8872367684b67a49856ca5937177dc8, type: 2}
+    attack_info:
+    - frame: 60
+      sub_action_id: brachio_baby_attack_0
+      damage_type: 1
+      radius: 350
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 420}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  active_skills:
+  - key: active_default
+    motion: Brachio_Active_Default
+    _clipObj: {fileID: 7400000, guid: 151900f84d80d0d40a4a3da63fc42e6d, type: 2}
+  etc_motions:
+  - key: brachio_death
+    motion: Brachio_Death
+    _clipObj: {fileID: 7400000, guid: 3b2812dd0ad7f814daca716573adff98, type: 2}
+  - key: brachio_run_baby
+    motion: Brachio_Run_baby
+    _clipObj: {fileID: 7400000, guid: 0cef86195cc34ba409d51946adb611aa, type: 2}
+  - key: brachio_sleep
+    motion: Brachio_Sleep
+    _clipObj: {fileID: 7400000, guid: ea74b0afb8b770d4fa54547fc747e764, type: 2}
+  - key: brachio_walk_pet
+    motion: Brachio_Walk_Pet
+    _clipObj: {fileID: 7400000, guid: 6ba78a3d6e4d83f4784269faad80e7cd, type: 2}
+  - key: brachio_run_stop
+    motion: Brachio_Run_Stop
+    _clipObj: {fileID: 7400000, guid: eaaedece97429cb44891388c8db7e210, type: 2}

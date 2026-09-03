@@ -23,11 +23,12 @@ using Yaml.Util;
 namespace BaoX.DurangoOriginal.IslandMarketEnable
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class IslandMarketEnablePlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "com.baox.durango.original.islandmarketenable";
+        public const string PluginGuid = "com.baominix.durango.original.islandmarketenable";
         public const string PluginName = "Island Market Enable Plugin";
-        public const string PluginVersion = "0.1.0";
+        public const string PluginVersion = "0.1.3";
 
         internal static ManualLogSource Log;
         private Harmony _harmony;
@@ -56,6 +57,7 @@ namespace BaoX.DurangoOriginal.IslandMarketEnable
         private const string LastClusterPrefKey = "last_selected_cluster_key";
         private const string CreativeKey = "free_offline";
         private const string SingleMultiKey = "single_multi_offline";
+        private const float DurabilityPerLevel = 5f;
 
         internal static bool ShouldForceMarket()
         {
@@ -429,8 +431,269 @@ namespace BaoX.DurangoOriginal.IslandMarketEnable
             return false;
         }
 
+        internal static bool SearchOfflineMarketProducts(
+            MarketManager manager,
+            SearchProducts option,
+            ref Products __result)
+        {
+            if (manager == null || !ShouldForceMarket())
+            {
+                return true;
+            }
+
+            try
+            {
+                IEnumerable<Product> products = (manager.Products ?? new Product[0])
+                    .Where(product => ProductMatchesSearch(product, option));
+
+                products = SortProducts(products, option.Sort);
+                Product[] result = products
+                    .Skip(Math.Max(0, option.Skip))
+                    .Take(OptionSystem.GetMarketSearchLimit())
+                    .ToArray();
+
+                __result = new Products
+                {
+                    _Products = result
+                };
+
+                if (IslandMarketEnablePlugin.Log != null)
+                {
+                    int nestedTagGroups = option.NestedTags == null
+                        ? 0
+                        : option.NestedTags.Length;
+                    IslandMarketEnablePlugin.Log.LogInfo(
+                        "Offline Market search filtered. itemName=" + option.ItemName +
+                        ", prototype=" + option.PrototypeId +
+                        ", category=" + option.Category +
+                        ", nestedTagGroups=" + nestedTagGroups +
+                        ", result=" + result.Length);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (IslandMarketEnablePlugin.Log != null)
+                {
+                    IslandMarketEnablePlugin.Log.LogWarning("SearchOfflineMarketProducts failed: " + ex);
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool ProductMatchesSearch(Product product, SearchProducts option)
+        {
+            if (product.Items == null || product.Items.Length == 0)
+            {
+                return false;
+            }
+
+            if (option.Price != null)
+            {
+                PriceRangePredicate price = option.Price.Value;
+                if (price.Min != null && product.Price < price.Min.Value)
+                {
+                    return false;
+                }
+                if (price.Max != null && product.Price > price.Max.Value)
+                {
+                    return false;
+                }
+                if (price.Currency != Currency.Invalid && product.Currency != price.Currency)
+                {
+                    return false;
+                }
+            }
+
+            if (option.Level != null)
+            {
+                RangePredicate level = option.Level.Value;
+                if (level.Min != null && product.Level < level.Min.Value)
+                {
+                    return false;
+                }
+                if (level.Max != null && product.Level > level.Max.Value)
+                {
+                    return false;
+                }
+            }
+
+            for (int i = 0; i < product.Items.Length; i++)
+            {
+                if (ItemMatchesSearch(product.Items[i], option))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool ItemMatchesSearch(Item item, SearchProducts option)
+        {
+            if (!string.IsNullOrEmpty(option.ItemName) &&
+                (string.IsNullOrEmpty(item.Name) ||
+                 item.Name.IndexOf(option.ItemName, StringComparison.OrdinalIgnoreCase) < 0))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(option.PrototypeId) &&
+                !PrototypeIdsEqual(item.Prototype, option.PrototypeId))
+            {
+                return false;
+            }
+
+            Yaml.Prototype prototype = Yaml.PrototypeYaml.GetItemPrototype(
+                (item.Prototype ?? string.Empty).Replace(".", "_"),
+                Math.Max(1, item.Level));
+            if (prototype == null)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(option.Category) &&
+                !string.Equals(prototype.Category, option.Category, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (option.SubCategories != null && option.SubCategories.Length > 0)
+            {
+                if (prototype.SubCategories == null ||
+                    !option.SubCategories.Any(requested =>
+                        prototype.SubCategories.Any(actual =>
+                            string.Equals(actual, requested, StringComparison.OrdinalIgnoreCase))))
+                {
+                    return false;
+                }
+            }
+
+            return MatchesNestedTags(item, prototype, option.NestedTags);
+        }
+
+        private static bool MatchesNestedTags(
+            Item item,
+            Yaml.Prototype prototype,
+            string[][] nestedTags)
+        {
+            if (nestedTags == null || nestedTags.Length == 0)
+            {
+                return true;
+            }
+
+            HashSet<string> itemTags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            AddTags(itemTags, item.Tags);
+            AddTags(itemTags, item.TagModifications);
+            if (prototype.Tags != null)
+            {
+                foreach (string tag in prototype.Tags.Keys)
+                {
+                    if (!string.IsNullOrEmpty(tag))
+                    {
+                        itemTags.Add(tag);
+                    }
+                }
+            }
+
+            for (int groupIndex = 0; groupIndex < nestedTags.Length; groupIndex++)
+            {
+                string[] group = nestedTags[groupIndex];
+                if (group == null || group.Length == 0)
+                {
+                    continue;
+                }
+
+                bool groupMatched = false;
+                for (int tagIndex = 0; tagIndex < group.Length; tagIndex++)
+                {
+                    string requestedTag = group[tagIndex];
+                    if (!string.IsNullOrEmpty(requestedTag) && itemTags.Contains(requestedTag))
+                    {
+                        groupMatched = true;
+                        break;
+                    }
+                }
+
+                if (!groupMatched)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static void AddTags(HashSet<string> destination, Tag[] tags)
+        {
+            if (tags == null)
+            {
+                return;
+            }
+            for (int i = 0; i < tags.Length; i++)
+            {
+                if (!string.IsNullOrEmpty(tags[i].Id))
+                {
+                    destination.Add(tags[i].Id);
+                }
+            }
+        }
+
+        private static bool PrototypeIdsEqual(string left, string right)
+        {
+            if (string.IsNullOrEmpty(left) || string.IsNullOrEmpty(right))
+            {
+                return false;
+            }
+            return string.Equals(
+                left.Replace(".", "_"),
+                right.Replace(".", "_"),
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static IEnumerable<Product> SortProducts(
+            IEnumerable<Product> products,
+            SortCondition sort)
+        {
+            Func<Product, IComparable> selector;
+            switch (sort.Field)
+            {
+                case ProductSortField.Price:
+                    selector = product => product.Price;
+                    break;
+                case ProductSortField.RegisteredAt:
+                    selector = product => product.ListedAt;
+                    break;
+                case ProductSortField.ExpiresAt:
+                    selector = product => product.ExpiresAt;
+                    break;
+                case ProductSortField.PurchasedAt:
+                    selector = product => product.PurchasedAt ?? 0.0;
+                    break;
+                case ProductSortField.Level:
+                    selector = product => product.Level;
+                    break;
+                case ProductSortField.Durability:
+                    selector = product => product.Durability;
+                    break;
+                case ProductSortField.State:
+                    selector = product => (int)product.State;
+                    break;
+                default:
+                    return products;
+            }
+
+            return sort.Ascending
+                ? products.OrderBy(selector)
+                : products.OrderByDescending(selector);
+        }
+
         private static Product MakeProduct(string prototypeId)
         {
+            int productLevel = 60;
+            float productDurability = GetMarketDurability(
+                prototypeId,
+                productLevel,
+                10000f);
             Product product = new Product
             {
                 Id = Guid.NewGuid().ToString(),
@@ -443,19 +706,92 @@ namespace BaoX.DurangoOriginal.IslandMarketEnable
                 Fee = 0L,
                 Currency = Currency.TStone,
                 State = ProductState.Registered,
-                Level = 60,
-                Durability = 10000f
+                Level = productLevel,
+                Durability = productDurability
             };
 
             Item? item = Cheats.MakeItem(prototypeId, product.Level);
             if (item != null)
             {
+                Item marketItem = item.Value;
+                ApplyMarketDurability(ref marketItem);
                 product.Items = new Item[]
                 {
-                    item.Value
+                    marketItem
                 };
             }
             return product;
+        }
+
+        internal static void ApplyMarketDurability(Item[] items)
+        {
+            if (items == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                Item item = items[i];
+                ApplyMarketDurability(ref item);
+                items[i] = item;
+            }
+        }
+
+        private static void ApplyMarketDurability(ref Item item)
+        {
+            if (item.OriginalLevel <= 0)
+            {
+                item.OriginalLevel = item.Level;
+            }
+
+            if (!IsWeaponOrTool(item.Prototype, item.Level))
+            {
+                return;
+            }
+
+            float durability = CalculateDurability(item.Level);
+            item.Durability = new Gauge(
+                durability,
+                0f,
+                new GaugeNode[]
+                {
+                    new GaugeNode(0.0, durability)
+                });
+        }
+
+        private static float GetMarketDurability(
+            string prototypeId,
+            int level,
+            float fallback)
+        {
+            return IsWeaponOrTool(prototypeId, level)
+                ? CalculateDurability(level)
+                : fallback;
+        }
+
+        private static float CalculateDurability(int level)
+        {
+            return Math.Max(1, level) * DurabilityPerLevel;
+        }
+
+        private static bool IsWeaponOrTool(
+            string prototypeId,
+            int level)
+        {
+            if (string.IsNullOrEmpty(prototypeId))
+            {
+                return false;
+            }
+
+            Yaml.Prototype prototype = Yaml.PrototypeYaml.GetItemPrototype(
+                prototypeId.Replace(".", "_"),
+                Math.Max(1, level));
+            return prototype != null &&
+                string.Equals(
+                    prototype.Category,
+                    "weapon/tool",
+                    StringComparison.OrdinalIgnoreCase);
         }
 
         private static T GetField<T>(object instance, string name) where T : class
@@ -579,6 +915,30 @@ namespace BaoX.DurangoOriginal.IslandMarketEnable
         private static bool Prefix(MarketManager __instance, ref Product[] __result)
         {
             return IslandMarketRuntime.GetAllOfflineMarketProducts(__instance, ref __result);
+        }
+    }
+
+    [HarmonyPatch(typeof(MarketManager), "BuyProduct")]
+    internal static class MarketManagerBuyProductPatch
+    {
+        private static void Postfix(ref Item[] __result)
+        {
+            IslandMarketRuntime.ApplyMarketDurability(__result);
+        }
+    }
+
+    [HarmonyPatch(typeof(MarketManager), "SearchProduct")]
+    internal static class MarketManagerSearchProductPatch
+    {
+        private static bool Prefix(
+            MarketManager __instance,
+            SearchProducts option,
+            ref Products __result)
+        {
+            return IslandMarketRuntime.SearchOfflineMarketProducts(
+                __instance,
+                option,
+                ref __result);
         }
     }
 }

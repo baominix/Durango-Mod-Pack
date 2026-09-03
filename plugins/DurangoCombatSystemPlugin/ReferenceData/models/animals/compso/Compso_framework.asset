@@ -1,0 +1,214 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca623cbf980f338b9506b97c6ddc38aa, type: 3}
+  m_Name: Compso_framework
+  m_EditorClassIdentifier:
+  normal_motions:
+  - key: stand
+    motion: Compso_Stand
+    _clipObj: {fileID: 7400000, guid: 782ae055e25a17b44825c39132632264, type: 2}
+  - key: idle
+    motion: Compso_Idle
+    _clipObj: {fileID: 7400000, guid: dca70f686e778af4896202d677040a6c, type: 2}
+  - key: eat
+    motion: Compso_Eat
+    _clipObj: {fileID: 7400000, guid: 367fc5ab1f3bb214b93c3043050895f6, type: 2}
+  - key: alert
+    motion: Compso_Alert
+    _clipObj: {fileID: 7400000, guid: b70c80289feb70c43881e7e44cbb801b, type: 2}
+  - key: dead
+    motion: Compso_Die
+    _clipObj: {fileID: 7400000, guid: eab34c1e532469d43b1a86ee285d06ba, type: 2}
+  - key: paperdead
+    motion: Compso_PaperDie
+    _clipObj: {fileID: 7400000, guid: 77d28f7d0a295d6498307aec7429a371, type: 2}
+  normal_3states:
+  - key: sleep_motions
+    begin: Compso_Sleep_Begin
+    during: Compso_Sleep_Looping
+    end: Compso_Sleep_End
+    _clipObjBegin: {fileID: 7400000, guid: 67cfce85582835843a1f1e328b80fcf6, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 23de14ae0258ad84098caddf4f2c5508, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: e95fe2003b237f74d9216323d3706f4b, type: 2}
+  weighted_motions:
+  - key: rest_motions
+    elems:
+    - weight: 1
+      motion: Compso_Stand
+      duration: {x: 3, y: 3}
+      _clipObj: {fileID: 7400000, guid: 782ae055e25a17b44825c39132632264, type: 2}
+    - weight: 1
+      motion: Compso_Idle
+      duration: {x: 7.1, y: 7.1}
+      _clipObj: {fileID: 7400000, guid: dca70f686e778af4896202d677040a6c, type: 2}
+    - weight: 1
+      motion: Compso_Idle_Step
+      duration: {x: 4.3, y: 4.3}
+      _clipObj: {fileID: 7400000, guid: f856f398925f50b4795bbc6a972ce1ee, type: 2}
+  weighted_3states:
+  - key: seq_rest_motions
+    elems:
+    - weight: 1
+      begin: Compso_Sit_Begin
+      loopings:
+      - weight: 0.7
+        motion: Compso_Sit_Looping_A
+        duration: {x: 3, y: 10}
+        _clipObj: {fileID: 7400000, guid: d4b882f0a643ed2488cb82ebe1291d03, type: 2}
+      - weight: 0.3
+        motion: Compso_Sit_Looping_B
+        duration: {x: 8.2, y: 8.2}
+        _clipObj: {fileID: 7400000, guid: b5b5fb55b589b354c8206d14b533e081, type: 2}
+      end: Compso_Sit_End
+      _clipObjBegin: {fileID: 7400000, guid: ac824f52837107c4faa3c3e987bc3506, type: 2}
+      _clipObjEnd: {fileID: 7400000, guid: 3af549ad894b4c249b537e5ccedd9052, type: 2}
+  move_sets:
+  - key: move_motion_sets
+    elems:
+    - name: compsognathus_move_set
+      motions:
+      - motion: Compso_Limp
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion:
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 800
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 4a87cc7aa9f41034a8674bf2365d51d0, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 0}
+      - motion: Compso_Walk
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<200'
+        base_move_speed: 720
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: f083657f06a15ca4bb9c5e7d5188f060, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 0}
+      - motion: Compso_Run
+        rot_motion_cw:
+        rot_motion_ccw:
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 1520
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 4493b2bb815325d43949ad936abef433, type: 2}
+        _clipObjRotateCW: {fileID: 0}
+        _clipObjRotateCCW: {fileID: 0}
+        _clipObjTurnReverse: {fileID: 0}
+  comabt_motions:
+  - key: battle_idle
+    motion: Compso_BattleStand
+    _clipObj: {fileID: 7400000, guid: d31b89f3fdbc93e41a482490bf87977b, type: 2}
+  - key: battle_stand
+    motion: Compso_BattleStand
+    _clipObj: {fileID: 7400000, guid: d31b89f3fdbc93e41a482490bf87977b, type: 2}
+  - key: evade
+    motion: Compso_Evade
+    _clipObj: {fileID: 7400000, guid: 8b01f5499be52d24d8a00f1f41223768, type: 2}
+  - key: groggy
+    motion: Compso_Groggy
+    _clipObj: {fileID: 7400000, guid: 4230abbef31e31c4bbe53c531e2392fa, type: 2}
+  - key: blow
+    motion: Compso_Damage_Blow_Begin
+    _clipObj: {fileID: 7400000, guid: 25575ad35db914d44b91ce3321fc1d84, type: 2}
+  combat_directions:
+  - key: knock_back_motion_map
+    front: Compso_Damage_S
+    back: Compso_Damage_N
+    left: Compso_Damage_E
+    right: Compso_Damage_W
+    _clipObjFront: {fileID: 7400000, guid: c67870b5661309244a4dafc5aad8d352, type: 2}
+    _clipObjBack: {fileID: 7400000, guid: 639c6f9a9cbb108418139f090765cb8e, type: 2}
+    _clipObjLeft: {fileID: 7400000, guid: 21ad87267dcd6f344a315c478b88deff, type: 2}
+    _clipObjRight: {fileID: 7400000, guid: c426dcb8fde96de4884fd81c5929e81b, type: 2}
+  combat_3states:
+  - key: knock_down_motions
+    begin: Compso_Damage_Blow_Begin
+    during: Compso_Damage_Blow_Looping
+    end: Compso_Damage_Blow_End
+    _clipObjBegin: {fileID: 7400000, guid: 25575ad35db914d44b91ce3321fc1d84, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 3430bb54b0570744e9001ea8d4293ce1, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 1210fc97f86d82b4c9133ee0fe1d8c44, type: 2}
+  combat_attacks:
+  - key: compso_strong
+    meta:
+      motion: Compso_Attack_Strong
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 487a09058a1eeeb4c85159b451b6e9f2, type: 2}
+    attack_info:
+    - frame: 13
+      sub_action_id: compso_strong_0
+      damage_type: 1
+      radius: 210
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: compso_head
+    meta:
+      motion: Compso_Attack_Head
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: e95a57b8c3512554ab4e0e75e6db41cc, type: 2}
+    attack_info:
+    - frame: 36
+      sub_action_id: compso_head_0
+      damage_type: 1
+      radius: 210
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 43
+      sub_action_id: compso_head_1
+      damage_type: 1
+      radius: 210
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  active_skills:
+  - key: active_default
+    motion: Compso_Active_Default
+    _clipObj: {fileID: 7400000, guid: 92244497703698140955761cf279bce8, type: 2}
+  etc_motions:
+  - key: compso_battle_idle
+    motion: Compso_Battle_Idle
+    _clipObj: {fileID: 7400000, guid: 3fe177f2e23dbc446853fbd38fad3e2d, type: 2}
+  - key: compso_flinch
+    motion: Compso_Flinch
+    _clipObj: {fileID: 7400000, guid: c49732b627ebc364386eb03bf37efc70, type: 2}

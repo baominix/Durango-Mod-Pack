@@ -14,11 +14,12 @@ using Shared.Economy;
 namespace BaoX.DurangoOriginal.OfflineClanRestoration
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class OfflineClanRestorationPlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "com.baox.durango.original.offlineclanrestoration";
+        public const string PluginGuid = "com.baominix.durango.original.offlineclanrestoration";
         public const string PluginName = "Offline Clan Restoration Plugin";
-        public const string PluginVersion = "0.1.0";
+        public const string PluginVersion = "0.1.2";
 
         internal static ManualLogSource Log;
         internal static ConfigEntry<bool> Enabled;
@@ -92,15 +93,24 @@ namespace BaoX.DurangoOriginal.OfflineClanRestoration
             ClanJson json = new ClanJson
             {
                 id = OfflineClanRestorationPlugin.ClanId.Value,
-                name = OfflineClanRestorationPlugin.ClanName.Value,
+                name = OfflineClanLocalization.ResolveDefault(
+                    OfflineClanRestorationPlugin.ClanName.Value,
+                    "Durango Clan",
+                    "default_clan_name"),
                 fund = OfflineClanRestorationPlugin.ClanFund.Value,
                 level = Math.Max(1, OfflineClanRestorationPlugin.ClanLevel.Value),
                 exp = Math.Max(0L, OfflineClanRestorationPlugin.ClanExp.Value),
-                intro = OfflineClanRestorationPlugin.ClanIntro.Value,
-                notice = OfflineClanRestorationPlugin.ClanNotice.Value,
+                intro = OfflineClanLocalization.ResolveDefault(
+                    OfflineClanRestorationPlugin.ClanIntro.Value,
+                    "A local offline clan.",
+                    "default_intro"),
+                notice = OfflineClanLocalization.ResolveDefault(
+                    OfflineClanRestorationPlugin.ClanNotice.Value,
+                    "Offline clan restored.",
+                    "default_notice"),
                 member_count = 1,
                 capacity = 30,
-                mainland = "Offline",
+                mainland = OfflineClanLocalization.Get("offline"),
                 members = new Pair<string, int>[] { new Pair<string, int>(entityId, 0) },
                 appliers = new string[0],
                 role_infos = new Dictionary<int, RoleInfo>
@@ -114,7 +124,7 @@ namespace BaoX.DurangoOriginal.OfflineClanRestoration
                             permissions = Permissions.ApproveMember | Permissions.PromoteMember |
                                 Permissions.EditClanInfo | Permissions.OccupyWarphole | Permissions.Research,
                             user_type = UserType.Root,
-                            name = "Leader"
+                            name = OfflineClanLocalization.Get("leader")
                         }
                     }
                 }
@@ -160,6 +170,7 @@ namespace BaoX.DurangoOriginal.OfflineClanRestoration
             {
                 ApplyToSystem(GameSystem<ClanSystem>.Instance());
             }
+            RefreshCraftBuildAvailability();
         }
 
         public static void Leave()
@@ -169,6 +180,37 @@ namespace BaoX.DurangoOriginal.OfflineClanRestoration
             if (GameSystem<ClanSystem>.HasInstance())
             {
                 ApplyToSystem(GameSystem<ClanSystem>.Instance());
+            }
+            RefreshCraftBuildAvailability();
+        }
+
+        private static void RefreshCraftBuildAvailability()
+        {
+            try
+            {
+                Type backendType = AccessTools.TypeByName(
+                    "BaoX.DurangoOriginal.CraftBuildMod.CraftBuildBackend");
+                if (backendType == null)
+                {
+                    return;
+                }
+
+                MethodInfo refresh = backendType.GetMethod(
+                    "RefreshLocalAvailability",
+                    BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                if (refresh != null)
+                {
+                    refresh.Invoke(null, null);
+                }
+            }
+            catch (Exception exception)
+            {
+                if (OfflineClanRestorationPlugin.Log != null)
+                {
+                    OfflineClanRestorationPlugin.Log.LogWarning(
+                        "Craft/build availability refresh after Clan state change failed: " +
+                        exception.Message);
+                }
             }
         }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using BepInEx;
 using BepInEx.Logging;
@@ -12,7 +13,8 @@ using Durango.Network;
 
 namespace BaoX.DurangoOriginal.GatheringMod
 {
-    [BepInPlugin("com.baox.durango.original.gathering", "Gathering Plugin (Original)", "0.2.0")]
+    [BepInPlugin("com.baominix.durango.original.gathering", "Gathering Plugin (Original)", "0.4.38")]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class GatheringPlugin : BaseUnityPlugin
     {
         internal static ManualLogSource Log;
@@ -22,13 +24,48 @@ namespace BaoX.DurangoOriginal.GatheringMod
         private void Awake()
         {
             Log = Logger;
-            _harmony = new Harmony("com.baox.durango.original.gathering");
+            _harmony = new Harmony("com.baominix.durango.original.gathering");
 
             Type playerType = AccessTools.TypeByName("Durango.Offline.Player");
             if (playerType == null)
             {
                 Logger.LogError("Durango.Offline.Player class not found!");
                 return;
+            }
+
+            MethodInfo interactionMenuSetMethod =
+                typeof(Durango.UI.InteractionMenuWidgetBase).GetMethod(
+                    "Set",
+                    BindingFlags.Instance |
+                    BindingFlags.Public |
+                    BindingFlags.NonPublic,
+                    null,
+                    new Type[]
+                    {
+                        typeof(InteractionData.InteractionMenuData),
+                        typeof(InteractionObject)
+                    },
+                    null);
+            if (interactionMenuSetMethod != null)
+            {
+                _harmony.Patch(
+                    interactionMenuSetMethod,
+                    new HarmonyMethod(
+                        typeof(ClientPatches).GetMethod(
+                            "InteractionMenuWidgetSetPrefix")),
+                    new HarmonyMethod(
+                        typeof(ClientPatches).GetMethod(
+                            "InteractionMenuWidgetSetPostfix")),
+                    null,
+                    null,
+                    null);
+                Logger.LogInfo(
+                    "Interaction menu mobile-style no-tool warnings patched.");
+            }
+            else
+            {
+                Logger.LogError(
+                    "InteractionMenuWidgetBase.Set not found.");
             }
 
             bool hasHandleTouchNatural = playerType.GetMethod("HandleTouchNatural", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic) != null;
@@ -80,6 +117,33 @@ namespace BaoX.DurangoOriginal.GatheringMod
                     Logger.LogError("Player constructor not found!");
                 }
 
+                var processMethod = playerType.GetMethod(
+                    "Process",
+                    BindingFlags.Instance |
+                    BindingFlags.Public |
+                    BindingFlags.NonPublic,
+                    null,
+                    Type.EmptyTypes,
+                    null);
+                if (processMethod != null)
+                {
+                    _harmony.Patch(
+                        processMethod,
+                        null,
+                        new HarmonyMethod(
+                            typeof(OriginalPatches).GetMethod(
+                                "PlayerProcessPostfix")),
+                        null,
+                        null,
+                        null);
+                    Logger.LogInfo(
+                        "Gathering outbound messages queued on Player.Process.");
+                }
+                else
+                {
+                    Logger.LogError("Player.Process method not found!");
+                }
+
                 var handleTouchMsgMethod = playerType.GetMethod("HandleTouchMsg", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 if (handleTouchMsgMethod != null)
                 {
@@ -88,6 +152,32 @@ namespace BaoX.DurangoOriginal.GatheringMod
                 else
                 {
                     Logger.LogError("HandleTouchMsg method not found!");
+                }
+
+                MethodInfo sendTouchMsgMethod =
+                    typeof(InteractionSystem).GetMethod(
+                        "SendTouchMsg",
+                        BindingFlags.Instance |
+                        BindingFlags.Public |
+                        BindingFlags.NonPublic);
+                if (sendTouchMsgMethod != null)
+                {
+                    _harmony.Patch(
+                        sendTouchMsgMethod,
+                        null,
+                        new HarmonyMethod(
+                            typeof(ClientPatches).GetMethod(
+                                "SendTouchMsgPostfix")),
+                        null,
+                        null,
+                        null);
+                    Logger.LogInfo(
+                        "InteractionSystem loading ring patched for delayed natural touches.");
+                }
+                else
+                {
+                    Logger.LogError(
+                        "InteractionSystem.SendTouchMsg not found!");
                 }
 
                 Type gatheringSystemType = AccessTools.TypeByName("GatheringSystem");
@@ -105,6 +195,56 @@ namespace BaoX.DurangoOriginal.GatheringMod
                     else
                     {
                         Logger.LogError("GatheringSystem.OnCollected not found!");
+                    }
+
+                    var onGatheringTimerMethod =
+                        gatheringSystemType.GetMethod(
+                            "OnGatheringTimer",
+                            BindingFlags.Instance |
+                            BindingFlags.NonPublic |
+                            BindingFlags.Public);
+                    if (onGatheringTimerMethod != null)
+                    {
+                        _harmony.Patch(
+                            onGatheringTimerMethod,
+                            null,
+                            new HarmonyMethod(
+                                typeof(ClientPatches).GetMethod(
+                                    "OnGatheringTimerPostfix")),
+                            null,
+                            null,
+                            null);
+                        Logger.LogInfo(
+                            "Gathering actual-duration cache patched.");
+                    }
+                    else
+                    {
+                        Logger.LogError(
+                            "GatheringSystem.OnGatheringTimer not found!");
+                    }
+
+                    MethodInfo findBestToolMethod =
+                        typeof(InteractionData.GatheringData).GetMethod(
+                            "FindBestTool",
+                            BindingFlags.Instance |
+                            BindingFlags.Public |
+                            BindingFlags.NonPublic);
+                    if (findBestToolMethod != null)
+                    {
+                        _harmony.Patch(
+                            findBestToolMethod,
+                            null,
+                            new HarmonyMethod(
+                                typeof(ClientPatches).GetMethod(
+                                    "FindBestToolPostfix")),
+                            null,
+                            null,
+                            null);
+                    }
+                    else
+                    {
+                        Logger.LogError(
+                            "GatheringData.FindBestTool not found!");
                     }
 
                     var prop = gatheringSystemType.GetProperty("CurrentGatheringData", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
@@ -127,6 +267,74 @@ namespace BaoX.DurangoOriginal.GatheringMod
                     {
                         Logger.LogError("GatheringSystem.CurrentGatheringData property not found!");
                     }
+
+                    Type gatheringDataType =
+                        AccessTools.TypeByName(
+                            "InteractionData.GatheringData");
+                    MethodInfo gatheringMethod =
+                        gatheringDataType == null
+                            ? null
+                            : gatheringSystemType.GetMethod(
+                                "Gathering",
+                                BindingFlags.Instance |
+                                BindingFlags.NonPublic,
+                                null,
+                                new Type[] { gatheringDataType },
+                                null);
+                    if (gatheringMethod != null)
+                    {
+                        _harmony.Patch(
+                            gatheringMethod,
+                            new HarmonyMethod(
+                                typeof(ClientPatches).GetMethod(
+                                    "GatheringPrefix")),
+                            new HarmonyMethod(
+                                typeof(ClientPatches).GetMethod(
+                                    "GatheringPostfix")),
+                            null,
+                            null,
+                            null);
+                        Logger.LogInfo(
+                            "GatheringSystem.Gathering skill precheck patched.");
+                    }
+                    else
+                    {
+                        Logger.LogError(
+                            "GatheringSystem.Gathering(GatheringData) not found!");
+                    }
+
+                    MethodInfo lockConfirmMethod =
+                        typeof(Durango.UI.MessageBox).GetMethod(
+                            "ShowLockConfirm",
+                            BindingFlags.Instance |
+                            BindingFlags.Public |
+                            BindingFlags.NonPublic,
+                            null,
+                            new Type[]
+                            {
+                                typeof(Durango.Logic.Item.ItemData),
+                                typeof(Action)
+                            },
+                            null);
+                    if (lockConfirmMethod != null)
+                    {
+                        _harmony.Patch(
+                            lockConfirmMethod,
+                            new HarmonyMethod(
+                                typeof(ClientPatches).GetMethod(
+                                    "ShowLockConfirmPrefix")),
+                            null,
+                            null,
+                            null,
+                            null);
+                        Logger.LogInfo(
+                            "Gathering locked-tool confirmation batching patched.");
+                    }
+                    else
+                    {
+                        Logger.LogError(
+                            "MessageBox.ShowLockConfirm(ItemData, Action) not found!");
+                    }
                 }
                 else
                 {
@@ -134,7 +342,42 @@ namespace BaoX.DurangoOriginal.GatheringMod
                 }
             }
 
-            Logger.LogInfo("Gathering Plugin loaded. Collectibles=Date Palm");
+            MethodInfo worldSaveMethod = typeof(Durango.Offline.World).GetMethod(
+                "Save",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+                null,
+                Type.EmptyTypes,
+                null);
+            if (worldSaveMethod != null)
+            {
+                _harmony.Patch(
+                    worldSaveMethod,
+                    null,
+                    new HarmonyMethod(
+                        typeof(WorldPersistencePatches).GetMethod(
+                            "WorldSavePostfix")),
+                    null,
+                    null,
+                    null);
+            }
+
+            MethodInfo endServerMethod = typeof(Durango.Offline.Server).GetMethod(
+                "EndServer",
+                BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+            if (endServerMethod != null)
+            {
+                _harmony.Patch(
+                    endServerMethod,
+                    new HarmonyMethod(
+                        typeof(WorldPersistencePatches).GetMethod(
+                            "ServerEndServerPrefix")),
+                    null,
+                    null,
+                    null,
+                    null);
+            }
+
+            Logger.LogInfo("Gathering Plugin 0.4.38 loaded. Character/category/world and partial natural-resource data are persisted across map changes.");
         }
 
         private void OnDestroy()
@@ -147,77 +390,553 @@ namespace BaoX.DurangoOriginal.GatheringMod
         }
     }
 
-    internal static class DatePalmGatheringData
+    internal static class GatheringWorldPersistence
     {
-        internal const string CollectibleId = "tree_date";
-        internal const int XpReward = 2;
+        private static readonly object Gate = new object();
+        private static readonly HashSet<Durango.Offline.World> DirtyWorlds =
+            new HashSet<Durango.Offline.World>();
 
-        private static readonly HashSet<string> RewardGeneratorIds = new HashSet<string>(StringComparer.Ordinal)
+        internal static void MarkDirty(Durango.Offline.World world)
         {
-            "date",
-            "wood_log",
-            "leaf_large"
-        };
-
-        internal static bool IsDatePalm(string collectibleId)
-        {
-            return string.Equals(collectibleId, CollectibleId, StringComparison.Ordinal);
-        }
-
-        internal static bool IsRewardGenerator(string generatorId)
-        {
-            return generatorId != null && RewardGeneratorIds.Contains(generatorId);
-        }
-
-        internal static bool HasOnlyDatePalmGenerators(Generator[] generators)
-        {
-            if (generators == null || generators.Length == 0)
+            if (world == null)
             {
-                return true;
+                return;
+            }
+            lock (Gate)
+            {
+                DirtyWorlds.Add(world);
+            }
+        }
+
+        internal static void MarkSaved(Durango.Offline.World world)
+        {
+            if (world == null)
+            {
+                return;
+            }
+            lock (Gate)
+            {
+                DirtyWorlds.Remove(world);
+            }
+        }
+
+        internal static void FlushAll()
+        {
+            Durango.Offline.World[] worlds;
+            lock (Gate)
+            {
+                worlds = new Durango.Offline.World[DirtyWorlds.Count];
+                DirtyWorlds.CopyTo(worlds);
+                DirtyWorlds.Clear();
             }
 
-            for (int i = 0; i < generators.Length; i++)
+            for (int i = 0; i < worlds.Length; i++)
             {
-                if (!IsRewardGenerator(generators[i].Id))
+                try
                 {
-                    return false;
+                    worlds[i].Save();
+                }
+                catch (Exception ex)
+                {
+                    MarkDirty(worlds[i]);
+                    GatheringPlugin.Log.LogError(
+                        "Deferred gathering world save failed: " + ex);
                 }
             }
 
-            return true;
+            if (worlds.Length > 0)
+            {
+                GatheringPlugin.Log.LogInfo(
+                    "Deferred gathering world saved at map/logout transition. worlds=" +
+                    worlds.Length);
+            }
         }
 
-        internal static List<Generator> CreateGenerators(int level)
+        internal static void SaveNow(Durango.Offline.World world)
         {
-            if (level <= 0)
+            if (world == null)
             {
-                level = 1;
+                return;
             }
 
-            List<Generator> generators = new List<Generator>();
-            generators.Add(CreateGenerator("date", "Date", "icon_nat_fruit_date", 5, level));
-            generators.Add(CreateGenerator("wood_log", "Log", "icon_nat_wood_log", 2, level));
-            generators.Add(CreateGenerator("leaf_large", "Large Leaf", "icon_nat_leaf_big", 2, level));
-            return generators;
+            try
+            {
+                world.Save();
+                MarkSaved(world);
+            }
+            catch (Exception ex)
+            {
+                MarkDirty(world);
+                GatheringPlugin.Log.LogError(
+                    "Immediate gathering world save failed: " + ex);
+            }
+        }
+    }
+
+    internal static class WorldPersistencePatches
+    {
+        public static void WorldSavePostfix(Durango.Offline.World __instance)
+        {
+            GatheringWorldPersistence.MarkSaved(__instance);
         }
 
-        private static Generator CreateGenerator(string id, string name, string icon, int amount, int level)
+        public static void ServerEndServerPrefix()
         {
-            Dictionary<string, int> tools = new Dictionary<string, int>();
-            tools.Add("bare_hands", 1);
+            GatheringOutboundQueue.FlushAll();
+            DatePalmReflection.FlushPersistentState();
+            GatheringWorldPersistence.FlushAll();
+        }
+    }
 
-            return new Generator
+#if false
+    // Kept only as source history for the backed-up 0.4.20 experiment.
+    internal static class OfflinePlayerScheduler
+    {
+        private sealed class ScheduledWork
+        {
+            internal object Player;
+            internal DateTime DueAt;
+            internal Action Action;
+            internal bool Cancelled;
+        }
+
+        private static readonly object Gate = new object();
+        private static readonly List<ScheduledWork> Pending =
+            new List<ScheduledWork>();
+
+        internal static object Schedule(
+            object player,
+            double delayMilliseconds,
+            Action action)
+        {
+            ScheduledWork work = new ScheduledWork
             {
-                Id = id,
-                Name = name,
-                Icon = icon,
-                Amount = amount,
-                Level = level,
-                Effort = 20f,
-                Duration = 3f,
-                Enabled = true,
-                ToolRequirements = tools
+                Player = player,
+                DueAt = DateTime.UtcNow.AddMilliseconds(
+                    Math.Max(0.0, delayMilliseconds)),
+                Action = action
             };
+            lock (Gate)
+            {
+                Pending.Add(work);
+            }
+            return work;
+        }
+
+        internal static void Cancel(object token)
+        {
+            ScheduledWork work = token as ScheduledWork;
+            if (work == null)
+            {
+                return;
+            }
+            lock (Gate)
+            {
+                work.Cancelled = true;
+                Pending.Remove(work);
+            }
+        }
+
+        internal static void Process(object player)
+        {
+            List<Action> dueActions = null;
+            DateTime now = DateTime.UtcNow;
+            lock (Gate)
+            {
+                for (int i = Pending.Count - 1; i >= 0; i--)
+                {
+                    ScheduledWork work = Pending[i];
+                    if (work.Cancelled)
+                    {
+                        Pending.RemoveAt(i);
+                        continue;
+                    }
+                    if (!object.ReferenceEquals(work.Player, player) ||
+                        work.DueAt > now)
+                    {
+                        continue;
+                    }
+
+                    Pending.RemoveAt(i);
+                    if (dueActions == null)
+                    {
+                        dueActions = new List<Action>();
+                    }
+                    dueActions.Add(work.Action);
+                }
+            }
+
+            if (dueActions == null)
+            {
+                return;
+            }
+            dueActions.Reverse();
+            for (int i = 0; i < dueActions.Count; i++)
+            {
+                try
+                {
+                    dueActions[i]();
+                }
+                catch (Exception ex)
+                {
+                    GatheringPlugin.Log.LogError(
+                        "Offline scheduled gathering work failed: " + ex);
+                }
+            }
+        }
+    }
+
+    internal static class GatheringPersistenceBatch
+    {
+        private static readonly object DirtyGate = new object();
+        private static readonly HashSet<Durango.Offline.PlayerContext>
+            DirtyPlayerContexts =
+                new HashSet<Durango.Offline.PlayerContext>();
+        private static readonly HashSet<Durango.Offline.WorldContext>
+            DirtyWorldContexts =
+                new HashSet<Durango.Offline.WorldContext>();
+
+        [ThreadStatic]
+        private static int _depth;
+
+        [ThreadStatic]
+        private static bool _flushing;
+
+        [ThreadStatic]
+        private static HashSet<Durango.Offline.PlayerContext>
+            _playerContexts;
+
+        [ThreadStatic]
+        private static HashSet<Durango.Offline.WorldContext>
+            _worldContexts;
+
+        internal static void Begin()
+        {
+            _depth++;
+            if (_depth != 1)
+            {
+                return;
+            }
+            _playerContexts =
+                new HashSet<Durango.Offline.PlayerContext>();
+            _worldContexts =
+                new HashSet<Durango.Offline.WorldContext>();
+        }
+
+        internal static bool Defer(
+            Durango.Offline.PlayerContext context)
+        {
+            if (_flushing || context == null)
+            {
+                return false;
+            }
+
+            if (_depth > 0)
+            {
+                _playerContexts.Add(context);
+                return true;
+            }
+
+            lock (DirtyGate)
+            {
+                return DirtyPlayerContexts.Contains(context);
+            }
+        }
+
+        internal static bool Defer(
+            Durango.Offline.WorldContext context,
+            bool persistent)
+        {
+            if (_flushing || context == null || persistent)
+            {
+                return false;
+            }
+
+            if (_depth > 0)
+            {
+                _worldContexts.Add(context);
+                return true;
+            }
+
+            lock (DirtyGate)
+            {
+                return DirtyWorldContexts.Contains(context);
+            }
+        }
+
+        internal static void End()
+        {
+            if (_depth <= 0)
+            {
+                return;
+            }
+            _depth--;
+            if (_depth != 0)
+            {
+                return;
+            }
+
+            HashSet<Durango.Offline.PlayerContext> players =
+                _playerContexts;
+            HashSet<Durango.Offline.WorldContext> worlds =
+                _worldContexts;
+            _playerContexts = null;
+            _worldContexts = null;
+
+            lock (DirtyGate)
+            {
+                if (players != null)
+                {
+                    foreach (Durango.Offline.PlayerContext context in players)
+                    {
+                        DirtyPlayerContexts.Add(context);
+                    }
+                }
+                if (worlds != null)
+                {
+                    foreach (Durango.Offline.WorldContext context in worlds)
+                    {
+                        DirtyWorldContexts.Add(context);
+                    }
+                }
+            }
+        }
+
+        internal static void FlushAll()
+        {
+            Durango.Offline.PlayerContext[] players;
+            Durango.Offline.WorldContext[] worlds;
+            lock (DirtyGate)
+            {
+                players = new Durango.Offline.PlayerContext[
+                    DirtyPlayerContexts.Count];
+                DirtyPlayerContexts.CopyTo(players);
+                worlds = new Durango.Offline.WorldContext[
+                    DirtyWorldContexts.Count];
+                DirtyWorldContexts.CopyTo(worlds);
+                DirtyPlayerContexts.Clear();
+                DirtyWorldContexts.Clear();
+            }
+
+            if (players.Length == 0 && worlds.Length == 0)
+            {
+                return;
+            }
+
+            _flushing = true;
+            try
+            {
+                for (int i = 0; i < players.Length; i++)
+                {
+                    players[i].Save();
+                }
+                for (int i = 0; i < worlds.Length; i++)
+                {
+                    worlds[i].Save(false);
+                }
+                GatheringPlugin.Log.LogInfo(
+                    "Gathering dirty data saved at map/server transition. players=" +
+                    players.Length +
+                    ", worlds=" + worlds.Length);
+            }
+            finally
+            {
+                _flushing = false;
+            }
+        }
+    }
+
+    internal static class PersistencePatches
+    {
+        public static bool PlayerContextSavePrefix(
+            Durango.Offline.PlayerContext __instance)
+        {
+            return !GatheringPersistenceBatch.Defer(__instance);
+        }
+
+        public static bool WorldContextSavePrefix(
+            Durango.Offline.WorldContext __instance,
+            bool persistent)
+        {
+            return !GatheringPersistenceBatch.Defer(
+                __instance,
+                persistent);
+        }
+
+        public static void ServerEndServerPrefix()
+        {
+            GatheringPersistenceBatch.FlushAll();
+        }
+    }
+#endif
+
+    internal static class GatheringOutboundQueue
+    {
+        private sealed class OutboundWork
+        {
+            internal string Label;
+            internal Action Action;
+        }
+
+        private static readonly object Gate = new object();
+        private static readonly Dictionary<Durango.Offline.Player, Queue<OutboundWork>>
+            Pending =
+                new Dictionary<Durango.Offline.Player, Queue<OutboundWork>>();
+        private static readonly HashSet<Durango.Offline.Player> Registered =
+            new HashSet<Durango.Offline.Player>();
+
+        internal static void Register(Durango.Offline.Player player)
+        {
+            if (player == null)
+            {
+                return;
+            }
+
+            bool subscribe = false;
+            lock (Gate)
+            {
+                if (!Pending.ContainsKey(player))
+                {
+                    Pending[player] = new Queue<OutboundWork>();
+                }
+                if (Registered.Add(player))
+                {
+                    subscribe = true;
+                }
+            }
+
+            if (subscribe)
+            {
+                player.Closed += delegate()
+                {
+                    DatePalmCollectState.CancelSession(player);
+                    Clear(player);
+                };
+            }
+        }
+
+        internal static void Enqueue(
+            Durango.Offline.Player player,
+            Action action)
+        {
+            Enqueue(player, "Action", action);
+        }
+
+        internal static void Enqueue(
+            Durango.Offline.Player player,
+            string label,
+            Action action)
+        {
+            if (player == null || action == null)
+            {
+                return;
+            }
+
+            lock (Gate)
+            {
+                Queue<OutboundWork> queue;
+                if (!Pending.TryGetValue(player, out queue))
+                {
+                    queue = new Queue<OutboundWork>();
+                    Pending[player] = queue;
+                }
+                queue.Enqueue(new OutboundWork
+                {
+                    Label = string.IsNullOrEmpty(label) ? "Action" : label,
+                    Action = action
+                });
+            }
+        }
+
+        internal static void Send<T>(
+            Durango.Offline.Player player,
+            T message,
+            uint replyOf)
+        {
+            Enqueue(player, typeof(T).Name, delegate()
+            {
+                player.Send<T>(message, replyOf);
+            });
+        }
+
+        internal static void ProcessOne(Durango.Offline.Player player)
+        {
+            OutboundWork work = null;
+            lock (Gate)
+            {
+                Queue<OutboundWork> queue;
+                if (player != null &&
+                    Pending.TryGetValue(player, out queue) &&
+                    queue.Count > 0)
+                {
+                    work = queue.Dequeue();
+                }
+            }
+
+            if (work == null || work.Action == null)
+            {
+                return;
+            }
+
+            try
+            {
+                work.Action();
+            }
+            catch (Exception ex)
+            {
+                GatheringPlugin.Log.LogError(
+                    "Gathering outbound queue action failed: " + ex);
+            }
+        }
+
+        internal static void FlushAll()
+        {
+            List<OutboundWork> works = new List<OutboundWork>();
+            lock (Gate)
+            {
+                foreach (KeyValuePair<Durango.Offline.Player,
+                    Queue<OutboundWork>> pair in Pending)
+                {
+                    while (pair.Value.Count > 0)
+                    {
+                        works.Add(pair.Value.Dequeue());
+                    }
+                }
+            }
+
+            for (int i = 0; i < works.Count; i++)
+            {
+                try
+                {
+                    if (works[i] != null && works[i].Action != null)
+                    {
+                        works[i].Action();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    GatheringPlugin.Log.LogError(
+                        "Gathering shutdown queue action failed (" +
+                        (works[i] == null ? "unknown" : works[i].Label) +
+                        "): " + ex);
+                }
+            }
+
+            if (works.Count > 0)
+            {
+                GatheringPlugin.Log.LogInfo(
+                    "Flushed " + works.Count +
+                    " pending gathering action(s) before server shutdown.");
+            }
+        }
+
+        private static void Clear(Durango.Offline.Player player)
+        {
+            lock (Gate)
+            {
+                Pending.Remove(player);
+                Registered.Remove(player);
+            }
         }
     }
 
@@ -278,7 +997,7 @@ namespace BaoX.DurangoOriginal.GatheringMod
                 }
                 ActiveSessions[player] = new GatherSession 
                 { 
-                    Timer = timer, 
+                    Timer = timer,
                     Seq = seq,
                     StartTime = DateTime.UtcNow
                 };
@@ -337,52 +1056,83 @@ namespace BaoX.DurangoOriginal.GatheringMod
 
     internal static class DatePalmReflection
     {
-        private static readonly Dictionary<string, Collectible> CustomCollectedFrom = new Dictionary<string, Collectible>();
+        private const BindingFlags InstanceFields =
+            BindingFlags.Instance |
+            BindingFlags.Public |
+            BindingFlags.NonPublic;
+
+        private static readonly FieldInfo PlayerWorldField =
+            typeof(Durango.Offline.Player).GetField(
+                "_world",
+                InstanceFields);
+        private static readonly FieldInfo WorldContextField =
+            typeof(Durango.Offline.World).GetField(
+                "_context",
+                InstanceFields);
+        private static readonly FieldInfo PlayerContextField =
+            typeof(Durango.Offline.Player).GetField(
+                "_context",
+                InstanceFields);
+        private static readonly FieldInfo NativeCollectedFromField =
+            typeof(Durango.Offline.WorldContext).GetField(
+                "CollectedFrom",
+                InstanceFields);
+        private static readonly FieldInfo PlayerGeneratorsField =
+            typeof(Durango.Offline.Player).GetField(
+                "_generators",
+                InstanceFields);
+
+        private static readonly object CollectedFromGate = new object();
+        private static readonly Dictionary<object,
+            Dictionary<string, Dictionary<string, Collectible>>>
+            CustomCollectedFromByOwner =
+                new Dictionary<object,
+                    Dictionary<string, Dictionary<string, Collectible>>>();
+        private static readonly HashSet<Durango.Offline.PlayerContext>
+            DirtyPersistentContexts =
+                new HashSet<Durango.Offline.PlayerContext>();
+
+        private const string PersistentStoragePrefix =
+            "gathering_plugin.collected_from.v1.";
 
         internal static Collectible? GetCollectedFrom(object player, string tileKey)
         {
             try
             {
-                object context = GetWorldContext(player);
-                if (context == null)
+                Durango.Offline.WorldContext context = GetWorldContext(player);
+                IDictionary<string, Collectible> native =
+                    GetNativeCollectedFrom(context);
+                if (native != null)
                 {
-                    Collectible col;
-                    if (CustomCollectedFrom.TryGetValue(tileKey, out col))
-                    {
-                        return col;
-                    }
-                    return null;
+                    Collectible nativeCollectible;
+                    return native.TryGetValue(tileKey, out nativeCollectible)
+                        ? new Collectible?(nativeCollectible)
+                        : null;
                 }
 
-                FieldInfo field = AccessTools.Field(context.GetType(), "CollectedFrom");
-                if (field == null)
-                {
-                    Collectible col;
-                    if (CustomCollectedFrom.TryGetValue(tileKey, out col))
-                    {
-                        return col;
-                    }
-                    return null;
-                }
-
-                IDictionary<string, Collectible> collectedFrom = field.GetValue(context) as IDictionary<string, Collectible>;
-                if (collectedFrom == null)
-                {
-                    Collectible col;
-                    if (CustomCollectedFrom.TryGetValue(tileKey, out col))
-                    {
-                        return col;
-                    }
-                    return null;
-                }
-
-                Collectible collectible;
-                if (!collectedFrom.TryGetValue(tileKey, out collectible))
+                Durango.Offline.PlayerContext playerContext =
+                    GetPlayerContext(player);
+                object owner = (object)playerContext ?? context ?? player;
+                if (owner == null)
                 {
                     return null;
                 }
 
-                return new Collectible?(collectible);
+                lock (CollectedFromGate)
+                {
+                    string worldKey = GetWorldKey(context);
+                    Dictionary<string, Collectible> collectedFrom =
+                        GetOrLoadCollectedFrom(
+                            owner,
+                            playerContext,
+                            worldKey);
+                    Collectible collectible;
+                    return collectedFrom.TryGetValue(
+                            tileKey,
+                            out collectible)
+                            ? new Collectible?(collectible)
+                            : null;
+                }
             }
             catch (Exception ex)
             {
@@ -395,28 +1145,45 @@ namespace BaoX.DurangoOriginal.GatheringMod
         {
             try
             {
-                object context = GetWorldContext(player);
-                if (context == null)
+                Durango.Offline.WorldContext context = GetWorldContext(player);
+                IDictionary<string, Collectible> native =
+                    GetNativeCollectedFrom(context);
+                if (native != null)
                 {
-                    CustomCollectedFrom[tileKey] = collectible;
+                    native[tileKey] = collectible;
                     return;
                 }
 
-                FieldInfo field = AccessTools.Field(context.GetType(), "CollectedFrom");
-                if (field == null)
+                Durango.Offline.PlayerContext playerContext =
+                    GetPlayerContext(player);
+                object owner = (object)playerContext ?? context ?? player;
+                if (owner == null)
                 {
-                    CustomCollectedFrom[tileKey] = collectible;
                     return;
                 }
 
-                IDictionary<string, Collectible> collectedFrom = field.GetValue(context) as IDictionary<string, Collectible>;
-                if (collectedFrom != null)
+                lock (CollectedFromGate)
                 {
+                    string worldKey = GetWorldKey(context);
+                    Dictionary<string, Collectible> collectedFrom =
+                        GetOrLoadCollectedFrom(
+                            owner,
+                            playerContext,
+                            worldKey);
                     collectedFrom[tileKey] = collectible;
-                }
-                else
-                {
-                    CustomCollectedFrom[tileKey] = collectible;
+
+                    if (playerContext != null)
+                    {
+                        if (playerContext.Storage == null)
+                        {
+                            playerContext.Storage =
+                                new Dictionary<string, byte[]>();
+                        }
+                        playerContext.Storage[
+                            GetPersistentStorageKey(worldKey)] =
+                                SerializeCollectedFrom(collectedFrom);
+                        DirtyPersistentContexts.Add(playerContext);
+                    }
                 }
             }
             catch (Exception ex)
@@ -425,14 +1192,281 @@ namespace BaoX.DurangoOriginal.GatheringMod
             }
         }
 
+        internal static void FlushPersistentState()
+        {
+            Durango.Offline.PlayerContext[] contexts;
+            lock (CollectedFromGate)
+            {
+                contexts = new Durango.Offline.PlayerContext[
+                    DirtyPersistentContexts.Count];
+                DirtyPersistentContexts.CopyTo(contexts);
+                DirtyPersistentContexts.Clear();
+            }
+
+            for (int i = 0; i < contexts.Length; i++)
+            {
+                try
+                {
+                    contexts[i].Save();
+                }
+                catch (Exception ex)
+                {
+                    lock (CollectedFromGate)
+                    {
+                        DirtyPersistentContexts.Add(contexts[i]);
+                    }
+                    GatheringPlugin.Log.LogError(
+                        "Saving partial natural-resource state failed: " + ex);
+                }
+            }
+
+            if (contexts.Length > 0)
+            {
+                GatheringPlugin.Log.LogInfo(
+                    "Saved partial natural-resource state for " +
+                    contexts.Length + " player context(s).");
+            }
+        }
+
+        private static Dictionary<string, Collectible>
+            GetOrLoadCollectedFrom(
+                object owner,
+                Durango.Offline.PlayerContext playerContext,
+                string worldKey)
+        {
+            Dictionary<string, Dictionary<string, Collectible>> worlds;
+            if (!CustomCollectedFromByOwner.TryGetValue(owner, out worlds))
+            {
+                worlds = new Dictionary<string,
+                    Dictionary<string, Collectible>>(StringComparer.Ordinal);
+                CustomCollectedFromByOwner[owner] = worlds;
+            }
+
+            Dictionary<string, Collectible> collectedFrom;
+            if (worlds.TryGetValue(worldKey, out collectedFrom))
+            {
+                return collectedFrom;
+            }
+
+            collectedFrom = new Dictionary<string, Collectible>(
+                StringComparer.Ordinal);
+            if (playerContext != null && playerContext.Storage != null)
+            {
+                byte[] data;
+                if (playerContext.Storage.TryGetValue(
+                    GetPersistentStorageKey(worldKey),
+                    out data))
+                {
+                    collectedFrom = DeserializeCollectedFrom(data);
+                }
+            }
+
+            worlds[worldKey] = collectedFrom;
+            return collectedFrom;
+        }
+
+        private static string GetWorldKey(
+            Durango.Offline.WorldContext context)
+        {
+            if (context == null)
+            {
+                return "unknown";
+            }
+
+            string routeKey = string.Empty;
+            try
+            {
+                if (!string.IsNullOrEmpty(context.Path))
+                {
+                    string directory = System.IO.Path.GetDirectoryName(
+                        context.Path);
+                    string slot = System.IO.Path.GetFileNameWithoutExtension(
+                        context.Path);
+                    string statePath = System.IO.Path.Combine(
+                        directory,
+                        slot + ".harbor.state");
+                    if (File.Exists(statePath))
+                    {
+                        string[] lines = File.ReadAllLines(statePath);
+                        for (int i = 0; i < lines.Length; i++)
+                        {
+                            const string prefix = "current_save_key=";
+                            if (lines[i].StartsWith(
+                                prefix,
+                                StringComparison.Ordinal))
+                            {
+                                routeKey = lines[i].Substring(prefix.Length);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                GatheringPlugin.Log.LogWarning(
+                    "Could not read Harbor route identity: " + ex.Message);
+            }
+
+            return "route=" +
+                (string.IsNullOrEmpty(routeKey) ? "home" : routeKey) +
+                "|terrain=" + (context.TerrainId ?? string.Empty);
+        }
+
+        private static string GetPersistentStorageKey(string worldKey)
+        {
+            return PersistentStoragePrefix + worldKey;
+        }
+
+        private static byte[] SerializeCollectedFrom(
+            Dictionary<string, Collectible> collectedFrom)
+        {
+            using (MemoryStream stream = new MemoryStream())
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(1);
+                writer.Write(collectedFrom.Count);
+                foreach (KeyValuePair<string, Collectible> pair in
+                    collectedFrom)
+                {
+                    WriteString(writer, pair.Key);
+                    Collectible collectible = pair.Value;
+                    WriteString(writer, collectible.EntityId);
+                    WriteString(writer, collectible.CollectibleId);
+                    WriteString(writer, collectible.Size);
+                    WriteString(writer, collectible.CriticalGenerator);
+
+                    Generator[] generators = collectible.Generators ??
+                        new Generator[0];
+                    writer.Write(generators.Length);
+                    for (int i = 0; i < generators.Length; i++)
+                    {
+                        Generator generator = generators[i];
+                        WriteString(writer, generator.Id);
+                        writer.Write(generator.Level);
+                        WriteString(writer, generator.Name);
+                        WriteString(writer, generator.Icon);
+                        writer.Write(generator.Amount);
+                        writer.Write(generator.Effort);
+                        writer.Write(generator.Duration);
+                        writer.Write(generator.Enabled);
+
+                        Dictionary<string, int> requirements =
+                            generator.ToolRequirements;
+                        writer.Write(requirements == null
+                            ? 0
+                            : requirements.Count);
+                        if (requirements != null)
+                        {
+                            foreach (KeyValuePair<string, int> requirement in
+                                requirements)
+                            {
+                                WriteString(writer, requirement.Key);
+                                writer.Write(requirement.Value);
+                            }
+                        }
+                    }
+                }
+                writer.Flush();
+                return stream.ToArray();
+            }
+        }
+
+        private static Dictionary<string, Collectible>
+            DeserializeCollectedFrom(byte[] data)
+        {
+            Dictionary<string, Collectible> result =
+                new Dictionary<string, Collectible>(StringComparer.Ordinal);
+            if (data == null || data.Length == 0)
+            {
+                return result;
+            }
+
+            try
+            {
+                using (MemoryStream stream = new MemoryStream(data, false))
+                using (BinaryReader reader = new BinaryReader(stream))
+                {
+                    int version = reader.ReadInt32();
+                    int entryCount = reader.ReadInt32();
+                    if (version != 1 || entryCount < 0 || entryCount > 100000)
+                    {
+                        return result;
+                    }
+
+                    for (int i = 0; i < entryCount; i++)
+                    {
+                        string tileKey = reader.ReadString();
+                        Collectible collectible = default(Collectible);
+                        collectible.EntityId = reader.ReadString();
+                        collectible.CollectibleId = reader.ReadString();
+                        collectible.Size = reader.ReadString();
+                        collectible.CriticalGenerator = reader.ReadString();
+
+                        int generatorCount = reader.ReadInt32();
+                        if (generatorCount < 0 || generatorCount > 1000)
+                        {
+                            return new Dictionary<string, Collectible>(
+                                StringComparer.Ordinal);
+                        }
+                        collectible.Generators =
+                            new Generator[generatorCount];
+                        for (int j = 0; j < generatorCount; j++)
+                        {
+                            Generator generator = default(Generator);
+                            generator.Id = reader.ReadString();
+                            generator.Level = reader.ReadInt32();
+                            generator.Name = reader.ReadString();
+                            generator.Icon = reader.ReadString();
+                            generator.Amount = reader.ReadInt32();
+                            generator.Effort = reader.ReadSingle();
+                            generator.Duration = reader.ReadSingle();
+                            generator.Enabled = reader.ReadBoolean();
+
+                            int requirementCount = reader.ReadInt32();
+                            if (requirementCount < 0 || requirementCount > 1000)
+                            {
+                                return new Dictionary<string, Collectible>(
+                                    StringComparer.Ordinal);
+                            }
+                            generator.ToolRequirements =
+                                new Dictionary<string, int>(
+                                    requirementCount,
+                                    StringComparer.Ordinal);
+                            for (int k = 0; k < requirementCount; k++)
+                            {
+                                generator.ToolRequirements[
+                                    reader.ReadString()] = reader.ReadInt32();
+                            }
+                            collectible.Generators[j] = generator;
+                        }
+                        result[tileKey] = collectible;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                GatheringPlugin.Log.LogWarning(
+                    "Stored partial natural-resource state was invalid: " +
+                    ex.Message);
+                result.Clear();
+            }
+            return result;
+        }
+
+        private static void WriteString(BinaryWriter writer, string value)
+        {
+            writer.Write(value ?? string.Empty);
+        }
+
         internal static void SetGenerators(object player, List<Generator> generators)
         {
             try
             {
-                FieldInfo field = AccessTools.Field(player.GetType(), "_generators");
-                if (field != null)
+                if (PlayerGeneratorsField != null &&
+                    player is Durango.Offline.Player)
                 {
-                    field.SetValue(player, generators);
+                    PlayerGeneratorsField.SetValue(player, generators);
                 }
             }
             catch (Exception ex)
@@ -441,28 +1475,46 @@ namespace BaoX.DurangoOriginal.GatheringMod
             }
         }
 
-        private static object GetWorldContext(object player)
+        private static Durango.Offline.WorldContext GetWorldContext(
+            object player)
         {
-            FieldInfo worldField = AccessTools.Field(player.GetType(), "_world");
-            if (worldField == null)
+            if (player == null ||
+                PlayerWorldField == null ||
+                !(player is Durango.Offline.Player))
             {
                 return null;
             }
 
-            object world = worldField.GetValue(player);
-            if (world == null)
+            object world = PlayerWorldField.GetValue(player);
+            if (world == null || WorldContextField == null)
             {
                 return null;
             }
 
-            FieldInfo contextField = AccessTools.Field(world.GetType(), "_context");
-            if (contextField == null)
-            {
-                return null;
-            }
-
-            return contextField.GetValue(world);
+            return WorldContextField.GetValue(world) as
+                Durango.Offline.WorldContext;
         }
+
+        private static Durango.Offline.PlayerContext GetPlayerContext(
+            object player)
+        {
+            return player == null ||
+                PlayerContextField == null ||
+                !(player is Durango.Offline.Player)
+                    ? null
+                    : PlayerContextField.GetValue(player) as
+                        Durango.Offline.PlayerContext;
+        }
+
+        private static IDictionary<string, Collectible> GetNativeCollectedFrom(
+            object context)
+        {
+            return context == null || NativeCollectedFromField == null
+                ? null
+                : NativeCollectedFromField.GetValue(context) as
+                    IDictionary<string, Collectible>;
+        }
+
     }
 
     internal static class DatePalmXpBridge
@@ -508,7 +1560,7 @@ namespace BaoX.DurangoOriginal.GatheringMod
             }
 
             _warnedMissingApi = true;
-            GatheringPlugin.Log.LogWarning("PlayerProgressionApi not found; Date Palm XP reward disabled");
+            GatheringPlugin.Log.LogWarning("PlayerProgressionApi not found; gathering XP reward disabled");
         }
     }
 
@@ -516,33 +1568,77 @@ namespace BaoX.DurangoOriginal.GatheringMod
     {
         public static void GeneratorPostfix(BiomeSpriteInfo biomeSpriteInfo, ref List<Generator> __result)
         {
-            if (biomeSpriteInfo == null || !DatePalmGatheringData.IsDatePalm(biomeSpriteInfo.CollectibleId))
+            if (biomeSpriteInfo == null)
             {
                 return;
             }
-            __result = DatePalmGatheringData.CreateGenerators(1);
+
+            if (UnstableSavannaSeaDatabase.IsTamedVegetation(
+                biomeSpriteInfo.CollectibleId))
+            {
+                __result =
+                    UnstableSavannaSeaDatabase.CreateTamedRootGenerators();
+            }
+            else if (UnstableSavannaSeaDatabase.IsActive(
+                biomeSpriteInfo.CollectibleId))
+            {
+                __result = UnstableSavannaSeaDatabase.CreateGenerators(
+                    biomeSpriteInfo.CollectibleId);
+            }
         }
 
         public static void HandleTouchNaturalPostfix(object __instance, Messages.Touch touch, BiomeSpriteInfo biomeSpriteInfo, ref Touched __result)
         {
-            if (biomeSpriteInfo == null && !DatePalmGatheringData.IsDatePalm(__result.Collectible.CollectibleId))
-            {
-                return;
-            }
-            if (biomeSpriteInfo != null && !DatePalmGatheringData.IsDatePalm(biomeSpriteInfo.CollectibleId))
+            string collectibleId = biomeSpriteInfo == null
+                ? __result.Collectible.CollectibleId
+                : biomeSpriteInfo.CollectibleId;
+            bool isTamedRoot =
+                UnstableSavannaSeaDatabase.IsTamedVegetation(
+                    collectibleId);
+            if (!isTamedRoot &&
+                !UnstableSavannaSeaDatabase.IsActive(collectibleId))
             {
                 return;
             }
 
-            if (DatePalmGatheringData.HasOnlyDatePalmGenerators(__result.Collectible.Generators))
-            {
-                return;
-            }
+            string collectibleSize =
+                UnstableSavannaSeaDatabase.CollectibleSizeOf(
+                    collectibleId);
+            bool hasExpectedGenerators =
+                isTamedRoot
+                    ? UnstableSavannaSeaDatabase
+                        .HasOnlyTamedRootGenerator(
+                            __result.Collectible.Generators)
+                    : UnstableSavannaSeaDatabase
+                        .HasOnlyExpectedGenerators(
+                            collectibleId,
+                            __result.Collectible.Generators);
+            List<Generator> generators = hasExpectedGenerators
+                ? new List<Generator>(
+                    __result.Collectible.Generators ??
+                    new Generator[0])
+                : (isTamedRoot
+                    ? UnstableSavannaSeaDatabase
+                        .CreateTamedRootGenerators()
+                    : UnstableSavannaSeaDatabase.CreateGenerators(
+                        collectibleId));
 
-            List<Generator> generators = DatePalmGatheringData.CreateGenerators(1);
+            GatheringMechanics.ApplyGeneratorSkillAvailability(
+                __instance as Durango.Offline.Player,
+                collectibleId,
+                generators);
+            string criticalGenerator =
+                isTamedRoot
+                    ? "root"
+                    : UnstableSavannaSeaDatabase.CriticalGenerator(
+                        collectibleId,
+                        generators.ToArray());
+
             Collectible collectible = __result.Collectible;
-            collectible.CollectibleId = DatePalmGatheringData.CollectibleId;
+            collectible.CollectibleId = collectibleId;
+            collectible.Size = collectibleSize;
             collectible.Generators = generators.ToArray();
+            collectible.CriticalGenerator = criticalGenerator;
             __result.Collectible = collectible;
 
             DatePalmReflection.SetGenerators(__instance, generators);
@@ -552,7 +1648,9 @@ namespace BaoX.DurangoOriginal.GatheringMod
         public static void CollectNaturalPrefix(object __instance, Collect msg)
         {
             Collectible? collectible = DatePalmReflection.GetCollectedFrom(__instance, msg.Tile.ToString());
-            if (collectible == null || !DatePalmGatheringData.IsDatePalm(collectible.Value.CollectibleId))
+            if (collectible == null ||
+                !UnstableSavannaSeaDatabase.IsHandled(
+                    collectible.Value.CollectibleId))
             {
                 DatePalmCollectState.Mark(__instance, null);
                 return;
@@ -564,7 +1662,7 @@ namespace BaoX.DurangoOriginal.GatheringMod
         public static void SendCollectedPostfix(object __instance, List<Item> list, Result result)
         {
             string generatorId = DatePalmCollectState.Consume(__instance);
-            if (!DatePalmGatheringData.IsRewardGenerator(generatorId))
+            if (!UnstableSavannaSeaDatabase.IsRewardGenerator(generatorId))
             {
                 return;
             }
@@ -574,13 +1672,767 @@ namespace BaoX.DurangoOriginal.GatheringMod
                 return;
             }
 
-            DatePalmXpBridge.AddLevelXp(DatePalmGatheringData.XpReward);
+            if (list != null && list.Count > 0)
+            {
+                DatePalmXpBridge.AddLevelXp(Math.Max(1, list[0].Level));
+            }
         }
     }
 
     internal static class ClientPatches
     {
+        private sealed class ActualGatheringDuration
+        {
+            internal string ToolId;
+            internal float Duration;
+        }
+
         private static bool _isNaturallyEnding = false;
+        private static bool _gatheringLockInvocation;
+        private static string _gatheringLockTargetId;
+        private static string _gatheringLockGeneratorId;
+        private static string _approvedLockTargetId;
+        private static string _approvedLockGeneratorId;
+        private static string _approvedLockToolId;
+        private static string _actualDurationTargetId;
+        private static string _lastGatheringTargetId;
+        private static readonly Dictionary<string, ActualGatheringDuration>
+            ActualDurations =
+                new Dictionary<string, ActualGatheringDuration>();
+        private const string GatheringStatusOverlayName =
+            "GatheringStatusOverlay";
+        private const string MobileNoToolInfoName =
+            "GatheringMobileNoToolInfo";
+
+        public static void InteractionMenuWidgetSetPrefix(
+            InteractionData.InteractionMenuData data)
+        {
+            ApplyActualGatheringDuration(data.GatheringData);
+        }
+
+        public static void InteractionMenuWidgetSetPostfix(
+            Durango.UI.InteractionMenuWidgetBase __instance,
+            InteractionData.InteractionMenuData data)
+        {
+            try
+            {
+                InteractionData.GatheringData gatheringData =
+                    data.GatheringData;
+                if (gatheringData == null)
+                {
+                    return;
+                }
+
+                FieldInfo infoLabelField = AccessTools.Field(
+                    typeof(Durango.UI.InteractionMenuWidgetBase),
+                    "InfoLabel");
+                UILabel infoLabel = infoLabelField == null
+                    ? null
+                    : infoLabelField.GetValue(__instance)
+                        as UILabel;
+                if (infoLabel == null ||
+                    infoLabel.transform.parent == null)
+                {
+                    return;
+                }
+
+                // Remove the direct UISprite overlay used by v0.4.11.  The
+                // mobile client renders this warning through an encoded
+                // UILabel, just like the critical icon, so the complete
+                // wrench + prohibited symbol is preserved and follows the
+                // ring-menu position preset.
+                UnityEngine.Transform overlayTransform =
+                    infoLabel.transform.parent.Find(
+                        GatheringStatusOverlayName);
+                UISprite statusOverlay = overlayTransform == null
+                    ? null
+                    : overlayTransform.GetComponent<UISprite>();
+                if (statusOverlay != null)
+                {
+                    statusOverlay.gameObject.SetActive(false);
+                }
+
+                UnityEngine.Transform warningInfoTransform =
+                    infoLabel.transform.Find(MobileNoToolInfoName);
+                UnityEngine.GameObject warningInfo =
+                    warningInfoTransform == null
+                        ? null
+                        : warningInfoTransform.gameObject;
+                Type hoverType = AccessTools.TypeByName(
+                    "Durango.UI.Control.TargetActivatorOnHover");
+                UnityEngine.Behaviour criticalHover = hoverType == null
+                    ? null
+                    : infoLabel.GetComponent(hoverType)
+                        as UnityEngine.Behaviour;
+
+                bool showMobileWarning =
+                    !gatheringData.IsAvailableForGathering() &&
+                    gatheringData.RequiredTools != null &&
+                    gatheringData.RequiredTools.Count > 0;
+                if (!showMobileWarning)
+                {
+                    if (warningInfo != null)
+                    {
+                        warningInfo.SetActive(false);
+                    }
+                    if (criticalHover != null)
+                    {
+                        criticalHover.enabled = true;
+                    }
+                    return;
+                }
+
+                string criticalText = null;
+                if (gatheringData.IsCritical &&
+                    infoLabel.gameObject.activeSelf &&
+                    !string.IsNullOrEmpty(infoLabel.text))
+                {
+                    criticalText = infoLabel.text;
+                }
+
+                if (warningInfo == null)
+                {
+                    warningInfo = CreateMobileWarningInfo(infoLabel);
+                }
+
+                UILabel warningLabel =
+                    warningInfo.GetComponent<UILabel>();
+                warningLabel.supportEncoding = true;
+                warningLabel.color = UnityEngine.Color.white;
+                warningLabel.text = "[icon=img_notool]";
+                warningLabel.width = 18;
+                warningLabel.height = 24;
+                warningLabel.MarkAsChanged();
+                warningLabel.ResizeCollider();
+                SetMobileWarningTooltip(
+                    warningInfo,
+                    BuildGatheringWarningTooltip(gatheringData));
+                warningInfo.transform.localPosition =
+                    string.IsNullOrEmpty(criticalText)
+                        ? UnityEngine.Vector3.zero
+                        : new UnityEngine.Vector3(-18f, 0f, 0f);
+                warningInfo.transform.localScale = UnityEngine.Vector3.one;
+                warningInfo.SetActive(true);
+
+                // The clone owns hover handling while the warning is visible.
+                // This prevents the original Critical tooltip from appearing
+                // over the missing-skill/tool explanation.
+                if (criticalHover != null)
+                {
+                    criticalHover.enabled = false;
+                }
+                infoLabel.text = criticalText ?? string.Empty;
+                infoLabel.gameObject.SetActive(true);
+                infoLabel.MarkAsChanged();
+
+                // The original mobile widget dims unavailable generators to
+                // 75 percent, regardless of whether the cause is a missing
+                // skill (Enabled) or a missing tool (BestPerformance).
+                __instance.Alpha = 0.75f;
+            }
+            catch (Exception ex)
+            {
+                GatheringPlugin.Log.LogWarning(
+                    "Failed to set gathering status sub-icon: " +
+                    ex.Message);
+            }
+        }
+
+        private static UnityEngine.GameObject CreateMobileWarningInfo(
+            UILabel infoLabel)
+        {
+            UnityEngine.GameObject clone =
+                UnityEngine.Object.Instantiate(
+                    infoLabel.gameObject) as UnityEngine.GameObject;
+            clone.name = MobileNoToolInfoName;
+            clone.transform.SetParent(infoLabel.transform, false);
+            clone.transform.localPosition = UnityEngine.Vector3.zero;
+            clone.transform.localRotation = UnityEngine.Quaternion.identity;
+            clone.transform.localScale = UnityEngine.Vector3.one;
+
+            // The clone follows its Critical parent, so its own serialized
+            // ring-position preset must not move it a second time.
+            Type presetType = AccessTools.TypeByName(
+                "Durango.UI.InteractionMenuPreset");
+            UnityEngine.Behaviour preset = presetType == null
+                ? null
+                : clone.GetComponent(presetType)
+                    as UnityEngine.Behaviour;
+            if (preset != null)
+            {
+                preset.enabled = false;
+            }
+
+            UILabel cloneLabel = clone.GetComponent<UILabel>();
+            cloneLabel.supportEncoding = true;
+            cloneLabel.color = UnityEngine.Color.white;
+            cloneLabel.text = "[icon=img_notool]";
+            cloneLabel.width = 18;
+            cloneLabel.height = 24;
+            cloneLabel.MarkAsChanged();
+            cloneLabel.ResizeCollider();
+            return clone;
+        }
+
+        private static void SetMobileWarningTooltip(
+            UnityEngine.GameObject warningInfo,
+            string text)
+        {
+            Type hoverType = AccessTools.TypeByName(
+                "Durango.UI.Control.TargetActivatorOnHover");
+            if (hoverType == null)
+            {
+                return;
+            }
+
+            UnityEngine.Component hover =
+                warningInfo.GetComponent(hoverType);
+            FieldInfo targetField = AccessTools.Field(hoverType, "_target");
+            UnityEngine.GameObject target = hover == null ||
+                targetField == null
+                    ? null
+                    : targetField.GetValue(hover)
+                        as UnityEngine.GameObject;
+            UILabel tooltipLabel = target == null
+                ? null
+                : target.GetComponent<UILabel>();
+            if (tooltipLabel != null)
+            {
+                tooltipLabel.text = text;
+                tooltipLabel.MarkAsChanged();
+            }
+        }
+
+        private static string BuildGatheringWarningTooltip(
+            InteractionData.GatheringData gatheringData)
+        {
+            if (!gatheringData.Enabled)
+            {
+                try
+                {
+                    Touched touched =
+                        GameSystem<InteractionSystem>.Instance().LastTouched;
+                    string collectibleId =
+                        touched.Collectible.CollectibleId;
+                    SkillNeeded needed;
+                    GatheringMechanics.ClientHasRequiredSkill(
+                        collectibleId,
+                        gatheringData.GeneratorId,
+                        out needed);
+                    Durango.Logic.Skill.Node skill =
+                        GameSystem<Durango.Logic.SkillSystem>
+                            .Instance()
+                            .FindSkill(
+                                needed.SkillId,
+                                needed.SubId,
+                                needed.Level);
+                    if (skill != null)
+                    {
+                        string categoryName =
+                            Durango.Logic.Skill.Util
+                                .CategoryLocalizeName(skill.Category);
+                        string categoryIcon =
+                            Durango.Logic.Skill.Util
+                                .CategoryIcon(skill.Category);
+                        return skill.CategoryLevel <= 0
+                            ? L10N.T._(
+                                "<em>{0}</em> ([icon={1}]{2}) 스킬이 필요합니다.",
+                                new object[]
+                                {
+                                    skill.Name,
+                                    categoryIcon,
+                                    categoryName
+                                })
+                            : L10N.T._(
+                                "<em>{0}</em> ([icon={1}]{2} {3:lv:}) 스킬이 필요합니다.",
+                                new object[]
+                                {
+                                    skill.Name,
+                                    categoryIcon,
+                                    categoryName,
+                                    skill.CategoryLevel
+                                });
+                    }
+                }
+                catch
+                {
+                }
+
+                return L10N.T._(
+                    "<em>{0}</em> 스킬이 필요합니다.",
+                    new object[] { gatheringData.Name });
+            }
+
+            List<KeyValuePair<string, int>> requiredTools =
+                new List<KeyValuePair<string, int>>();
+            int requiredLevel = 0;
+            foreach (KeyValuePair<string, int> pair in
+                gatheringData.RequiredTools)
+            {
+                if (string.Equals(
+                    pair.Key,
+                    "bare_hands",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+                requiredTools.Add(pair);
+                requiredLevel = Math.Max(requiredLevel, pair.Value);
+            }
+
+            string toolNames =
+                Durango.Logic.Item.Util
+                    .LocalizedTagNamesAndLevels(requiredTools);
+            return requiredLevel <= 1
+                ? L10N.T._(
+                    "다음 중 하나의 도구가 필요합니다.\n<em>{0}</em>",
+                    new object[] { toolNames })
+                : L10N.T._(
+                    "다음 중 하나의 도구가 필요합니다.\n{1:lv:}이상 <em>{0}</em>",
+                    new object[] { toolNames, requiredLevel });
+        }
+
+        public static void SendTouchMsgPostfix(
+            InteractionSystem __instance)
+        {
+            try
+            {
+                InteractionObject target = __instance.Target;
+                if (target == null ||
+                    !DataHelper.IsNaturalObject(target.EntityType))
+                {
+                    return;
+                }
+
+                if (!string.Equals(
+                    _actualDurationTargetId,
+                    InteractionTargetKey(target),
+                    StringComparison.Ordinal))
+                {
+                    ActualDurations.Clear();
+                    _actualDurationTargetId =
+                        InteractionTargetKey(target);
+                }
+                _lastGatheringTargetId =
+                    InteractionTargetKey(target);
+
+                BiomeSpriteInfo biomeSpriteInfo =
+                    DataHelper.GetBiomeSpriteInfo(target.EntityType);
+                if (biomeSpriteInfo == null ||
+                    !UnstableSavannaSeaDatabase.IsHandled(
+                        biomeSpriteInfo.CollectibleId))
+                {
+                    return;
+                }
+
+                Durango.UI.Popup.LoadingRingWidget loadingRing =
+                    UIManager.Popup.LoadingRing;
+                if (loadingRing != null &&
+                    loadingRing.AttachMode ==
+                        Durango.UI.Popup.LoadingRingWidget.Mode
+                            .InteractionTarget)
+                {
+                    loadingRing.ShowInstantly();
+                }
+            }
+            catch (Exception ex)
+            {
+                GatheringPlugin.Log.LogWarning(
+                    "Failed to show delayed touch loading ring: " +
+                    ex.Message);
+            }
+        }
+
+        public static void OnGatheringTimerPostfix(
+            object __instance,
+            Messages.Timer msg)
+        {
+            try
+            {
+                FieldInfo dataField = AccessTools.Field(
+                    __instance.GetType(),
+                    "_currentGatheringData");
+                InteractionData.GatheringData data =
+                    dataField == null
+                        ? null
+                        : dataField.GetValue(__instance)
+                            as InteractionData.GatheringData;
+                if (data == null ||
+                    string.IsNullOrEmpty(data.GeneratorId) ||
+                    msg.Duration <= 0f)
+                {
+                    return;
+                }
+
+                string targetId = CurrentInteractionTargetId();
+                if (string.IsNullOrEmpty(targetId))
+                {
+                    return;
+                }
+
+                CacheActualGatheringDuration(
+                    targetId,
+                    data.GeneratorId,
+                    data.BestTool == null
+                        ? string.Empty
+                        : data.BestTool.Id,
+                    msg.Duration);
+            }
+            catch (Exception ex)
+            {
+                GatheringPlugin.Log.LogWarning(
+                    "Failed to cache actual gathering duration: " +
+                    ex.Message);
+            }
+        }
+
+        public static void FindBestToolPostfix(
+            InteractionData.GatheringData __instance,
+            IList<Durango.Logic.Item.ItemData> tools)
+        {
+            try
+            {
+                PreferUnequippedLockedTool(__instance, tools);
+                ApplyActualGatheringDuration(__instance);
+            }
+            catch (Exception ex)
+            {
+                GatheringPlugin.Log.LogWarning(
+                    "Failed to restore actual gathering duration: " +
+                    ex.Message);
+            }
+        }
+
+        private static void PreferUnequippedLockedTool(
+            InteractionData.GatheringData data,
+            IList<Durango.Logic.Item.ItemData> tools)
+        {
+            if (data == null ||
+                data.BestTool == null ||
+                !data.BestTool.Locked ||
+                !data.BestTool.IsEquipments ||
+                data.RequiredTools == null ||
+                tools == null)
+            {
+                return;
+            }
+
+            Durango.Logic.Item.ItemData replacement = null;
+            int replacementPerformance = 0;
+            for (int i = 0; i < tools.Count; i++)
+            {
+                Durango.Logic.Item.ItemData candidate = tools[i];
+                if (candidate == null ||
+                    candidate.IsDestroyed() ||
+                    candidate.IsEquipments ||
+                    !candidate.Locked)
+                {
+                    continue;
+                }
+
+                foreach (KeyValuePair<string, int> requirement in
+                    data.RequiredTools)
+                {
+                    Durango.Logic.Item.TagData tag =
+                        candidate.GetTagData(requirement.Key);
+                    if (tag == null || tag.Level < requirement.Value)
+                    {
+                        continue;
+                    }
+
+                    if (replacement == null ||
+                        tag.Level > replacementPerformance)
+                    {
+                        replacement = candidate;
+                        replacementPerformance = tag.Level;
+                    }
+                }
+            }
+
+            if (replacement == null)
+            {
+                return;
+            }
+
+            string equippedToolId = data.BestTool.Id;
+            data.BestTool = replacement;
+            data.BestPerformance = replacementPerformance;
+            GatheringPlugin.Log.LogInfo(
+                "[Client] Preferred unequipped locked gathering tool: " +
+                replacement.Id + " instead of equipped " +
+                equippedToolId + ".");
+        }
+
+        internal static void CacheActualGatheringDuration(
+            string targetId,
+            string generatorId,
+            string toolId,
+            float duration)
+        {
+            if (string.IsNullOrEmpty(targetId) ||
+                string.IsNullOrEmpty(generatorId) ||
+                duration <= 0f)
+            {
+                return;
+            }
+
+            if (!string.Equals(
+                _actualDurationTargetId,
+                targetId,
+                StringComparison.Ordinal))
+            {
+                ActualDurations.Clear();
+                _actualDurationTargetId = targetId;
+            }
+            _lastGatheringTargetId = targetId;
+            ActualDurations[generatorId] =
+                new ActualGatheringDuration
+                {
+                    ToolId = toolId ?? string.Empty,
+                    Duration = duration
+                };
+            GatheringPlugin.Log.LogInfo(
+                "[Client] Cached actual gathering duration: target=" +
+                targetId + " generator=" + generatorId + " duration=" +
+                duration.ToString("0.0") + "s");
+        }
+
+        private static void ApplyActualGatheringDuration(
+            InteractionData.GatheringData data)
+        {
+            if (data == null ||
+                !string.Equals(
+                    _actualDurationTargetId,
+                    CurrentInteractionTargetId(),
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            ActualGatheringDuration cached;
+            if (!ActualDurations.TryGetValue(
+                data.GeneratorId,
+                out cached))
+            {
+                return;
+            }
+
+            string toolId = data.BestTool == null
+                ? string.Empty
+                : data.BestTool.Id;
+            if (!string.Equals(
+                cached.ToolId,
+                toolId,
+                StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            data.Duration = cached.Duration;
+        }
+
+        private static string CurrentInteractionTargetId()
+        {
+            InteractionSystem interactionSystem =
+                GameSystem<InteractionSystem>.Instance();
+            if (interactionSystem == null)
+            {
+                return null;
+            }
+
+            InteractionObject target = interactionSystem.Target ??
+                interactionSystem.LastInteractionTarget;
+            return target == null
+                ? _lastGatheringTargetId
+                : InteractionTargetKey(target);
+        }
+
+        private static string InteractionTargetKey(
+            InteractionObject target)
+        {
+            return target == null
+                ? null
+                : MakeTileTargetKey(
+                    (int)target.Tile.x,
+                    (int)target.Tile.y);
+        }
+
+        internal static string MakeTileTargetKey(int x, int y)
+        {
+            return "tile:" + x + "," + y;
+        }
+
+        public static bool GatheringPrefix(object data)
+        {
+            try
+            {
+                if (data == null)
+                {
+                    return true;
+                }
+
+                Durango.Logic.Item.Inventory playerInventory =
+                    GameSystem<InventorySystem>
+                        .Instance()
+                        .PlayerInventory;
+                if (playerInventory != null &&
+                    !playerInventory.CanPutIn(
+                        new Durango.Logic.Item.ItemData[] { null }))
+                {
+                    GameSystem<InteractionSystem>
+                        .Instance()
+                        .ReservationQueue
+                        .Clear();
+                    UIManager.SystemMsg(
+                        L10N.T._(
+                            "\uAC00\uBC29\uC5D0 \uACF5\uAC04\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."),
+                        3f);
+                    GatheringPlugin.Log.LogInfo(
+                        "[Client] Gathering blocked: player inventory is full (" +
+                        playerInventory.CurrentSize() + "/" +
+                        playerInventory.Capacity + ").");
+                    return false;
+                }
+
+                FieldInfo generatorField =
+                    AccessTools.Field(data.GetType(), "GeneratorId");
+                string generatorId = generatorField == null
+                    ? null
+                    : generatorField.GetValue(data) as string;
+
+                Touched touched =
+                    GameSystem<InteractionSystem>.Instance().LastTouched;
+                string collectibleId =
+                    touched.Collectible.CollectibleId;
+
+                SkillNeeded needed;
+                if (GatheringMechanics.ClientHasRequiredSkill(
+                    collectibleId,
+                    generatorId,
+                    out needed))
+                {
+                    BeginGatheringLockInvocation(generatorId);
+                    return true;
+                }
+
+                GameSystem<InteractionSystem>
+                    .Instance()
+                    .ReservationQueue
+                    .Clear();
+                GameSystem<Durango.Logic.SkillSystem>
+                    .Instance()
+                    .SkillNeeded(needed);
+                GatheringPlugin.Log.LogInfo(
+                    "[Client] Gathering blocked; showed required skill popup: " +
+                    needed.SkillId + "/" + needed.SubId +
+                    " level=" + needed.Level);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                GatheringPlugin.Log.LogWarning(
+                    "Gathering skill precheck failed: " + ex.Message);
+                return true;
+            }
+        }
+
+        public static void GatheringPostfix()
+        {
+            _gatheringLockInvocation = false;
+            _gatheringLockTargetId = null;
+            _gatheringLockGeneratorId = null;
+        }
+
+        public static bool ShowLockConfirmPrefix(
+            Durango.Logic.Item.ItemData item,
+            ref Action onOk)
+        {
+            if (!_gatheringLockInvocation ||
+                item == null ||
+                item.SafeLevel == Durango.Logic.Item.SafeLevel.None)
+            {
+                return true;
+            }
+
+            string targetId = _gatheringLockTargetId;
+            string generatorId = _gatheringLockGeneratorId;
+            string toolId = item.Id;
+            if (string.Equals(
+                    _approvedLockTargetId,
+                    targetId,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    _approvedLockGeneratorId,
+                    generatorId,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    _approvedLockToolId,
+                    toolId,
+                    StringComparison.Ordinal))
+            {
+                GatheringPlugin.Log.LogInfo(
+                    "[Client] Reusing locked-tool confirmation for queued gather: " +
+                    generatorId + " tool=" + toolId);
+                if (onOk != null)
+                {
+                    onOk();
+                }
+                return false;
+            }
+
+            Action originalOnOk = onOk;
+            onOk = delegate()
+            {
+                _approvedLockTargetId = targetId;
+                _approvedLockGeneratorId = generatorId;
+                _approvedLockToolId = toolId;
+                GatheringPlugin.Log.LogInfo(
+                    "[Client] Locked tool approved for current gathering queue: " +
+                    generatorId + " tool=" + toolId);
+                if (originalOnOk != null)
+                {
+                    originalOnOk();
+                }
+            };
+            return true;
+        }
+
+        private static void BeginGatheringLockInvocation(
+            string generatorId)
+        {
+            InteractionObject target =
+                GameSystem<InteractionSystem>
+                    .Instance()
+                    .LastInteractionTarget;
+            string targetId = InteractionTargetKey(target);
+            if (!string.IsNullOrEmpty(targetId))
+            {
+                _lastGatheringTargetId = targetId;
+            }
+
+            if (!string.Equals(
+                    _approvedLockTargetId,
+                    targetId,
+                    StringComparison.Ordinal) ||
+                !string.Equals(
+                    _approvedLockGeneratorId,
+                    generatorId,
+                    StringComparison.Ordinal))
+            {
+                ClearGatheringLockApproval();
+            }
+
+            _gatheringLockInvocation = true;
+            _gatheringLockTargetId = targetId;
+            _gatheringLockGeneratorId = generatorId;
+        }
+
+        private static void ClearGatheringLockApproval()
+        {
+            _approvedLockTargetId = null;
+            _approvedLockGeneratorId = null;
+            _approvedLockToolId = null;
+        }
 
         public static void OnCollectedPrefix()
         {
@@ -590,6 +2442,20 @@ namespace BaoX.DurangoOriginal.GatheringMod
         public static void OnCollectedPostfix()
         {
             _isNaturallyEnding = false;
+            try
+            {
+                if (GameSystem<InteractionSystem>
+                        .Instance()
+                        .ReservationQueue
+                        .Count == 0)
+                {
+                    ClearGatheringLockApproval();
+                }
+            }
+            catch
+            {
+                ClearGatheringLockApproval();
+            }
         }
 
         public static void set_CurrentGatheringDataPrefix(object __instance, object value)
@@ -619,6 +2485,7 @@ namespace BaoX.DurangoOriginal.GatheringMod
                 }
 
                 GatheringPlugin.Log.LogInfo("[Client] Gathering cancelled by client. Sending Canceled to server.");
+                ClearGatheringLockApproval();
                 Connections.Frontend.Send<Messages.Canceled>(new Messages.Canceled(), false, 0U);
             }
             catch (Exception ex)
@@ -630,10 +2497,15 @@ namespace BaoX.DurangoOriginal.GatheringMod
 
     internal static class OriginalPatches
     {
-        public static void ConstructorPostfix(Durango.Offline.Player __instance, Durango.Offline.Connection connection, Durango.Offline.World world)
+        private const double NaturalTouchResponseDelayMs = 300.0;
+
+        public static void ConstructorPostfix(Durango.Offline.Player __instance, Durango.Offline.Connection connection, Durango.Offline.World world, Durango.Offline.PlayerContext context)
         {
             try
             {
+                GatheringMechanics.RegisterPlayer(__instance, context);
+                GatheringOutboundQueue.Register(__instance);
+
                 connection.Recv<Messages.Collect>(delegate(Messages.Collect msg, Durango.Network.PacketHeader header)
                 {
                     HandleCollectOriginal(__instance, world, msg, header);
@@ -665,12 +2537,20 @@ namespace BaoX.DurangoOriginal.GatheringMod
             }
         }
 
+        public static void PlayerProcessPostfix(
+            Durango.Offline.Player __instance)
+        {
+            GatheringOutboundQueue.ProcessOne(__instance);
+        }
+
         private static void HandleGetCollectibleOriginal(Durango.Offline.Player player, GetCollectible msg, Durango.Network.PacketHeader header)
         {
             try
             {
                 Collectible? col = DatePalmReflection.GetCollectedFrom(player, msg.Tile.ToString());
-                if (col != null && DatePalmGatheringData.IsDatePalm(col.Value.CollectibleId))
+                if (col != null &&
+                    UnstableSavannaSeaDatabase.IsHandled(
+                        col.Value.CollectibleId))
                 {
                     player.Send<Collectible>(col.Value, header.Seq);
                 }
@@ -693,12 +2573,21 @@ namespace BaoX.DurangoOriginal.GatheringMod
                 if (DataHelper.IsNaturalObject((int)touch.EntityType))
                 {
                     BiomeSpriteInfo biomeSpriteInfo = DataHelper.GetBiomeSpriteInfo((int)touch.EntityType);
-                    if (biomeSpriteInfo != null && DatePalmGatheringData.IsDatePalm(biomeSpriteInfo.CollectibleId))
+                    if (biomeSpriteInfo != null &&
+                        UnstableSavannaSeaDatabase.IsHandled(
+                            biomeSpriteInfo.CollectibleId))
                     {
+                        string collectibleId = biomeSpriteInfo.CollectibleId;
+                        bool isTamedRoot =
+                            UnstableSavannaSeaDatabase
+                                .IsTamedVegetation(collectibleId);
                         Touched msg = default(Touched);
                         msg.EntityId = touch.EntityId;
                         msg.EntityName = biomeSpriteInfo.Name;
-                        msg.Level = 1;
+                        msg.Level = isTamedRoot
+                            ? 10
+                            : UnstableSavannaSeaDatabase.LevelOf(
+                                collectibleId);
                         msg.PrototypeId = string.Empty;
 
                         bool flag = GameManager.ClusterMode == Durango.Logic.Clusters.Mode.Editable;
@@ -711,20 +2600,65 @@ namespace BaoX.DurangoOriginal.GatheringMod
 
                             Collectible collectible = default(Collectible);
                             collectible.EntityId = touch.EntityId;
-                            collectible.CollectibleId = DatePalmGatheringData.CollectibleId;
+                            collectible.CollectibleId = collectibleId;
 
                             Collectible? cachedCollectible = DatePalmReflection.GetCollectedFrom(__instance, touch.Tile.ToString());
-                            if (cachedCollectible != null && DatePalmGatheringData.IsDatePalm(cachedCollectible.Value.CollectibleId))
+                            bool cachedMatches =
+                                cachedCollectible != null &&
+                                string.Equals(
+                                    cachedCollectible.Value.CollectibleId,
+                                    collectibleId,
+                                    StringComparison.Ordinal);
+                            bool cachedGeneratorsValid =
+                                cachedMatches &&
+                                (isTamedRoot
+                                    ? UnstableSavannaSeaDatabase
+                                        .HasOnlyTamedRootGenerator(
+                                            cachedCollectible.Value
+                                                .Generators)
+                                    : UnstableSavannaSeaDatabase
+                                        .HasOnlyExpectedGenerators(
+                                            collectibleId,
+                                            cachedCollectible.Value
+                                                .Generators));
+                            List<Generator> generators =
+                                cachedGeneratorsValid
+                                    ? new List<Generator>(
+                                        cachedCollectible.Value.Generators)
+                                    : (isTamedRoot
+                                        ? UnstableSavannaSeaDatabase
+                                            .CreateTamedRootGenerators()
+                                        : UnstableSavannaSeaDatabase
+                                            .CreateGenerators(
+                                                collectibleId));
+                            GatheringMechanics
+                                .ApplyGeneratorSkillAvailability(
+                                    __instance,
+                                    collectibleId,
+                                    generators);
+                            if (cachedMatches)
                             {
                                 collectible = cachedCollectible.Value;
                             }
-                            else
-                            {
-                                List<Generator> generators = DatePalmGatheringData.CreateGenerators(1);
-                                collectible.Generators = generators.ToArray();
-                                DatePalmReflection.SetCollectedFrom(__instance, touch.Tile.ToString(), collectible);
-                            }
+                            collectible.EntityId = touch.EntityId;
+                            collectible.CollectibleId = collectibleId;
+                            collectible.Generators =
+                                generators.ToArray();
 
+                            collectible.Size =
+                                UnstableSavannaSeaDatabase.CollectibleSizeOf(
+                                    collectibleId);
+                            collectible.CriticalGenerator =
+                                isTamedRoot
+                                    ? "root"
+                                    : UnstableSavannaSeaDatabase
+                                        .CriticalGenerator(
+                                            collectibleId,
+                                            collectible.Generators);
+                            DatePalmReflection.SetCollectedFrom(
+                                __instance,
+                                touch.Tile.ToString(),
+                                collectible);
                             msg.Collectible = collectible;
                         }
                         else
@@ -735,15 +2669,12 @@ namespace BaoX.DurangoOriginal.GatheringMod
                         msg.DisabledInteractions = new int[0];
                         msg.AccessDeniedInteractions = new int[0];
 
-                        __instance.Send<Touched>(msg, seq);
+                        SendTouchedDelayed(
+                            __instance,
+                            msg,
+                            seq);
 
-                        MethodInfo onContextChanged = typeof(Durango.Offline.Player).GetMethod("OnContextChanged", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                        if (onContextChanged != null)
-                        {
-                            onContextChanged.Invoke(__instance, null);
-                        }
-
-                        return false; // Bypass original touch handler for date palms
+                        return false; // Bypass stock offline touch for restored resources
                     }
                 }
             }
@@ -755,41 +2686,151 @@ namespace BaoX.DurangoOriginal.GatheringMod
             return true;
         }
 
+        private static void SendTouchedDelayed(
+            Durango.Offline.Player player,
+            Touched touched,
+            uint seq)
+        {
+            System.Timers.Timer responseTimer =
+                new System.Timers.Timer
+                {
+                    Interval = NaturalTouchResponseDelayMs,
+                    Enabled = false,
+                    AutoReset = false
+                };
+            responseTimer.Elapsed += delegate(
+                object sender,
+                System.Timers.ElapsedEventArgs args)
+            {
+                try
+                {
+                    MethodInfo onContextChanged =
+                        typeof(Durango.Offline.Player).GetMethod(
+                            "OnContextChanged",
+                            BindingFlags.Instance |
+                            BindingFlags.NonPublic |
+                            BindingFlags.Public);
+                    if (onContextChanged != null)
+                    {
+                        onContextChanged.Invoke(player, null);
+                    }
+
+                    GatheringOutboundQueue.Send<Touched>(
+                        player,
+                        touched,
+                        seq);
+                }
+                catch (Exception ex)
+                {
+                    GatheringPlugin.Log.LogError(
+                        "Delayed natural touch response failed: " +
+                        ex);
+                }
+                finally
+                {
+                    responseTimer.Dispose();
+                }
+            };
+            responseTimer.Start();
+        }
+
         private static void HandleCollectOriginal(Durango.Offline.Player player, Durango.Offline.World world, Messages.Collect msg, Durango.Network.PacketHeader header)
         {
             try
             {
                 GatheringPlugin.Log.LogInfo("[Collect] start gen=" + msg.GeneratorId + " tile=" + msg.Tile);
                 Collectible? col = DatePalmReflection.GetCollectedFrom(player, msg.Tile.ToString());
-                if (col == null || !DatePalmGatheringData.IsDatePalm(col.Value.CollectibleId))
+                if (col == null ||
+                    !UnstableSavannaSeaDatabase.IsHandled(
+                        col.Value.CollectibleId))
                 {
+                    return;
+                }
+
+                Generator generator = default(Generator);
+                bool foundGenerator = false;
+                if (col.Value.Generators != null)
+                {
+                    for (int i = 0; i < col.Value.Generators.Length; i++)
+                    {
+                        if (string.Equals(
+                            col.Value.Generators[i].Id,
+                            msg.GeneratorId,
+                            StringComparison.Ordinal))
+                        {
+                            generator = col.Value.Generators[i];
+                            foundGenerator = true;
+                            break;
+                        }
+                    }
+                }
+                if (!foundGenerator || generator.Amount <= 0)
+                {
+                    return;
+                }
+
+                GatheringAttempt attempt =
+                    GatheringMechanics.CreateAttempt(
+                        player,
+                        col.Value.CollectibleId,
+                        generator,
+                        msg.ToolItemId);
+
+                if (!attempt.ToolValid)
+                {
+                    player.Send<ToolNeeded>(new ToolNeeded
+                    {
+                        RecipeIds = new string[0],
+                        Skills = new Dictionary<string, Messages.Skill>(),
+                        TagNames = string.Join(
+                            ", ",
+                            new List<string>(
+                                attempt.RequiredTools.Keys).ToArray()),
+                        Tags = attempt.RequiredTools
+                    }, header.Seq);
+                    return;
+                }
+
+                if (!attempt.SkillValid)
+                {
+                    player.Send<SkillNeeded>(new SkillNeeded
+                    {
+                        SkillId = attempt.RequiredSkillId,
+                        SubId = "__base__",
+                        Level = attempt.RequiredSkillLevel
+                    }, header.Seq);
                     return;
                 }
 
                 DatePalmCollectState.Mark(player, msg.GeneratorId);
 
                 List<Item> list = new List<Item>();
-                Result result = Result.Invalid;
-                int roll = new System.Random().Next(1, 100);
-                if (roll < 5) result = Result.BigFailure;
-                else if (roll < 10) result = Result.Failure;
-                else if (roll < 85) result = Result.Success;
-                else result = Result.GreatSuccess;
-
-                if (roll >= 5)
+                Result result = attempt.Result;
+                int gatheredItemLevel = Math.Max(
+                    1,
+                    Math.Min(generator.Level, attempt.CategoryLevel));
+                if (result != Result.BigFailure)
                 {
-                    string actualProtoId = msg.GeneratorId;
-                    if (actualProtoId == "date")
-                    {
-                        actualProtoId = "fruit";
-                    }
-                    Item? item = Durango.Offline.Cheats.MakeItem(actualProtoId, msg.Level);
+                    string actualProtoId =
+                        UnstableSavannaSeaDatabase.ResolvePrototypeId(
+                            col.Value.CollectibleId,
+                            msg.GeneratorId);
+                    Item? item = Durango.Offline.Cheats.MakeItem(
+                        actualProtoId,
+                        gatheredItemLevel);
                     if (item != null)
                     {
                         Item itemVal = item.Value;
-                        if (msg.GeneratorId == "date")
+                        itemVal = GatheringMechanics.PrepareLostPackageItem(
+                            itemVal,
+                            col.Value.CollectibleId);
+                        string generatorIcon =
+                            UnstableSavannaSeaDatabase.GeneratorIcon(
+                                col.Value.CollectibleId,
+                                msg.GeneratorId);
+                        if (!string.IsNullOrEmpty(generatorIcon))
                         {
-                            itemVal.Icon = "icon_nat_fruit_date";
+                            itemVal.Icon = generatorIcon;
                         }
                         if (col.Value.Generators != null)
                         {
@@ -799,18 +2840,37 @@ namespace BaoX.DurangoOriginal.GatheringMod
                                 itemVal.Name = col.Value.Generators[genIndex].Name;
                             }
                         }
+                        itemVal = GatheringMechanics.ApplyGatheredItemData(
+                            itemVal,
+                            col.Value.CollectibleId,
+                            msg.GeneratorId,
+                            result,
+                            attempt.RandomAttributeRatio,
+                            attempt.CategoryLevel);
                         list.Add(itemVal);
                     }
                 }
 
+                ClientPatches.CacheActualGatheringDuration(
+                    ClientPatches.MakeTileTargetKey(
+                        msg.Tile.x,
+                        msg.Tile.y),
+                    msg.GeneratorId,
+                    attempt.Tool == null
+                        ? string.Empty
+                        : attempt.Tool.Value.Id,
+                    attempt.Duration);
+
                 player.Send<Messages.Timer>(new Messages.Timer
                 {
-                    Duration = 2f
+                    Duration = attempt.Duration
                 }, header.Seq);
 
                 var delayTimer = new System.Timers.Timer
                 {
-                    Interval = 2000.0,
+                    Interval = Math.Max(
+                        100.0,
+                        attempt.Duration * 1000.0),
                     Enabled = true,
                     AutoReset = false
                 };
@@ -819,13 +2879,13 @@ namespace BaoX.DurangoOriginal.GatheringMod
 
                 delayTimer.Elapsed += delegate(object sender, System.Timers.ElapsedEventArgs args)
                 {
+                    bool completionQueued = false;
                     try
                     {
                         GatheringPlugin.Log.LogInfo("[Elapsed] fired gen=" + msg.GeneratorId + " tile=" + msg.Tile);
                         if (!DatePalmCollectState.IsActiveTimer(player, delayTimer))
                         {
                             GatheringPlugin.Log.LogInfo("Timer session inactive, aborting.");
-                            delayTimer.Dispose();
                             return;
                         }
 
@@ -834,18 +2894,19 @@ namespace BaoX.DurangoOriginal.GatheringMod
                         if (currentCol == null)
                         {
                             GatheringPlugin.Log.LogError("Collectible state vanished.");
-                            delayTimer.Dispose();
+                            GatheringOutboundQueue.Send<Messages.Collected>(
+                                player,
+                                new Messages.Collected
+                                {
+                                    Items = new Item[0],
+                                    Result = Result.BigFailure,
+                                    ActionInfo = attempt.ActionInfo,
+                                    RanOut = false
+                                },
+                                header.Seq);
+                            completionQueued = true;
+                            DatePalmCollectState.Consume(player);
                             return;
-                        }
-
-                        if (roll >= 5 && list.Count > 0)
-                        {
-                            player.AddItems(list);
-                            player.Send<InventoryUpdated>(new InventoryUpdated
-                            {
-                                EntityId = player.EntityId,
-                                Items = list.ToArray()
-                            }, 0U);
                         }
 
                         List<Generator> genList = new List<Generator>();
@@ -854,6 +2915,7 @@ namespace BaoX.DurangoOriginal.GatheringMod
                             genList.AddRange(currentCol.Value.Generators);
                         }
 
+                        bool criticalRanOut = false;
                         int index = genList.FindIndex(delegate(Generator o) { return o.Id == msg.GeneratorId; });
                         if (index != -1)
                         {
@@ -861,6 +2923,10 @@ namespace BaoX.DurangoOriginal.GatheringMod
                             gen.Amount = gen.Amount - 1;
                             if (gen.Amount <= 0)
                             {
+                                criticalRanOut = string.Equals(
+                                    gen.Id,
+                                    currentCol.Value.CriticalGenerator,
+                                    StringComparison.Ordinal);
                                 genList.RemoveAt(index);
                             }
                             else
@@ -869,38 +2935,142 @@ namespace BaoX.DurangoOriginal.GatheringMod
                             }
                         }
 
-                        bool ranOut = (genList.Count == 0);
-                        if (ranOut)
-                        {
-                            world.DestroyNatural(msg.Tile);
-                        }
-
+                        bool ranOut =
+                            criticalRanOut ||
+                            genList.Count == 0;
                         Collectible updatedCol = currentCol.Value;
                         updatedCol.Generators = genList.ToArray();
                         DatePalmReflection.SetCollectedFrom(player, msg.Tile.ToString(), updatedCol);
+                        GatheringWorldPersistence.MarkDirty(world);
 
-                        Messages.CollectibleChanged changed = default(Messages.CollectibleChanged);
-                        changed.EntityId = msg.EntityId;
-                        player.Send<Messages.CollectibleChanged>(changed, 0U);
-
+                        Item[] gatheredItems = list.ToArray();
                         Messages.Collected collected = default(Messages.Collected);
-                        collected.Items = list.ToArray();
+                        collected.Items = gatheredItems;
                         collected.Result = result;
+                        collected.ActionInfo = attempt.ActionInfo;
                         collected.RanOut = ranOut;
-                        player.Send<Messages.Collected>(collected, header.Seq);
+                        GatheringOutboundQueue.Send<Messages.Collected>(
+                            player,
+                            collected,
+                            header.Seq);
+                        completionQueued = true;
 
-                        string consumedGenerator = DatePalmCollectState.Consume(player);
-                        if (DatePalmGatheringData.IsRewardGenerator(consumedGenerator) && (result == Result.Success || result == Result.GreatSuccess))
+                        if (gatheredItems.Length > 0)
                         {
-                            DatePalmXpBridge.AddLevelXp(DatePalmGatheringData.XpReward);
+                            GatheringOutboundQueue.Enqueue(
+                                player,
+                                "Inventory item commit/update",
+                                delegate()
+                                {
+                                    player.AddItems(list);
+                                    player.Send<InventoryUpdated>(
+                                        new InventoryUpdated
+                                        {
+                                            EntityId = player.EntityId,
+                                            Items = gatheredItems
+                                        },
+                                        0U);
+                                });
                         }
 
-                        world.Save();
-                        delayTimer.Dispose();
+                        // Finish the Collect request before refreshing the tool.
+                        // Updating a locked BestTool while GatheringSystem is still
+                        // active can make the client cancel/re-enter the request.
+                        if (attempt.Tool != null)
+                        {
+                            GatheringOutboundQueue.Enqueue(
+                                player,
+                                "Tool durability/update",
+                                delegate()
+                                {
+                                    Item? wornTool =
+                                        GatheringMechanics.ReduceToolDurability(
+                                            player,
+                                            attempt.Tool,
+                                            0.1f);
+                                    if (wornTool != null)
+                                    {
+                                        player.Send<InventoryUpdated>(
+                                            new InventoryUpdated
+                                            {
+                                                EntityId = player.EntityId,
+                                                Items = new Item[]
+                                                {
+                                                    wornTool.Value
+                                                }
+                                            },
+                                            0U);
+                                    }
+                                });
+                        }
+
+                        if (ranOut)
+                        {
+                            GatheringOutboundQueue.Enqueue(
+                                player,
+                                "Destroy natural object",
+                                delegate()
+                                {
+                                    world.DestroyNatural(msg.Tile);
+                                });
+                        }
+
+                        Messages.CollectibleChanged changed =
+                            default(Messages.CollectibleChanged);
+                        changed.EntityId = msg.EntityId;
+                        GatheringOutboundQueue.Send<Messages.CollectibleChanged>(
+                            player,
+                            changed,
+                            0U);
+
+                        string consumedGenerator = DatePalmCollectState.Consume(player);
+                        bool rewardExperience =
+                            UnstableSavannaSeaDatabase.IsRewardGenerator(
+                                consumedGenerator) &&
+                            gatheredItems.Length > 0 &&
+                            result != Result.BigFailure &&
+                            result != Result.Invalid;
+                        GatheringOutboundQueue.Enqueue(
+                            player,
+                            "Character and Gathering XP",
+                            delegate()
+                            {
+                                if (rewardExperience)
+                                {
+                                    DatePalmXpBridge.AddLevelXp(
+                                        gatheredItemLevel);
+                                    GatheringMechanics.AwardGatheringExperience(
+                                        result,
+                                        gatheredItemLevel,
+                                        attempt.GatheringAbility);
+                                }
+
+                                GatheringMechanics.SavePlayerAfterGathering(
+                                    player);
+                                GatheringWorldPersistence.SaveNow(world);
+                            });
                     }
                     catch (Exception ex)
                     {
                         GatheringPlugin.Log.LogError("Error in HandleCollectOriginal timer: " + ex);
+                        if (!completionQueued)
+                        {
+                            GatheringOutboundQueue.Send<Messages.Collected>(
+                                player,
+                                new Messages.Collected
+                                {
+                                    Items = new Item[0],
+                                    Result = Result.BigFailure,
+                                    ActionInfo = attempt.ActionInfo,
+                                    RanOut = false
+                                },
+                                header.Seq);
+                            DatePalmCollectState.Consume(player);
+                        }
+                    }
+                    finally
+                    {
+                        delayTimer.Dispose();
                     }
                 };
             }
@@ -909,7 +3079,6 @@ namespace BaoX.DurangoOriginal.GatheringMod
                 GatheringPlugin.Log.LogError("Error in HandleCollectOriginal: " + ex);
             }
         }
-
 
     }
 }

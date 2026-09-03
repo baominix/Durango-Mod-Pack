@@ -21,11 +21,12 @@ using SharedQuestState = Shared.Quest.QuestState;
 namespace BaoX.DurangoOriginal.TaskSystemRestoration
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class TaskSystemRestorationPlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "com.baox.durango.original.tasksystem";
+        public const string PluginGuid = "com.baominix.durango.original.tasksystem";
         public const string PluginName = "Task System Restoration Plugin";
-        public const string PluginVersion = "0.1.0";
+        public const string PluginVersion = "0.1.1";
 
         internal static ManualLogSource Log;
         internal static ConfigEntry<bool> Enabled;
@@ -116,7 +117,7 @@ namespace BaoX.DurangoOriginal.TaskSystemRestoration
 
             QuestCategory epic = default(QuestCategory);
             epic.Category = "sunset";
-            epic.Name = "Story";
+            epic.Name = TaskLocalization.Get("story");
             epic.Faction = null;
             epic.Season = null;
             epic.UnreceivedCount = 0;
@@ -192,9 +193,9 @@ namespace BaoX.DurangoOriginal.TaskSystemRestoration
 
         private static string DisplayName(string category)
         {
-            if (category == "permanent") return "Permanent Tasks";
-            if (category == "daily") return "Daily Tasks";
-            if (category == "weekly") return "Weekly Tasks";
+            if (category == "permanent") return TaskLocalization.Get("permanent");
+            if (category == "daily") return TaskLocalization.Get("daily");
+            if (category == "weekly") return TaskLocalization.Get("weekly");
             return category;
         }
     }

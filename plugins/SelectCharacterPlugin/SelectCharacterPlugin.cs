@@ -7,11 +7,12 @@ using HarmonyLib;
 namespace BaoX.DurangoOriginal.SelectCharacterMod
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class SelectCharacterPlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "com.baox.durango.original.selectcharacter";
+        public const string PluginGuid = "com.baominix.durango.original.selectcharacter";
         public const string PluginName = "Select Character Plugin";
-        public const string PluginVersion = "0.1.0";
+        public const string PluginVersion = "0.2.1";
 
         internal static ManualLogSource Log;
         private Harmony _harmony;

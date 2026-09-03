@@ -8,6 +8,7 @@ namespace BaoX.DurangoOriginal.PlayerProgressionMod
 {
     internal sealed class PlayerProgressionState
     {
+        internal const int MaximumLevel = 60;
         internal const float LevelOneHp = 300f;
         internal const float LevelOneInitialHp = 200f;
         internal const float HpPerLevel = 9f;
@@ -91,7 +92,7 @@ namespace BaoX.DurangoOriginal.PlayerProgressionMod
 
         internal int AddExperience(int amount)
         {
-            if (amount <= 0)
+            if (amount <= 0 || Level >= MaximumLevel)
             {
                 return 0;
             }
@@ -108,8 +109,11 @@ namespace BaoX.DurangoOriginal.PlayerProgressionMod
 
             int currentLevel = CalculateLevel(Experience, previousLevel);
             SetLevel(currentLevel);
-            RebuildGauges(currentLevel > previousLevel);
-            _context.Save();
+            if (currentLevel != previousLevel)
+            {
+                RebuildGauges(currentLevel > previousLevel);
+            }
+            ProgressionPersistence.MarkDirty(_context);
             return currentLevel - previousLevel;
         }
 
@@ -120,13 +124,13 @@ namespace BaoX.DurangoOriginal.PlayerProgressionMod
             int currentLevel = CalculateLevel(Experience, previousLevel);
             SetLevel(currentLevel);
             RebuildGauges(currentLevel != previousLevel);
-            _context.Save();
+            ProgressionPersistence.MarkDirty(_context);
             return currentLevel - previousLevel;
         }
 
         private void SetLevel(int level)
         {
-            level = Math.Max(1, Math.Min(60, level));
+            level = Math.Max(1, Math.Min(MaximumLevel, level));
             if (_context.PlayerInfo != null)
             {
                 _context.PlayerInfo.PlayerLevel = level;

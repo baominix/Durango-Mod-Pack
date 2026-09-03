@@ -1,0 +1,528 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca623cbf980f338b9506b97c6ddc38aa, type: 3}
+  m_Name: Ankylosaurus_framework
+  m_EditorClassIdentifier:
+  normal_motions:
+  - key: stand
+    motion: Ankylo_Stand
+    _clipObj: {fileID: 7400000, guid: eb8cbe34c3f95634984ecfbddcafe59b, type: 2}
+  - key: idle
+    motion: Ankylo_Stand
+    _clipObj: {fileID: 7400000, guid: eb8cbe34c3f95634984ecfbddcafe59b, type: 2}
+  - key: eat
+    motion: Ankylo_Eat
+    _clipObj: {fileID: 7400000, guid: eccda98ed203ba2458aad91ea44aafe1, type: 2}
+  - key: alert
+    motion: Ankylo_Alert
+    _clipObj: {fileID: 7400000, guid: d45531995622a9c42986e7e9e1a281a6, type: 2}
+  - key: dead
+    motion: Ankylo_Die
+    _clipObj: {fileID: 7400000, guid: b808f99eb49947248ad4a89b60dfbd4b, type: 2}
+  normal_3states:
+  - key: sleep_motions
+    begin: Ankylo_Sleep_Begin
+    during: Ankylo_Sleep_Looping
+    end: Ankylo_Sleep_End
+    _clipObjBegin: {fileID: 7400000, guid: 42c1901e24032b4498a2d02163d9b6a5, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: b236b7c7dd9565941bab2bfcce770b95, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: ecc298132f914bf48b19bd3949d0cde6, type: 2}
+  weighted_motions:
+  - key: rest_motions
+    elems:
+    - weight: 1
+      motion: Ankylo_Stand
+      duration: {x: 3, y: 3}
+      _clipObj: {fileID: 7400000, guid: eb8cbe34c3f95634984ecfbddcafe59b, type: 2}
+    - weight: 1
+      motion: Ankylo_Eat
+      duration: {x: 3.6, y: 3.6}
+      _clipObj: {fileID: 7400000, guid: eccda98ed203ba2458aad91ea44aafe1, type: 2}
+    - weight: 1
+      motion: Ankylo_Eat
+      duration: {x: 3.6, y: 3.6}
+      _clipObj: {fileID: 7400000, guid: eccda98ed203ba2458aad91ea44aafe1, type: 2}
+  weighted_3states:
+  - key: seq_rest_motions
+    elems: []
+  move_sets:
+  - key: move_motion_sets
+    elems:
+    - name: ankylosaurus_move_set
+      motions:
+      - motion: Ankylo_Limp
+        rot_motion_cw: Ankylo_Rotate_CW
+        rot_motion_ccw: Ankylo_Rotate_CCW
+        turn_reverse_motion: Ankylo_Turn
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 100
+        rot_speed: 60
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: c0ff142587002e842a83ecf70fb575fd, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 572a89acdc6ef9d4dbcdd75a47dfef02, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 17855b4c7fc1f8445ab9bcdb7d36a25d, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 667ac70c82cd927459e04eb4b85a0225, type: 2}
+      - motion: Ankylo_Walk
+        rot_motion_cw: Ankylo_Rotate_CW
+        rot_motion_ccw: Ankylo_Rotate_CCW
+        turn_reverse_motion: Ankylo_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<500'
+        base_move_speed: 120
+        rot_speed: 60
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: ed3de263187f817498bd5fb6ac0b158b, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 572a89acdc6ef9d4dbcdd75a47dfef02, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 17855b4c7fc1f8445ab9bcdb7d36a25d, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 667ac70c82cd927459e04eb4b85a0225, type: 2}
+      - motion: Ankylo_Run
+        rot_motion_cw: Ankylo_Rotate_CW
+        rot_motion_ccw: Ankylo_Rotate_CCW
+        turn_reverse_motion: Ankylo_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 300
+        rot_speed: 60
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 1f24f572e04f6064cb4f0cb3634e9551, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 572a89acdc6ef9d4dbcdd75a47dfef02, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 17855b4c7fc1f8445ab9bcdb7d36a25d, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 667ac70c82cd927459e04eb4b85a0225, type: 2}
+    - name: ankylosaurus_slow_move_set
+      motions:
+      - motion: Ankylo_Limp
+        rot_motion_cw: Ankylo_Rotate_CW
+        rot_motion_ccw: Ankylo_Rotate_CCW
+        turn_reverse_motion: Ankylo_Turn
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 100
+        rot_speed: 60
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: c0ff142587002e842a83ecf70fb575fd, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 572a89acdc6ef9d4dbcdd75a47dfef02, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 17855b4c7fc1f8445ab9bcdb7d36a25d, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 667ac70c82cd927459e04eb4b85a0225, type: 2}
+      - motion: Ankylo_Walk
+        rot_motion_cw: Ankylo_Rotate_CW
+        rot_motion_ccw: Ankylo_Rotate_CCW
+        turn_reverse_motion: Ankylo_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<1000'
+        base_move_speed: 120
+        rot_speed: 120
+        playback_rate: 1
+        rot_playback_rate: 1.2
+        _clipObjMove: {fileID: 7400000, guid: ed3de263187f817498bd5fb6ac0b158b, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 572a89acdc6ef9d4dbcdd75a47dfef02, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 17855b4c7fc1f8445ab9bcdb7d36a25d, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 667ac70c82cd927459e04eb4b85a0225, type: 2}
+      - motion: Ankylo_Run
+        rot_motion_cw: Ankylo_Rotate_CW
+        rot_motion_ccw: Ankylo_Rotate_CCW
+        turn_reverse_motion: Ankylo_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 300
+        rot_speed: 120
+        playback_rate: 1
+        rot_playback_rate: 1.2
+        _clipObjMove: {fileID: 7400000, guid: 1f24f572e04f6064cb4f0cb3634e9551, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 572a89acdc6ef9d4dbcdd75a47dfef02, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 17855b4c7fc1f8445ab9bcdb7d36a25d, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 667ac70c82cd927459e04eb4b85a0225, type: 2}
+    - name: ankylosaurus_move_p2_set
+      motions:
+      - motion: Ankylo_Limp
+        rot_motion_cw: Ankylo_Rotate_CW
+        rot_motion_ccw: Ankylo_Rotate_CCW
+        turn_reverse_motion: Ankylo_Turn
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 100
+        rot_speed: 60
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: c0ff142587002e842a83ecf70fb575fd, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 572a89acdc6ef9d4dbcdd75a47dfef02, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 17855b4c7fc1f8445ab9bcdb7d36a25d, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 667ac70c82cd927459e04eb4b85a0225, type: 2}
+      - motion: Ankylo_Walk
+        rot_motion_cw: Ankylo_Rotate_CW
+        rot_motion_ccw: Ankylo_Rotate_CCW
+        turn_reverse_motion: Ankylo_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<300'
+        base_move_speed: 120
+        rot_speed: 120
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: ed3de263187f817498bd5fb6ac0b158b, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 572a89acdc6ef9d4dbcdd75a47dfef02, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 17855b4c7fc1f8445ab9bcdb7d36a25d, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 667ac70c82cd927459e04eb4b85a0225, type: 2}
+      - motion: Ankylo_Run
+        rot_motion_cw: Ankylo_Rotate_CW
+        rot_motion_ccw: Ankylo_Rotate_CCW
+        turn_reverse_motion: Ankylo_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 300
+        rot_speed: 120
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 1f24f572e04f6064cb4f0cb3634e9551, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 572a89acdc6ef9d4dbcdd75a47dfef02, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 17855b4c7fc1f8445ab9bcdb7d36a25d, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 667ac70c82cd927459e04eb4b85a0225, type: 2}
+    - name: ankylosaurus_pet_move_set
+      motions:
+      - motion: Ankylo_Run_Pet
+        rot_motion_cw: Ankylo_Rotate_CW
+        rot_motion_ccw: Ankylo_Rotate_CCW
+        turn_reverse_motion: Ankylo_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 450
+        rot_speed: 60
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 68fc38f9db14e2240852df310721da36, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 572a89acdc6ef9d4dbcdd75a47dfef02, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 17855b4c7fc1f8445ab9bcdb7d36a25d, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 667ac70c82cd927459e04eb4b85a0225, type: 2}
+  comabt_motions:
+  - key: battle_idle
+    motion: Ankylo_BattleStand
+    _clipObj: {fileID: 7400000, guid: 3942d3120fb31f841bcdeafb04fd1497, type: 2}
+  - key: battle_stand
+    motion: Ankylo_BattleStand
+    _clipObj: {fileID: 7400000, guid: 3942d3120fb31f841bcdeafb04fd1497, type: 2}
+  - key: evade
+    motion: Ankylo_Evade
+    _clipObj: {fileID: 7400000, guid: 7c41fa9bff9c28f489e42fad47ebf3f6, type: 2}
+  - key: groggy
+    motion: Ankylo_Groggy
+    _clipObj: {fileID: 7400000, guid: 226fe0351f330c34aa3f8a2ef2fc7ce0, type: 2}
+  - key: blow
+    motion: Ankylo_Damage_Blow_Begin
+    _clipObj: {fileID: 7400000, guid: 2f92f269b1c768d4d88e581345c5b3c6, type: 2}
+  combat_directions:
+  - key: knock_back_motion_map
+    front: Ankylo_Damage_S
+    back: Ankylo_Damage_N
+    left: Ankylo_Damage_E
+    right: Ankylo_Damage_W
+    _clipObjFront: {fileID: 7400000, guid: b6b1b0529a2fa1140a8299810a9ccbd5, type: 2}
+    _clipObjBack: {fileID: 7400000, guid: a5735d67708391c4f91fd6a0adc5a658, type: 2}
+    _clipObjLeft: {fileID: 7400000, guid: 50ca8d747a9357249b2f8422818d82a6, type: 2}
+    _clipObjRight: {fileID: 7400000, guid: 5f607e8d92bf068449d46e44d5b5ec5d, type: 2}
+  combat_3states:
+  - key: knock_down_motions
+    begin: Ankylo_Damage_Blow_Begin
+    during: Ankylo_Damage_Blow_Looping
+    end: Ankylo_Damage_Blow_End
+    _clipObjBegin: {fileID: 7400000, guid: 2f92f269b1c768d4d88e581345c5b3c6, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: bd9a55ec68e33f84eade61fe54017ab8, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 68debdd6bbc5ef141be1738cf017bfa4, type: 2}
+  combat_attacks:
+  - key: ankylo_side_right
+    meta:
+      motion: Ankylo_Attack_Side_R
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: bb6597597fb1d2847a8e006744991e7a, type: 2}
+    attack_info:
+    - frame: 45
+      sub_action_id: ankylo_side_right_0
+      damage_type: 2
+      radius: 0
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 300, y: 100}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 57
+      sub_action_id: ankylo_side_right_1
+      damage_type: 2
+      radius: 0
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 300, y: 100}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 66
+      sub_action_id: ankylo_side_right_2
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 300, y: 100}
+      offset: {x: 0, y: 0}
+      damage_angle: -6
+      use_target_origin: 0
+    SameAbove: 0
+  - key: ankylo_side_left
+    meta:
+      motion: Ankylo_Attack_Side_L
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 65fb5d353faea1546bfd6f56409fd9e3, type: 2}
+    attack_info:
+    - frame: 45
+      sub_action_id: ankylo_side_left_0
+      damage_type: 2
+      radius: 0
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 300, y: 100}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 57
+      sub_action_id: ankylo_side_left_1
+      damage_type: 2
+      radius: 0
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 300, y: 100}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 66
+      sub_action_id: ankylo_side_left_2
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 300, y: 100}
+      offset: {x: 0, y: 0}
+      damage_angle: 6
+      use_target_origin: 0
+    SameAbove: 0
+  - key: ankylo_tail_swing
+    meta:
+      motion: Ankylo_Attack_Tail_Swing
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 68870fccaff8b804da9a85bc1b68eae2, type: 2}
+    attack_info:
+    - frame: 18
+      sub_action_id: ankylo_tail_swing_0
+      damage_type: 1
+      radius: 500
+      radius_min: 0
+      angles: {x: 80, y: 240}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: ankylo_tail_down
+    meta:
+      motion: Ankylo_Attack_Tail_Down
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: c39c961b9e414bc45bbd1ff152fb6569, type: 2}
+    attack_info:
+    - frame: 30
+      sub_action_id: ankylo_tail_down_0
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 60, y: -500}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 48
+      sub_action_id: ankylo_tail_down_1
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -500}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: ankylo_wounded_tail
+    meta:
+      motion: Ankylo_Attack_Wounded_Tail_Swing
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: e7a2b202f80c8c541a5d0f79371c30bd, type: 2}
+    attack_info:
+    - frame: 20
+      sub_action_id: ankylo_wounded_tail_0
+      damage_type: 1
+      radius: 400
+      radius_min: 0
+      angles: {x: 120, y: 270}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 100, y: -100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: ankylo_head
+    meta:
+      motion: Ankylo_Attack_Head
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: c30289f3628276e4ab3f949ded617970, type: 2}
+    attack_info:
+    - frame: 59
+      sub_action_id: ankylo_head_0
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 250, y: 150}
+      offset: {x: 0, y: -20}
+      damage_angle: 15
+      use_target_origin: 0
+    SameAbove: 0
+  - key: ankylo_taunt
+    meta:
+      motion: Ankylo_Taunt
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 7eebf894c5077ff47a6eb018bd61f5af, type: 2}
+    attack_info:
+    - frame: 15
+      sub_action_id: ankylo_taunt_0
+      damage_type: 1
+      radius: 700
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: ankylo_active_taunt_s
+    meta:
+      motion: Ankylo_Active_Taunt
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: cb2b35663678ef34fb7eda9fbd38dda7, type: 2}
+    attack_info:
+    - frame: 15
+      sub_action_id: ankylo_active_taunt_0
+      damage_type: 1
+      radius: 700
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: ankylo_taunt_f
+    meta:
+      motion: Ankylo_Taunt
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 7eebf894c5077ff47a6eb018bd61f5af, type: 2}
+    attack_info:
+    - frame: 15
+      sub_action_id: ankylo_taunt_f_0
+      damage_type: 1
+      radius: 700
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: ankylo_active_taunt_c
+    meta:
+      motion: Ankylo_Active_Taunt
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: cb2b35663678ef34fb7eda9fbd38dda7, type: 2}
+    attack_info:
+    - frame: 15
+      sub_action_id: ankylo_active_taunt_0
+      damage_type: 1
+      radius: 700
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: ankylo_active_taunt_b
+    meta:
+      motion: Ankylo_Active_Taunt
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: cb2b35663678ef34fb7eda9fbd38dda7, type: 2}
+    attack_info:
+    - frame: 15
+      sub_action_id: ankylo_active_taunt_0
+      damage_type: 1
+      radius: 700
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: ankylo_active_taunt_a
+    meta:
+      motion: Ankylo_Active_Taunt
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: cb2b35663678ef34fb7eda9fbd38dda7, type: 2}
+    attack_info:
+    - frame: 15
+      sub_action_id: ankylo_active_taunt_0
+      damage_type: 1
+      radius: 700
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  active_skills:
+  - key: active_default
+    motion: Ankylo_Active_Default
+    _clipObj: {fileID: 7400000, guid: 85933f37987b2cd458f6a9d93b9f9f75, type: 2}
+  etc_motions:
+  - key: ankylo_battle_idle
+    motion: Ankylo_Battle_Idle
+    _clipObj: {fileID: 7400000, guid: f978b0aedbd1f8947b80702d83c1d6c3, type: 2}
+  - key: ankylo_run_stop
+    motion: Ankylo_Run_Stop
+    _clipObj: {fileID: 7400000, guid: c20af1548caf9ec4090e360abfa13ffd, type: 2}

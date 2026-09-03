@@ -12,12 +12,13 @@ using UnityEngine;
 namespace BaoX.DurangoOriginal.PCCurrencyGroupRestoration
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
-    [BepInDependency("com.baox.durango.original.cashshoprestoration",
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.baominix.durango.original.cashshoprestoration",
         BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class PCCurrencyGroupRestorationPlugin : BaseUnityPlugin
     {
         public const string PluginGuid =
-            "com.baox.durango.original.pccurrencygrouprestoration";
+            "com.baominix.durango.original.pccurrencygrouprestoration";
         public const string PluginName =
             "PC Currency Group Restoration Plugin";
         public const string PluginVersion = "1.9.0";

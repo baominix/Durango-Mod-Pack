@@ -4,7 +4,7 @@ using System.Globalization;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
-namespace BaoX.DurangoOriginal.WeaponStatisticsMod
+namespace Baominix.DurangoOriginal.CombatSystem.EquipmentPerformance
 {
     internal sealed class WeaponPerformanceValues
     {
@@ -164,7 +164,7 @@ namespace BaoX.DurangoOriginal.WeaponStatisticsMod
                 TextAsset asset = Resources.Load("offline/assets/performance") as TextAsset;
                 if (asset == null)
                 {
-                    WeaponStatisticsPlugin.Log.LogWarning("Cannot load offline/assets/performance");
+                    DurangoCombatSystemPlugin.Log.LogWarning("Cannot load offline/assets/performance");
                     return;
                 }
 
@@ -172,11 +172,11 @@ namespace BaoX.DurangoOriginal.WeaponStatisticsMod
                 _weapons = root["weapon"] as JObject;
                 _armor = root["armor"] as JObject;
                 _modifiers = root["modifiers"] as JObject;
-                WeaponStatisticsPlugin.Log.LogInfo("Loaded original equipment performance data");
+                DurangoCombatSystemPlugin.Log.LogInfo("Loaded original equipment performance data");
             }
             catch (Exception exception)
             {
-                WeaponStatisticsPlugin.Log.LogError("Weapon performance load failed: " + exception);
+                DurangoCombatSystemPlugin.Log.LogError("Weapon performance load failed: " + exception);
             }
         }
 

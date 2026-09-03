@@ -1,0 +1,775 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca623cbf980f338b9506b97c6ddc38aa, type: 3}
+  m_Name: Ornithomimus_framework
+  m_EditorClassIdentifier:
+  normal_motions:
+  - key: stand
+    motion: Ornitho_Stand
+    _clipObj: {fileID: 7400000, guid: 74e82e9831b791145b41eb93f7591a43, type: 2}
+  - key: idle
+    motion: Ornitho_Idle
+    _clipObj: {fileID: 7400000, guid: 647c026da55791147bc3fa15e2b4f661, type: 2}
+  - key: eat
+    motion: Ornitho_Eat
+    _clipObj: {fileID: 7400000, guid: 1380b8a0b6905b7499f0a69753b50d10, type: 2}
+  - key: alert
+    motion: Ornitho_Alert
+    _clipObj: {fileID: 7400000, guid: c0a47d6b1e56d2c449c947a602b1f755, type: 2}
+  - key: dead
+    motion: Ornitho_Die
+    _clipObj: {fileID: 7400000, guid: b7b1a9b3a1666b441950a959ea796628, type: 2}
+  normal_3states:
+  - key: sleep_motions
+    begin: Ornitho_Sleep_Begin
+    during: Ornitho_Sleep_Looping
+    end: Ornitho_Sleep_End
+    _clipObjBegin: {fileID: 7400000, guid: b8cc1574dfd828f45a8af024eb0ff337, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: d7ef0e42affe1f5419f2798c19407f4a, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 845955eec2b0efc4ab08def94d420449, type: 2}
+  weighted_motions:
+  - key: rest_motions
+    elems:
+    - weight: 1
+      motion: Ornitho_Stand
+      duration: {x: 3, y: 3}
+      _clipObj: {fileID: 7400000, guid: 74e82e9831b791145b41eb93f7591a43, type: 2}
+    - weight: 1
+      motion: Ornitho_Idle
+      duration: {x: 7.1, y: 7.1}
+      _clipObj: {fileID: 7400000, guid: 647c026da55791147bc3fa15e2b4f661, type: 2}
+    - weight: 1
+      motion: Ornitho_Alert
+      duration: {x: 3, y: 3}
+      _clipObj: {fileID: 7400000, guid: c0a47d6b1e56d2c449c947a602b1f755, type: 2}
+    - weight: 1
+      motion: Ornitho_Idle_Grooming
+      duration: {x: 4.4, y: 4.4}
+      _clipObj: {fileID: 7400000, guid: 3d7d2b5639b3cc94cadc943b7dd68fcf, type: 2}
+  weighted_3states:
+  - key: seq_rest_motions
+    elems:
+    - weight: 1
+      begin: Ornitho_Sit_Begin
+      loopings:
+      - weight: 0.7
+        motion: Ornitho_Sit_Looping_A
+        duration: {x: 3, y: 10}
+        _clipObj: {fileID: 7400000, guid: c66f6542f785a3b4b8e6ca9a5849c9a2, type: 2}
+      - weight: 0.3
+        motion: Ornitho_Sit_Looping_B
+        duration: {x: 8.2, y: 8.2}
+        _clipObj: {fileID: 7400000, guid: 593fce15248df834a9d312f6c26bb1f1, type: 2}
+      end: Ornitho_Sit_End
+      _clipObjBegin: {fileID: 7400000, guid: 4d008498f4af8fa44bdf0a3a63640263, type: 2}
+      _clipObjEnd: {fileID: 7400000, guid: fbd1bc794fb907f4a85ba5e47af2599c, type: 2}
+  move_sets:
+  - key: move_motion_sets
+    elems:
+    - name: ornithomimus_move_set
+      motions:
+      - motion: Ornitho_Limp
+        rot_motion_cw: Ornitho_Rotate_CW
+        rot_motion_ccw: Ornitho_Rotate_CCW
+        turn_reverse_motion:
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 360
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 614ff5e0fa25383479e93ebe26ab98d7, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 8f63fcd4d06a0e54da1ae1d6bb6ac81a, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 34e47bf53d6a4c34281fdea01c2b0677, type: 2}
+        _clipObjTurnReverse: {fileID: 0}
+      - motion: Ornitho_Walk
+        rot_motion_cw: Ornitho_Rotate_CW
+        rot_motion_ccw: Ornitho_Rotate_CCW
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<400'
+        base_move_speed: 320
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: a8a51c32d3625ba48a94eb7ccbf86abb, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 8f63fcd4d06a0e54da1ae1d6bb6ac81a, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 34e47bf53d6a4c34281fdea01c2b0677, type: 2}
+        _clipObjTurnReverse: {fileID: 0}
+      - motion: Ornitho_Run
+        rot_motion_cw: Ornitho_Rotate_CW
+        rot_motion_ccw: Ornitho_Rotate_CCW
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 700
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 8645581a27ac53a4e8996ce2e871e348, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 8f63fcd4d06a0e54da1ae1d6bb6ac81a, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 34e47bf53d6a4c34281fdea01c2b0677, type: 2}
+        _clipObjTurnReverse: {fileID: 0}
+    - name: ornithomimus_pet_move_set
+      motions:
+      - motion: Ornitho_Run_Pet
+        rot_motion_cw: Ornitho_Rotate_CW
+        rot_motion_ccw: Ornitho_Rotate_CCW
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 650
+        rot_speed: 180
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 72334acb3e42e3746b6cc296736a6a8f, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 8f63fcd4d06a0e54da1ae1d6bb6ac81a, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 34e47bf53d6a4c34281fdea01c2b0677, type: 2}
+        _clipObjTurnReverse: {fileID: 0}
+  comabt_motions:
+  - key: battle_idle
+    motion: Ornitho_Battle_Idle
+    _clipObj: {fileID: 7400000, guid: bf0c98a0213bdaf4db86381adc592729, type: 2}
+  - key: battle_stand
+    motion: Ornitho_BattleStand
+    _clipObj: {fileID: 7400000, guid: 3e5add361b8c48341b572383333e0c6b, type: 2}
+  - key: evade
+    motion: Ornitho_Evade
+    _clipObj: {fileID: 7400000, guid: bb942e8773293b645a97ab6be508bc17, type: 2}
+  - key: groggy
+    motion: Ornitho_Groggy
+    _clipObj: {fileID: 7400000, guid: ffb7dbb0aca801c4ba487e06d41cef2d, type: 2}
+  - key: blow
+    motion: Ornitho_Damage_Blow_Begin
+    _clipObj: {fileID: 7400000, guid: fd1b3477d83f7e446b0674395180a146, type: 2}
+  combat_directions:
+  - key: knock_back_motion_map
+    front: Ornitho_Damage_S
+    back: Ornitho_Damage_N
+    left: Ornitho_Damage_E
+    right: Ornitho_Damage_W
+    _clipObjFront: {fileID: 7400000, guid: 7d72d6abac8bbc746a4d3f43e2e09189, type: 2}
+    _clipObjBack: {fileID: 7400000, guid: 7d81e84112741d94ca5a36215f00e343, type: 2}
+    _clipObjLeft: {fileID: 7400000, guid: e38d20b8a0173d34fa7d9ef90caaa807, type: 2}
+    _clipObjRight: {fileID: 7400000, guid: 18a7866f27dccc848974b33a26db90b7, type: 2}
+  combat_3states:
+  - key: knock_down_motions
+    begin: Ornitho_Damage_Blow_Begin
+    during: Ornitho_Damage_Blow_Looping
+    end: Ornitho_Damage_Blow_End
+    _clipObjBegin: {fileID: 7400000, guid: fd1b3477d83f7e446b0674395180a146, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 96b13f8235b482c439fae142373df00b, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 77159a81f8d9d50429b06214a0364280, type: 2}
+  combat_attacks:
+  - key: coelo_head
+    meta:
+      motion: Ornitho_Attack_Head
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: dbbc0f5fe586eb44daa5ac259ca79bb5, type: 2}
+    attack_info:
+    - frame: 48
+      sub_action_id: coelo_head_0
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 55
+      sub_action_id: coelo_head_1
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: coelo_strong
+    meta:
+      motion: Ornitho_Attack_Strong
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 99d0461dd929bc9479745d206e5051d2, type: 2}
+    attack_info:
+    - frame: 13
+      sub_action_id: coelo_strong_0
+      damage_type: 2
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 100}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: coelo_dash
+    meta:
+      motion: Ornitho_Attack_Dash
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: a16893213b2a6f8498d1330f05736cf7, type: 2}
+    attack_info:
+    - frame: 33
+      sub_action_id: coelo_dash_0
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 300, y: 100}
+      offset: {x: 0, y: -100}
+      damage_angle: -7
+      use_target_origin: 0
+    - frame: 38
+      sub_action_id: coelo_dash_1
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 100, y: 100}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 39
+      sub_action_id: coelo_dash_2
+      damage_type: 1
+      radius: 120
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 300, y: 100}
+      offset: {x: -50, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 47
+      sub_action_id: coelo_dash_3
+      damage_type: 1
+      radius: 120
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 400}
+      offset: {x: 50, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: coelo_mad
+    meta:
+      motion: Ornitho_Attack_Mad
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 63dc3616ff9f185499fbb99291fba77e, type: 2}
+    attack_info:
+    - frame: 16
+      sub_action_id: coelo_mad_0
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 31
+      sub_action_id: coelo_mad_1
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 54
+      sub_action_id: coelo_mad_2
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: -100, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 69
+      sub_action_id: coelo_mad_3
+      damage_type: 1
+      radius: 160
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 78
+      sub_action_id: coelo_mad_4
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 100, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 86
+      sub_action_id: coelo_mad_5
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 97
+      sub_action_id: coelo_mad_6
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 50, y: 250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: coelo_counter
+    meta:
+      motion: Ornitho_Attack_Counter
+      bound_enemy: 1
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 1a857fcc43ff7d84ca675343f2656574, type: 2}
+    attack_info:
+    - frame: 41
+      sub_action_id: coelo_counter_0
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: coelo_active_mad_s
+    meta:
+      motion: Ornitho_Active_Attack_Mad
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: b387947e9fcd7554baa9399d215359f4, type: 2}
+    attack_info:
+    - frame: 16
+      sub_action_id: coelo_active_mad_0
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 31
+      sub_action_id: coelo_active_mad_1
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 54
+      sub_action_id: coelo_active_mad_2
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: -100, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 69
+      sub_action_id: coelo_active_mad_3
+      damage_type: 1
+      radius: 160
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 78
+      sub_action_id: coelo_active_mad_4
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 100, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 86
+      sub_action_id: coelo_active_mad_5
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 97
+      sub_action_id: coelo_active_mad_6
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 50, y: 250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: coelo_mad_f
+    meta:
+      motion: Ornitho_Attack_Mad
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 63dc3616ff9f185499fbb99291fba77e, type: 2}
+    attack_info:
+    - frame: 16
+      sub_action_id: coelo_mad_f_0
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 31
+      sub_action_id: coelo_mad_f_1
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 54
+      sub_action_id: coelo_mad_f_2
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: -100, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 69
+      sub_action_id: coelo_mad_f_3
+      damage_type: 1
+      radius: 160
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 78
+      sub_action_id: coelo_mad_f_4
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 100, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 86
+      sub_action_id: coelo_mad_f_5
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 97
+      sub_action_id: coelo_mad_f_6
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 50, y: 250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: coelo_active_mad_c
+    meta:
+      motion: Ornitho_Active_Attack_Mad
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: b387947e9fcd7554baa9399d215359f4, type: 2}
+    attack_info:
+    - frame: 16
+      sub_action_id: coelo_active_mad_0
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 31
+      sub_action_id: coelo_active_mad_1
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 54
+      sub_action_id: coelo_active_mad_2
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: -100, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 69
+      sub_action_id: coelo_active_mad_3
+      damage_type: 1
+      radius: 160
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 78
+      sub_action_id: coelo_active_mad_4
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 100, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 86
+      sub_action_id: coelo_active_mad_5
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 97
+      sub_action_id: coelo_active_mad_6
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 50, y: 250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: coelo_active_mad_b
+    meta:
+      motion: Ornitho_Active_Attack_Mad
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: b387947e9fcd7554baa9399d215359f4, type: 2}
+    attack_info:
+    - frame: 16
+      sub_action_id: coelo_active_mad_0
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 31
+      sub_action_id: coelo_active_mad_1
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 54
+      sub_action_id: coelo_active_mad_2
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: -100, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 69
+      sub_action_id: coelo_active_mad_3
+      damage_type: 1
+      radius: 160
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 78
+      sub_action_id: coelo_active_mad_4
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 100, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 86
+      sub_action_id: coelo_active_mad_5
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 97
+      sub_action_id: coelo_active_mad_6
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 50, y: 250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: coelo_active_mad_a
+    meta:
+      motion: Ornitho_Active_Attack_Mad
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: b387947e9fcd7554baa9399d215359f4, type: 2}
+    attack_info:
+    - frame: 16
+      sub_action_id: coelo_active_mad_0
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 31
+      sub_action_id: coelo_active_mad_1
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 54
+      sub_action_id: coelo_active_mad_2
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: -100, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 69
+      sub_action_id: coelo_active_mad_3
+      damage_type: 1
+      radius: 160
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 78
+      sub_action_id: coelo_active_mad_4
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 100, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 86
+      sub_action_id: coelo_active_mad_5
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 97
+      sub_action_id: coelo_active_mad_6
+      damage_type: 1
+      radius: 150
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 50, y: 250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  active_skills:
+  - key: active_default
+    motion: Ornitho_Active_Default
+    _clipObj: {fileID: 7400000, guid: 239fdb5d6d6b7614894f2c65510a0fe7, type: 2}
+  etc_motions:
+  - key: ornitho_idle_shake
+    motion: Ornitho_Idle_Shake
+    _clipObj: {fileID: 7400000, guid: d87ad81a2f800d74ebb13844e405d959, type: 2}
+  - key: ornitho_death
+    motion: Ornitho_Death
+    _clipObj: {fileID: 7400000, guid: 49b6fff08e2628d4ca4a30f10ac63ddd, type: 2}
+  - key: ornitho_Run_Stop
+    motion:
+    _clipObj: {fileID: 0}
+  - key: ornitho_run_pet
+    motion: Ornitho_Run_Pet
+    _clipObj: {fileID: 7400000, guid: 72334acb3e42e3746b6cc296736a6a8f, type: 2}
+  - key: ornitho_run_stop
+    motion: Ornitho_Run_Stop
+    _clipObj: {fileID: 7400000, guid: 0fc3f46c3f7280b4fb83ff929cc6a36c, type: 2}

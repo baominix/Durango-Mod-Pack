@@ -1,0 +1,524 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca623cbf980f338b9506b97c6ddc38aa, type: 3}
+  m_Name: tricera_framework
+  m_EditorClassIdentifier:
+  normal_motions:
+  - key: stand
+    motion: Tricera_Stand
+    _clipObj: {fileID: 7400000, guid: 2e08b92cd34b0914ba73a34a8cb0dc34, type: 2}
+  - key: idle
+    motion: Tricera_Idle
+    _clipObj: {fileID: 7400000, guid: e0b417390386497448a2b46678ceffc3, type: 2}
+  - key: eat
+    motion: Tricera_Eat
+    _clipObj: {fileID: 7400000, guid: a905ec9e3e263af499fa6b621a021af7, type: 2}
+  - key: alert
+    motion: Tricera_Alert
+    _clipObj: {fileID: 7400000, guid: 96af4e3933e40f54e83e14af467bf5f0, type: 2}
+  - key: dead
+    motion: Tricera_Die
+    _clipObj: {fileID: 7400000, guid: 018b126e6d717184a95020199cdd53ae, type: 2}
+  normal_3states:
+  - key: sleep_motions
+    begin: Tricera_Sleep_Begin
+    during: Tricera_Sleep_Looping
+    end: Tricera_Sleep_End
+    _clipObjBegin: {fileID: 7400000, guid: c38b36fb89375ab4b9d9e8a7f0e21353, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 00bb6f3e1c9a14a469d9aabc47ebf78b, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 6b82d6cf3657a024e83f0cde62368445, type: 2}
+  weighted_motions:
+  - key: rest_motions
+    elems:
+    - weight: 1
+      motion: Tricera_Stand
+      duration: {x: 3, y: 3}
+      _clipObj: {fileID: 7400000, guid: 2e08b92cd34b0914ba73a34a8cb0dc34, type: 2}
+    - weight: 1
+      motion: Tricera_Idle
+      duration: {x: 6, y: 6}
+      _clipObj: {fileID: 7400000, guid: e0b417390386497448a2b46678ceffc3, type: 2}
+    - weight: 1
+      motion: Tricera_Idle_Step
+      duration: {x: 6.1, y: 6.1}
+      _clipObj: {fileID: 7400000, guid: df79ca0ef47b2a24d884078962225046, type: 2}
+    - weight: 1
+      motion: Tricera_Eat
+      duration: {x: 5.9, y: 5.9}
+      _clipObj: {fileID: 7400000, guid: a905ec9e3e263af499fa6b621a021af7, type: 2}
+  weighted_3states:
+  - key: seq_rest_motions
+    elems: []
+  move_sets:
+  - key: move_motion_sets
+    elems:
+    - name: triceratops_move_set
+      motions:
+      - motion: Tricera_Limp
+        rot_motion_cw: Tricera_Rotate_CW
+        rot_motion_ccw: Tricera_Rotate_CCW
+        turn_reverse_motion: Tricera_Turn
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 200
+        rot_speed: 150
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 66faf7191a9774b448673bce591ccf53, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 4856ce29458100c47b8bb5b6432bf666, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 65425afb290936d439d2ba4425e1288d, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 9eae17382e562c043a9bc11a88a8e6ef, type: 2}
+      - motion: Tricera_Walk
+        rot_motion_cw: Tricera_Rotate_CW
+        rot_motion_ccw: Tricera_Rotate_CCW
+        turn_reverse_motion: Tricera_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<500'
+        base_move_speed: 240
+        rot_speed: 150
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: e1dc3829d90c5ea4285416e7e6c98d14, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 4856ce29458100c47b8bb5b6432bf666, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 65425afb290936d439d2ba4425e1288d, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 9eae17382e562c043a9bc11a88a8e6ef, type: 2}
+      - motion: Tricera_Run
+        rot_motion_cw: Tricera_Rotate_CW
+        rot_motion_ccw: Tricera_Rotate_CCW
+        turn_reverse_motion: Tricera_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 800
+        rot_speed: 150
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 71b0e7072a11eed45b2f1abd9ebdd1d4, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 4856ce29458100c47b8bb5b6432bf666, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 65425afb290936d439d2ba4425e1288d, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 9eae17382e562c043a9bc11a88a8e6ef, type: 2}
+    - name: triceratops_pet_move_set
+      motions:
+      - motion: Tricera_Walk_Pet
+        rot_motion_cw: Tricera_Rotate_CW
+        rot_motion_ccw: Tricera_Rotate_CCW
+        turn_reverse_motion: Tricera_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 240
+        rot_speed: 150
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 615a00eea07d136489ce45dd140637bd, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 4856ce29458100c47b8bb5b6432bf666, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 65425afb290936d439d2ba4425e1288d, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 9eae17382e562c043a9bc11a88a8e6ef, type: 2}
+    - name: triceratops_pet2_move_set
+      motions:
+      - motion: Tricera_Run_Pet
+        rot_motion_cw: Tricera_Rotate_CW
+        rot_motion_ccw: Tricera_Rotate_CCW
+        turn_reverse_motion: Tricera_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 400
+        rot_speed: 150
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 1f794879e12ed054c930dc25f2fc374f, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 4856ce29458100c47b8bb5b6432bf666, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 65425afb290936d439d2ba4425e1288d, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: 9eae17382e562c043a9bc11a88a8e6ef, type: 2}
+  comabt_motions:
+  - key: battle_idle
+    motion: Tricera_BattleStand
+    _clipObj: {fileID: 7400000, guid: bec9168d6fdaaaa4b9ed3ad56e21952e, type: 2}
+  - key: battle_stand
+    motion: Tricera_BattleStand
+    _clipObj: {fileID: 7400000, guid: bec9168d6fdaaaa4b9ed3ad56e21952e, type: 2}
+  - key: evade
+    motion: Tricera_Evade
+    _clipObj: {fileID: 7400000, guid: c52c9b4ba0e4ea04ab171b3151fbe458, type: 2}
+  - key: groggy
+    motion: Tricera_Groggy
+    _clipObj: {fileID: 7400000, guid: 84839b86583c1e649b1f790cb29aa822, type: 2}
+  - key: blow
+    motion: Tricera_Damage_Blow_Begin
+    _clipObj: {fileID: 7400000, guid: 43b26c05c130de44fb215a661ce2130b, type: 2}
+  combat_directions:
+  - key: knock_back_motion_map
+    front: Tricera_Damage_S
+    back: Tricera_Damage_N
+    left: Tricera_Damage_E
+    right: Tricera_Damage_W
+    _clipObjFront: {fileID: 7400000, guid: fc4974dfa25b53a43b6b1f23f307b245, type: 2}
+    _clipObjBack: {fileID: 7400000, guid: 313b58a9a4ef1d64c979a7930f5d28e1, type: 2}
+    _clipObjLeft: {fileID: 7400000, guid: a8e7fbe2f82ab2d4496f65b5c57e7852, type: 2}
+    _clipObjRight: {fileID: 7400000, guid: b0f6a71c0f3cd6c45b6367a2da1dc34e, type: 2}
+  combat_3states:
+  - key: knock_down_motions
+    begin: Tricera_Damage_Blow_Begin
+    during: Tricera_Damage_Blow_Looping
+    end: Tricera_Damage_Blow_End
+    _clipObjBegin: {fileID: 7400000, guid: 43b26c05c130de44fb215a661ce2130b, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 722200e042ea73d46b42d5cb769607a4, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: d72aab9eb2b73b24fac78bdc601fdb9c, type: 2}
+  combat_attacks:
+  - key: tricera_dash
+    meta:
+      motion: Tricera_Attack_Dash
+      bound_enemy: 0
+      rot_speed: 45
+      _clipObj: {fileID: 7400000, guid: 759a8f8c8981e2f448c1935386efce81, type: 2}
+    attack_info:
+    - frame: 29
+      sub_action_id: tricera_dash_0
+      damage_type: 2
+      radius: 0
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 300, y: 150}
+      offset: {x: 0, y: 0}
+      damage_angle: -3
+      use_target_origin: 0
+    - frame: 33
+      sub_action_id: tricera_dash_1
+      damage_type: 2
+      radius: 180
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 150}
+      offset: {x: 0, y: 200}
+      damage_angle: 8
+      use_target_origin: 0
+    - frame: 41
+      sub_action_id: tricera_dash_2
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: tricera_once
+    meta:
+      motion: Tricera_Attack_Once
+      bound_enemy: 0
+      rot_speed: 90
+      _clipObj: {fileID: 7400000, guid: 88a5feba0332db240a91c0066f54d737, type: 2}
+    attack_info:
+    - frame: 12
+      sub_action_id: tricera_once_0
+      damage_type: 1
+      radius: 220
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 50, y: 200}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: tricera_head
+    meta:
+      motion: Tricera_Attack_Head
+      bound_enemy: 0
+      rot_speed: 90
+      _clipObj: {fileID: 7400000, guid: 035a91566da2dda47b88ef3391472e46, type: 2}
+    attack_info:
+    - frame: 12
+      sub_action_id: tricera_head_0
+      damage_type: 1
+      radius: 220
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 100, y: 150}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 23
+      sub_action_id: tricera_head_1
+      damage_type: 1
+      radius: 220
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: -150, y: 150}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: tricera_turn
+    meta:
+      motion: Tricera_Attack_Turn
+      bound_enemy: 0
+      rot_speed: 90
+      _clipObj: {fileID: 7400000, guid: 3f26649cace8e9747b559da029da7df2, type: 2}
+    attack_info:
+    - frame: 32
+      sub_action_id: tricera_turn_0
+      damage_type: 1
+      radius: 350
+      radius_min: 0
+      angles: {x: -80, y: 80}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 55
+      sub_action_id: tricera_turn_1
+      damage_type: 2
+      radius: 0
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 350, y: 150}
+      offset: {x: 0, y: 100}
+      damage_angle: 3
+      use_target_origin: 0
+    SameAbove: 0
+  - key: tricera_counter
+    meta:
+      motion: Tricera_Attack_Counter
+      bound_enemy: 1
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 40af0727d10b28649b8a053389d5ce57, type: 2}
+    attack_info:
+    - frame: 30
+      sub_action_id: tricera_counter_0
+      damage_type: 0
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 300}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: tricera_dash_f
+    meta:
+      motion: Tricera_Attack_Dash
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 759a8f8c8981e2f448c1935386efce81, type: 2}
+    attack_info:
+    - frame: 29
+      sub_action_id: tricera_dash_f_0
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 300, y: 150}
+      offset: {x: 0, y: 0}
+      damage_angle: -3
+      use_target_origin: 0
+    - frame: 33
+      sub_action_id: tricera_dash_f_1
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 150}
+      offset: {x: 0, y: 200}
+      damage_angle: 8
+      use_target_origin: 0
+    - frame: 41
+      sub_action_id: tricera_dash_f_2
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: tricera_active_dash_s
+    meta:
+      motion: Tricera_Active_Attack_Dash
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: f13411672e986004f8bf624edf587ac8, type: 2}
+    attack_info:
+    - frame: 29
+      sub_action_id: tricera_active_dash_0
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 300, y: 150}
+      offset: {x: 0, y: 0}
+      damage_angle: -3
+      use_target_origin: 0
+    - frame: 33
+      sub_action_id: tricera_active_dash_1
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 150}
+      offset: {x: 0, y: 200}
+      damage_angle: 8
+      use_target_origin: 0
+    - frame: 41
+      sub_action_id: tricera_active_dash_2
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: tricera_active_dash_c
+    meta:
+      motion: Tricera_Active_Attack_Dash
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: f13411672e986004f8bf624edf587ac8, type: 2}
+    attack_info:
+    - frame: 29
+      sub_action_id: tricera_active_dash_0
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 300, y: 150}
+      offset: {x: 0, y: 0}
+      damage_angle: -3
+      use_target_origin: 0
+    - frame: 33
+      sub_action_id: tricera_active_dash_1
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 150}
+      offset: {x: 0, y: 200}
+      damage_angle: 8
+      use_target_origin: 0
+    - frame: 41
+      sub_action_id: tricera_active_dash_2
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 1
+  - key: tricera_active_dash_b
+    meta:
+      motion: Tricera_Active_Attack_Dash
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: f13411672e986004f8bf624edf587ac8, type: 2}
+    attack_info:
+    - frame: 29
+      sub_action_id: tricera_active_dash_0
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 300, y: 150}
+      offset: {x: 0, y: 0}
+      damage_angle: -3
+      use_target_origin: 0
+    - frame: 33
+      sub_action_id: tricera_active_dash_1
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 150}
+      offset: {x: 0, y: 200}
+      damage_angle: 8
+      use_target_origin: 0
+    - frame: 41
+      sub_action_id: tricera_active_dash_2
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 1
+  - key: tricera_active_dash_a
+    meta:
+      motion: Tricera_Active_Attack_Dash
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: f13411672e986004f8bf624edf587ac8, type: 2}
+    attack_info:
+    - frame: 29
+      sub_action_id: tricera_active_dash_0
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 300, y: 150}
+      offset: {x: 0, y: 0}
+      damage_angle: -3
+      use_target_origin: 0
+    - frame: 33
+      sub_action_id: tricera_active_dash_1
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 150}
+      offset: {x: 0, y: 200}
+      damage_angle: 8
+      use_target_origin: 0
+    - frame: 41
+      sub_action_id: tricera_active_dash_2
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 250}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 1
+  active_skills:
+  - key: active_default
+    motion: Tricera_Active_Default
+    _clipObj: {fileID: 7400000, guid: 41d227865ff2cf7478ba82f83241983c, type: 2}
+  etc_motions:
+  - key: tricera_battle_idle
+    motion: Tricera_Battle_Idle
+    _clipObj: {fileID: 7400000, guid: 2b0a68a60ba10374f89a4abe77f4bae8, type: 2}
+  - key: tricera_death
+    motion: Tricera_Death
+    _clipObj: {fileID: 7400000, guid: 05199d9e33f527945a04f9020a7ffa7e, type: 2}
+  - key: tricera_threat
+    motion: Tricera_Threat
+    _clipObj: {fileID: 7400000, guid: 94d6665683e71644cb65d994982453cf, type: 2}
+  - key: tricera_trot
+    motion: Tricera_Trot
+    _clipObj: {fileID: 7400000, guid: 42097e5d19b7a3c4e9e22a77885d9885, type: 2}
+  - key: tricera_walk_pet
+    motion: Tricera_Walk_Pet
+    _clipObj: {fileID: 7400000, guid: 615a00eea07d136489ce45dd140637bd, type: 2}
+  - key: tricera_active_a
+    motion:
+    _clipObj: {fileID: 0}
+  - key: tricera
+    motion: Tricera_Run_Stop
+    _clipObj: {fileID: 7400000, guid: be75351b91dc15e4f887b9fd53b94fe1, type: 2}

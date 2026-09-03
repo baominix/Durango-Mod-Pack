@@ -22,8 +22,9 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
             if (!TamedIslandRestorationPlugin.Enabled.Value || __instance == null ||
                 __instance.World == null) return true;
 
-            string terrainId = __instance.World.TerrainInfo.region_template;
-            if (!HarborIslandApi.IsTamedTerrain(terrainId)) return true;
+            string terrainId = HarborIslandApi.GetCurrentTamedTerrainId(
+                __instance.World);
+            if (string.IsNullOrEmpty(terrainId)) return true;
 
             PlayerContext playerContext = GetPlayerContextMethod == null
                 ? null
@@ -37,8 +38,12 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
             welcome.Storage.Data = playerContext.Storage;
             welcome.Region.CreatedAt = 0.0;
             welcome.Region.Id = regionId;
-            welcome.Region.Name = TamedIslandRestorationPlugin.IslandName.Value;
-            welcome.Region.TemplateId = terrainId;
+            TamedIslandData.SetPlayerName(name);
+            welcome.Region.Name = TamedIslandData.IslandDisplayName;
+            // SkillCategoryWidget and other client UI resolve their metadata
+            // through Region.TemplateId. For the non-pe10 personal layouts the
+            // terrain package id is not itself a RegionTemplate key.
+            welcome.Region.TemplateId = HarborIslandApi.GetTamedRegionTemplateId(terrainId);
             // Offline Gateway only serves /terrains/1, so this must remain "1".
             welcome.Region.TerrainId = "1";
             welcome.Region.Role = Role.Personal;
@@ -54,7 +59,9 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
 
             connection.Send<Welcome>(welcome, seq);
             TamedIslandRestorationPlugin.Log.LogInfo(
-                "Sent Personal Welcome region: id=" + regionId + ", terrain=" + terrainId);
+                "Sent Personal Welcome region: id=" + regionId +
+                ", terrain=" + terrainId +
+                ", template=" + welcome.Region.TemplateId);
             return false;
         }
     }

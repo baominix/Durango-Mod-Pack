@@ -50,28 +50,36 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
         {
             if (!GameSystem<StatisticsSystem>.HasInstance() || GameSystem<StatisticsSystem>.Instance().Statistics == null)
             {
-                ChatCommandRegistry.Reply("StatisticsSystem is not ready.");
+                ChatCommandRegistry.Reply(ChatCommandLocalization.Get("stats_not_ready"));
                 return;
             }
 
             Statistics statistics = GameSystem<StatisticsSystem>.Instance().Statistics.Value;
-            ChatCommandRegistry.Reply("Combat Stat");
+            ChatCommandRegistry.Reply(ChatCommandLocalization.Get("combat_stat"));
             ChatCommandRegistry.Reply("Lv." + statistics.Level + " XP " + statistics.Exp);
             ChatCommandRegistry.Reply("STR " + GetBasic(statistics, Basic.Strength)
                 + " AGI " + GetBasic(statistics, Basic.Agility)
                 + " DEX " + GetBasic(statistics, Basic.Dexterity));
-            ChatCommandRegistry.Reply("Attack " + Number(GetDerived(statistics, Derived.Attack))
-                + " Accuracy " + Number(GetDerived(statistics, Derived.Accuracy))
-                + " Evasion " + Number(GetDerived(statistics, Derived.Dodge)));
-            ChatCommandRegistry.Reply("Lethality/Crit Rate " + Number(GetDerived(statistics, Derived.Critical))
-                + " AttackRating/Pen " + Number(GetDerived(statistics, Derived.AttackRating))
-                + " Defense " + Number(GetDerived(statistics, Derived.Defense)));
+            ChatCommandRegistry.Reply(
+                ChatCommandLocalization.Get("attack") + " " +
+                Number(GetDerived(statistics, Derived.Attack)) + " " +
+                ChatCommandLocalization.Get("accuracy") + " " +
+                Number(GetDerived(statistics, Derived.Accuracy)) + " " +
+                ChatCommandLocalization.Get("evasion") + " " +
+                Number(GetDerived(statistics, Derived.Dodge)));
+            ChatCommandRegistry.Reply(
+                ChatCommandLocalization.Get("crit_rate") + " " +
+                Number(GetDerived(statistics, Derived.Critical)) + " " +
+                ChatCommandLocalization.Get("attack_rating") + " " +
+                Number(GetDerived(statistics, Derived.AttackRating)) + " " +
+                ChatCommandLocalization.Get("defense") + " " +
+                Number(GetDerived(statistics, Derived.Defense)));
             CombatModifierContext combatContext = CollectCombatModifierContext();
-            ChatCommandRegistry.Reply("Active Actions: " + FormatActionSummary(combatContext.ActionIds));
+            ChatCommandRegistry.Reply(ChatCommandLocalization.Get("active_actions") + ": " + FormatActionSummary(combatContext.ActionIds));
             ReplyMeleeSkillGroupSummary(combatContext);
             ReplyRangedSkillGroupSummary(combatContext);
             ReplyActionModifierBreakdown(combatContext);
-            ChatCommandRegistry.Reply("Weapon: " + WeaponText());
+            ChatCommandRegistry.Reply(ChatCommandLocalization.Get("weapon") + ": " + WeaponText());
         }
 
         private static int GetBasic(Statistics statistics, Basic key)
@@ -228,7 +236,7 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
                     continue;
                 }
 
-                ChatCommandRegistry.Reply("Action " + displayActionId + ": " + FormatCompactModifiers(pair.Value.Totals));
+                ChatCommandRegistry.Reply(ChatCommandLocalization.Get("action") + " " + displayActionId + ": " + FormatCompactModifiers(pair.Value.Totals));
             }
         }
 
@@ -242,7 +250,7 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
             Dictionary<string, float> skill = CollectSkillIdModifiers("melee_weapon_mastery");
             if (!IsBarehandContext(combatContext) && HasAnyModifier(skill))
             {
-                ChatCommandRegistry.Reply("Melee Enhanced Action Type " + WeaponTypeText(combatContext) + ": " + FormatCompactModifiers(skill));
+                ChatCommandRegistry.Reply(ChatCommandLocalization.Get("melee_enhanced") + " " + ChatCommandLocalization.DisplayWeaponType(WeaponTypeText(combatContext)) + ": " + FormatCompactModifiers(skill));
             }
 
             string weaponSkillId = MeleeWeaponTypeSkillId(combatContext);
@@ -250,7 +258,7 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
             {
                 string weaponTypeText = WeaponTypeText(combatContext);
                 Dictionary<string, float> weaponType = CollectSkillIdModifiers(weaponSkillId);
-                ChatCommandRegistry.Reply("Melee Type " + weaponTypeText + ": " + FormatMeleeTypeModifiers(weaponTypeText, weaponType));
+                ChatCommandRegistry.Reply(ChatCommandLocalization.Get("melee_type") + " " + ChatCommandLocalization.DisplayWeaponType(weaponTypeText) + ": " + FormatMeleeTypeModifiers(weaponTypeText, weaponType));
             }
         }
 
@@ -264,13 +272,13 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
 
             Dictionary<string, float> enhanced = CollectSkillIdModifiers("ranged_weapon_proficiency");
             AddSkillIdModifiers(enhanced, "ranged_weapon_mastery");
-            ChatCommandRegistry.Reply("Ranged Enhanced Action Type " + rangedTypeText + ": " + FormatRangedEnhancedModifiers(enhanced));
+            ChatCommandRegistry.Reply(ChatCommandLocalization.Get("ranged_enhanced") + " " + ChatCommandLocalization.DisplayWeaponType(rangedTypeText) + ": " + FormatRangedEnhancedModifiers(enhanced));
 
             string weaponSkillId = RangedWeaponTypeSkillId(combatContext);
             if (!string.IsNullOrEmpty(weaponSkillId))
             {
                 Dictionary<string, float> weaponType = CollectSkillIdModifiers(weaponSkillId);
-                ChatCommandRegistry.Reply("Ranged Type " + rangedTypeText + ": " + FormatRangedTypeModifiers(rangedTypeText, weaponType));
+                ChatCommandRegistry.Reply(ChatCommandLocalization.Get("ranged_type") + " " + ChatCommandLocalization.DisplayWeaponType(rangedTypeText) + ": " + FormatRangedTypeModifiers(rangedTypeText, weaponType));
             }
         }
 
@@ -612,7 +620,7 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
         {
             if (node == null)
             {
-                return "Unknown";
+                return ChatCommandLocalization.Get("unknown");
             }
 
             if (!string.IsNullOrEmpty(node.Name))
@@ -1100,7 +1108,7 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
         {
             if (actionIds == null || actionIds.Count == 0)
             {
-                return "none";
+                return ChatCommandLocalization.Get("none");
             }
 
             string text = string.Empty;
@@ -1155,14 +1163,14 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
         {
             if (!GameSystem<EquipSystem>.HasInstance() || !GameSystem<InventorySystem>.HasInstance())
             {
-                return "not ready";
+                return ChatCommandLocalization.Get("not_ready");
             }
 
             EquipSystem equipSystem = GameSystem<EquipSystem>.Instance();
             EquipSystem.EquipPreset preset = equipSystem.GetEquipPreset(equipSystem.CurrentEquipPreset);
             if (preset == null || preset.SlotItems == null)
             {
-                return "none";
+                return ChatCommandLocalization.Get("none");
             }
 
             foreach (string itemId in preset.SlotItems.Values)
@@ -1178,7 +1186,7 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
                     return item.PrototypeId + " Lv." + item.Level;
                 }
             }
-            return "none";
+            return ChatCommandLocalization.Get("none");
         }
 
         private static bool HasAllowedActions(ItemData item)

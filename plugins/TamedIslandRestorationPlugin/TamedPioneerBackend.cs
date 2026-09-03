@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using BepInEx.Configuration;
 using Durango.Offline;
 using Durango.UI;
@@ -299,25 +300,10 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
                 HandleUseItems(player, context, ownerId, state, request, header);
             });
 
-            // CraftBuild's general offline backend intentionally exposes every normal
-            // blueprint. Only the nine original Pioneer lab rewards are rank-gated here.
-            connection.Recv<GetArtifactBlueprints>(delegate(GetArtifactBlueprints request, PacketHeader header)
-            {
-                List<string> ids = new List<string>();
-                RecipeSystem recipeSystem = GameSystem<RecipeSystem>.Instance();
-                if (recipeSystem != null && recipeSystem.RecipeContainer != null)
-                {
-                    foreach (Building.Blueprint blueprint in recipeSystem.RecipeContainer.GetAllBlueprints())
-                    {
-                        if (state.IsBlueprintUnlocked(blueprint.Id)) ids.Add(blueprint.Id);
-                    }
-                }
-                ArtifactBlueprints result = default(ArtifactBlueprints);
-                result.Ids = ids.ToArray();
-                result.LikedBlueprintIds = new string[0];
-                result.NewBlueprintIds = new string[0];
-                player.Send<ArtifactBlueprints>(result, header.Seq);
-            });
+            // GetArtifactBlueprints is owned by CraftBuildBackend. Offline Connection.Recv<T>
+            // replaces the previous TypeCode handler, so registering it here would erase
+            // skill/dynamic/clan availability. Pioneer rank is exposed as provider state
+            // and CraftBuildBackend unions the Original pioneer.json rewards.
 
             TamedIslandRestorationPlugin.Log.LogInfo(
                 "Pioneer progression ready: owner=" + ownerId + ", grade=" + state.Grade +
@@ -378,6 +364,10 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
             for (int i = indexes.Count - 1; i >= 0; i--) context.InventoryItems.RemoveAt(indexes[i]);
             context.Save();
             state.Update(grade, point, dailyPoints);
+            if (state.Grade != oldGrade)
+            {
+                RefreshCraftBuildBlueprintAvailability(player);
+            }
 
             InventoryUpdated inventory = default(InventoryUpdated);
             inventory.EntityId = ownerId;
@@ -395,6 +385,36 @@ namespace BaoX.DurangoOriginal.TamedIslandRestoration
                 ", grade=" + oldGrade + "->" + state.Grade +
                 ", point=" + oldPoint + "->" + state.Point +
                 ", plots=" + state.MaximumEstateSize);
+        }
+
+        private static void RefreshCraftBuildBlueprintAvailability(OfflinePlayer player)
+        {
+            try
+            {
+                Type backendType = AccessTools.TypeByName(
+                    "BaoX.DurangoOriginal.CraftBuildMod.CraftBuildBackend");
+                if (backendType == null)
+                {
+                    return;
+                }
+
+                MethodInfo sendBlueprints = backendType.GetMethod(
+                    "SendBlueprintAvailability",
+                    BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                if (sendBlueprints != null)
+                {
+                    sendBlueprints.Invoke(null, new object[] { player, 0U });
+                }
+            }
+            catch (Exception exception)
+            {
+                if (TamedIslandRestorationPlugin.Log != null)
+                {
+                    TamedIslandRestorationPlugin.Log.LogWarning(
+                        "Craft/build blueprint refresh after Pioneer grade change failed: " +
+                        exception.Message);
+                }
+            }
         }
 
         private static int FindItem(List<Item> items, string itemId)

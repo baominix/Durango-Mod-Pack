@@ -21,14 +21,14 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
             PlayerController controller = GetController();
             if (controller == null)
             {
-                ChatCommandRegistry.Reply("Enter a character before using /walk.");
+                ChatCommandRegistry.Reply(ChatCommandLocalization.Get("walk_enter"));
                 return;
             }
 
             if (string.IsNullOrEmpty(valueText))
             {
                 ChatCommandRegistry.Reply(
-                    "Current walk speed: " + Format(controller.CheatMoveSpeedMultiply) + "x (1 = default).");
+                    ChatCommandLocalization.Get("walk_current", Format(controller.CheatMoveSpeedMultiply)));
                 ShowUsage();
                 return;
             }
@@ -41,14 +41,14 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
             }
             else if (!TryParseMultiplier(valueText, out multiplier))
             {
-                ChatCommandRegistry.Reply("Walk speed must be a number from 0.1 to 10.");
+                ChatCommandRegistry.Reply(ChatCommandLocalization.Get("walk_invalid"));
                 ShowUsage();
                 return;
             }
 
             controller.CheatMoveSpeedMultiply = multiplier;
             ChatCommandRegistry.Reply(
-                "Walk speed set to " + Format(multiplier) + "x (1 = default).");
+                ChatCommandLocalization.Get("walk_set", Format(multiplier)));
         }
 
         private static bool TryGetValueText(string[] args, out string valueText)
@@ -101,8 +101,8 @@ namespace BaoX.DurangoOriginal.ChatCommandMod
 
         private static void ShowUsage()
         {
-            ChatCommandRegistry.Reply("Usage: /walk <speed> or /walk speed <value>");
-            ChatCommandRegistry.Reply("Range: 0.1 to 10. Use /walk 1 or /walk reset for default speed.");
+            ChatCommandRegistry.Reply(ChatCommandLocalization.Get("usage_prefix", "/walk <speed> or /walk speed <value>"));
+            ChatCommandRegistry.Reply(ChatCommandLocalization.Get("walk_range"));
         }
     }
 }

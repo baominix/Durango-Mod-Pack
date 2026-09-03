@@ -10,9 +10,10 @@ using HarmonyLib;
 namespace BaoX.DurangoOriginal.GameMenu
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
+    [BepInDependency("com.baominix.durango.original.logcontrol", BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class GameMenuPlugin : BaseUnityPlugin
     {
-        public const string PluginGuid = "com.baox.durango.original.gamemenu";
+        public const string PluginGuid = "com.baominix.durango.original.gamemenu";
         public const string PluginName = "Game Menu Plugin";
         public const string PluginVersion = "0.1.0";
 

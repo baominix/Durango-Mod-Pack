@@ -1,0 +1,731 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca623cbf980f338b9506b97c6ddc38aa, type: 3}
+  m_Name: Macrauchenia_framework
+  m_EditorClassIdentifier:
+  normal_motions:
+  - key: stand
+    motion: Macrau_Stand
+    _clipObj: {fileID: 7400000, guid: 89279c03f61b3e247890e5466ccd8479, type: 2}
+  - key: idle
+    motion: Macrau_Idle
+    _clipObj: {fileID: 7400000, guid: 20087030120c07e47a47b90376377caf, type: 2}
+  - key: eat
+    motion: Macrau_Eat
+    _clipObj: {fileID: 7400000, guid: cf5617684b9fce5469b04b6f87b328ae, type: 2}
+  - key: alert
+    motion: Macrau_Alert
+    _clipObj: {fileID: 7400000, guid: a7828c6cc6e66154fa925954b65ee1cd, type: 2}
+  - key: dead
+    motion: Macrau_Die
+    _clipObj: {fileID: 7400000, guid: 5240075721d59aa4dbe163a82e1ee612, type: 2}
+  normal_3states:
+  - key: sleep_motions
+    begin: Macrau_Sleep_Begin
+    during: Macrau_Sleep_Looping
+    end: Macrau_Sleep_End
+    _clipObjBegin: {fileID: 7400000, guid: 8914ac2f0fa39064d8a10406f47da41c, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: fcd6cc14b8c5bd6498f088ce2953d4c9, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: bcb0b36e858c2df4a8ce6ae5f6345725, type: 2}
+  weighted_motions:
+  - key: rest_motions
+    elems:
+    - weight: 1
+      motion: Macrau_Stand
+      duration: {x: 3, y: 3}
+      _clipObj: {fileID: 7400000, guid: 89279c03f61b3e247890e5466ccd8479, type: 2}
+    - weight: 1
+      motion: Macrau_Idle
+      duration: {x: 5.7, y: 5.7}
+      _clipObj: {fileID: 7400000, guid: 20087030120c07e47a47b90376377caf, type: 2}
+    - weight: 1
+      motion: Macrau_Idle_howling
+      duration: {x: 8.3, y: 8.3}
+      _clipObj: {fileID: 7400000, guid: a729a430662b4d343acf3965ec15743c, type: 2}
+    - weight: 1
+      motion: Macrau_Eat
+      duration: {x: 4.1, y: 4.1}
+      _clipObj: {fileID: 7400000, guid: cf5617684b9fce5469b04b6f87b328ae, type: 2}
+  weighted_3states:
+  - key: seq_rest_motions
+    elems:
+    - weight: 1
+      begin: Macrau_Sit_Begin
+      loopings:
+      - weight: 0.7
+        motion: Macrau_Sit_Looping_A
+        duration: {x: 3, y: 10}
+        _clipObj: {fileID: 7400000, guid: 15e058d0b670b3e4c861cc2698e77725, type: 2}
+      - weight: 0.3
+        motion: Macrau_Sit_Looping_B
+        duration: {x: 7.6, y: 7.6}
+        _clipObj: {fileID: 7400000, guid: 305f4d36c47b3c64a95d616c237aa662, type: 2}
+      end: Macrau_Sit_End
+      _clipObjBegin: {fileID: 7400000, guid: 6fef2a87e8949d54ea909331388e207c, type: 2}
+      _clipObjEnd: {fileID: 7400000, guid: d371bdf68121a9944943deb1c5acc4f7, type: 2}
+  move_sets:
+  - key: move_motion_sets
+    elems:
+    - name: macrauchenia_move_set
+      motions:
+      - motion: Macrau_Limp
+        rot_motion_cw: Macrau_Rotate_CW
+        rot_motion_ccw: Macrau_Rotate_CCW
+        turn_reverse_motion:
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 360
+        rot_speed: 160
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 86c8b62575e28404b9678680e6c9c919, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: bffab44872fba3d4186a120268f4e17d, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 894e6d10d9982c34e985e41c90e74873, type: 2}
+        _clipObjTurnReverse: {fileID: 0}
+      - motion: Macrau_Walk
+        rot_motion_cw: Macrau_Rotate_CW
+        rot_motion_ccw: Macrau_Rotate_CCW
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<400'
+        base_move_speed: 240
+        rot_speed: 160
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 2a5e8ccde7735c24092f3030a0ed54e4, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: bffab44872fba3d4186a120268f4e17d, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 894e6d10d9982c34e985e41c90e74873, type: 2}
+        _clipObjTurnReverse: {fileID: 0}
+      - motion: Macrau_Run
+        rot_motion_cw: Macrau_Rotate_CW
+        rot_motion_ccw: Macrau_Rotate_CCW
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 682.9268
+        rot_speed: 160
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 245fec70ba9d85d48a93827450d0e642, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: bffab44872fba3d4186a120268f4e17d, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 894e6d10d9982c34e985e41c90e74873, type: 2}
+        _clipObjTurnReverse: {fileID: 0}
+    - name: macrauchenia_pet_move_set
+      motions:
+      - motion: Macrau_Run_Pet
+        rot_motion_cw: Macrau_Rotate_CW
+        rot_motion_ccw: Macrau_Rotate_CCW
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 650
+        rot_speed: 160
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 3b71f4c38cb2375449ec72f7297105aa, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: bffab44872fba3d4186a120268f4e17d, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 894e6d10d9982c34e985e41c90e74873, type: 2}
+        _clipObjTurnReverse: {fileID: 0}
+    - name: megaloceros_pet_move_set
+      motions:
+      - motion: Macrau_Run_Pet
+        rot_motion_cw: Macrau_Rotate_CW
+        rot_motion_ccw: Macrau_Rotate_CCW
+        turn_reverse_motion:
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 750
+        rot_speed: 160
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 3b71f4c38cb2375449ec72f7297105aa, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: bffab44872fba3d4186a120268f4e17d, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: 894e6d10d9982c34e985e41c90e74873, type: 2}
+        _clipObjTurnReverse: {fileID: 0}
+  comabt_motions:
+  - key: battle_idle
+    motion: Macrau_BattleStand
+    _clipObj: {fileID: 7400000, guid: 0b6504e2dea84d94aa82971ca12353bc, type: 2}
+  - key: battle_stand
+    motion: Macrau_BattleStand
+    _clipObj: {fileID: 7400000, guid: 0b6504e2dea84d94aa82971ca12353bc, type: 2}
+  - key: evade
+    motion: Macrau_Evade
+    _clipObj: {fileID: 7400000, guid: fda21d7eb93860f419c8fe2578086347, type: 2}
+  - key: groggy
+    motion: Macrau_Groggy
+    _clipObj: {fileID: 7400000, guid: 404540e8b1c43e042977453411152c98, type: 2}
+  - key: blow
+    motion: Macrau_Damage_Blow_Begin
+    _clipObj: {fileID: 7400000, guid: d54a45d5dae2ece42bbaee9f69ed12b5, type: 2}
+  combat_directions:
+  - key: knock_back_motion_map
+    front: Macrau_Damage_S
+    back: Macrau_Damage_N
+    left: Macrau_Damage_E
+    right: Macrau_Damage_W
+    _clipObjFront: {fileID: 7400000, guid: ed3f646c7f327d54592d20a9251aceda, type: 2}
+    _clipObjBack: {fileID: 7400000, guid: 40c98feb96043904f8867a462d6057de, type: 2}
+    _clipObjLeft: {fileID: 7400000, guid: 4f4cb72bddf0af04390763d3f6522873, type: 2}
+    _clipObjRight: {fileID: 7400000, guid: 7f0719480c89b274da497fa7456fa42e, type: 2}
+  combat_3states:
+  - key: knock_down_motions
+    begin: Macrau_Damage_Blow_Begin
+    during: Macrau_Damage_Blow_Looping
+    end: Macrau_Damage_Blow_End
+    _clipObjBegin: {fileID: 7400000, guid: d54a45d5dae2ece42bbaee9f69ed12b5, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 7583b6255afc7f9499d0ee8310b61e47, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 02fa226540a085048b0230dad31f22a3, type: 2}
+  combat_attacks:
+  - key: macrau_kick
+    meta:
+      motion: Macrau_Attack_Kick
+      bound_enemy: 0
+      rot_speed: 180
+      _clipObj: {fileID: 7400000, guid: b586655a1d054aa40b7a69b0e9acd5c4, type: 2}
+    attack_info:
+    - frame: 39
+      sub_action_id: macrau_kick_0
+      damage_type: 2
+      radius: 300
+      radius_min: 0
+      angles: {x: 120, y: 240}
+      rect_half_size: {x: 150, y: 80}
+      offset: {x: 0, y: -100}
+      damage_angle: 5
+      use_target_origin: 0
+    SameAbove: 0
+  - key: macrau_kick_small
+    meta:
+      motion: Macrau_Attack_Kick_Normal
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 07f028805850c6f4c85b25c6ecb9d8aa, type: 2}
+    attack_info:
+    - frame: 12
+      sub_action_id: macrau_kick_small_0
+      damage_type: 2
+      radius: 300
+      radius_min: 0
+      angles: {x: 120, y: 240}
+      rect_half_size: {x: 150, y: 80}
+      offset: {x: 0, y: -150}
+      damage_angle: 5
+      use_target_origin: 0
+    SameAbove: 0
+  - key: macrau_kick_front
+    meta:
+      motion: Macrau_Attack_FrontLeg
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 07ba1107219459d4195525aa5be5d438, type: 2}
+    attack_info:
+    - frame: 8
+      sub_action_id: macrau_kick_front_0
+      damage_type: 2
+      radius: 0
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 80}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 9
+      sub_action_id: macrau_kick_front_2
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 23
+      sub_action_id: macrau_kick_front_1
+      damage_type: 2
+      radius: 0
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 80}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 24
+      sub_action_id: macrau_kick_front_3
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: macrau_head
+    meta:
+      motion: Macrau_Attack_Head
+      bound_enemy: 1
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 8ea8d1fc88351cc4287d3a30e14148a6, type: 2}
+    attack_info:
+    - frame: 54
+      sub_action_id: macrau_head_0
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: -100, y: 30}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 65
+      sub_action_id: macrau_head_1
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: -30, y: 100}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: macrau_dash
+    meta:
+      motion: Macrau_Attack_Dash
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: a97936c6a91dab04d9f17e8974dc850c, type: 2}
+    attack_info:
+    - frame: 19
+      sub_action_id: macrau_dash_0
+      damage_type: 2
+      radius: 200
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 80}
+      offset: {x: 0, y: 80}
+      damage_angle: 5
+      use_target_origin: 0
+    SameAbove: 0
+  - key: macrau_spit
+    meta:
+      motion: Macrau_Attack_Spit
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: a1d333bf2c13a7f44be5bcfbe65d83e0, type: 2}
+    attack_info:
+    - frame: 27
+      sub_action_id: macrau_spit_0
+      damage_type: 1
+      radius: 650
+      radius_min: 0
+      angles: {x: -25, y: 25}
+      rect_half_size: {x: 200, y: 300}
+      offset: {x: 0, y: -100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: macrau_active_head_s
+    meta:
+      motion: Macrau_Active_Attack_Head
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: cde0d5195a0b2e043a8a30a6d6292ea1, type: 2}
+    attack_info:
+    - frame: 54
+      sub_action_id: macrau_active_head_0
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: -100, y: 30}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 65
+      sub_action_id: macrau_active_head_1
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: -30, y: 100}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: macrau_head_f
+    meta:
+      motion: Macrau_Attack_Head
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 8ea8d1fc88351cc4287d3a30e14148a6, type: 2}
+    attack_info:
+    - frame: 54
+      sub_action_id: macrau_head_f_0
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: -100, y: 30}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 65
+      sub_action_id: macrau_head_f_1
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: -30, y: 100}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: macrau_kick_front_f
+    meta:
+      motion: Macrau_Attack_FrontLeg
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 07ba1107219459d4195525aa5be5d438, type: 2}
+    attack_info:
+    - frame: 8
+      sub_action_id: macrau_kick_front_f_0
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 80}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 9
+      sub_action_id: macrau_kick_front_f_2
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 23
+      sub_action_id: macrau_kick_front_f_1
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 80}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 24
+      sub_action_id: macrau_kick_front_f_3
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: macrau_active_kick_front_s
+    meta:
+      motion: Macrau_Active_Attack_FrontLeg
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: bd7863bb237ee7f489aa852869acd934, type: 2}
+    attack_info:
+    - frame: 8
+      sub_action_id: macrau_active_kick_front_0
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 80}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 9
+      sub_action_id: macrau_active_kick_front_2
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 23
+      sub_action_id: macrau_active_kick_front_1
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 80}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 24
+      sub_action_id: macrau_active_kick_front_3
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: macrau_active_head_c
+    meta:
+      motion: Macrau_Active_Attack_Head
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: cde0d5195a0b2e043a8a30a6d6292ea1, type: 2}
+    attack_info:
+    - frame: 54
+      sub_action_id: macrau_active_head_0
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: -100, y: 30}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 65
+      sub_action_id: macrau_active_head_1
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: -30, y: 100}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: macrau_active_head_b
+    meta:
+      motion: Macrau_Active_Attack_Head
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: cde0d5195a0b2e043a8a30a6d6292ea1, type: 2}
+    attack_info:
+    - frame: 54
+      sub_action_id: macrau_active_head_0
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: -100, y: 30}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 65
+      sub_action_id: macrau_active_head_1
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: -30, y: 100}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: macrau_active_head_a
+    meta:
+      motion: Macrau_Active_Attack_Head
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: cde0d5195a0b2e043a8a30a6d6292ea1, type: 2}
+    attack_info:
+    - frame: 54
+      sub_action_id: macrau_active_head_0
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: -100, y: 30}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 65
+      sub_action_id: macrau_active_head_1
+      damage_type: 1
+      radius: 200
+      radius_min: 0
+      angles: {x: -30, y: 100}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: macrau_active_kick_front_c
+    meta:
+      motion: Macrau_Active_Attack_FrontLeg
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: bd7863bb237ee7f489aa852869acd934, type: 2}
+    attack_info:
+    - frame: 8
+      sub_action_id: macrau_active_kick_front_0
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 80}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 9
+      sub_action_id: macrau_active_kick_front_2
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 23
+      sub_action_id: macrau_active_kick_front_1
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 80}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 24
+      sub_action_id: macrau_active_kick_front_3
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: macrau_active_kick_front_b
+    meta:
+      motion: Macrau_Active_Attack_FrontLeg
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: bd7863bb237ee7f489aa852869acd934, type: 2}
+    attack_info:
+    - frame: 8
+      sub_action_id: macrau_active_kick_front_0
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 80}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 9
+      sub_action_id: macrau_active_kick_front_2
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 23
+      sub_action_id: macrau_active_kick_front_1
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 80}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 24
+      sub_action_id: macrau_active_kick_front_3
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: macrau_active_kick_front_a
+    meta:
+      motion: Macrau_Active_Attack_FrontLeg
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: bd7863bb237ee7f489aa852869acd934, type: 2}
+    attack_info:
+    - frame: 8
+      sub_action_id: macrau_active_kick_front_0
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 80}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 9
+      sub_action_id: macrau_active_kick_front_2
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 23
+      sub_action_id: macrau_active_kick_front_1
+      damage_type: 2
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 200, y: 80}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 24
+      sub_action_id: macrau_active_kick_front_3
+      damage_type: 1
+      radius: 100
+      radius_min: 0
+      angles: {x: 0, y: 0}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  active_skills:
+  - key: active_default
+    motion: Macrau_Active_Default
+    _clipObj: {fileID: 7400000, guid: 57d6dae67f003f84293d4cc0ede2de94, type: 2}
+  etc_motions:
+  - key: macrau_run_pet
+    motion: Macrau_Run_Pet
+    _clipObj: {fileID: 7400000, guid: 3b71f4c38cb2375449ec72f7297105aa, type: 2}
+  - key: macrau_run_stop
+    motion: Macrau_Run_Stop
+    _clipObj: {fileID: 7400000, guid: d5d7ed919bbbeff408ce2bb8104c835c, type: 2}

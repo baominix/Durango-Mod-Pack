@@ -1,0 +1,250 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca623cbf980f338b9506b97c6ddc38aa, type: 3}
+  m_Name: Parasaurolophus_framework
+  m_EditorClassIdentifier:
+  normal_motions:
+  - key: stand
+    motion: Para_Stand
+    _clipObj: {fileID: 7400000, guid: fa593fbcf94e57d479126a1381ef7932, type: 2}
+  - key: idle
+    motion: Para_Idle
+    _clipObj: {fileID: 7400000, guid: 021f3629e28954e448490bc0d13e916b, type: 2}
+  - key: eat
+    motion: Para_Eat
+    _clipObj: {fileID: 7400000, guid: 7a8f65acc6efe2e4abfb81d4aaf814db, type: 2}
+  - key: alert
+    motion: Para_Alert
+    _clipObj: {fileID: 7400000, guid: b2341df8338303f47b16c17b57ccf677, type: 2}
+  - key: dead
+    motion: Para_Die
+    _clipObj: {fileID: 7400000, guid: b60729cf432bf3942abbe9936de256dd, type: 2}
+  normal_3states:
+  - key: sleep_motions
+    begin: Para_Sleep_Begin
+    during: Para_Sleep_Looping
+    end: Para_Sleep_End
+    _clipObjBegin: {fileID: 7400000, guid: d8fb94c3de98f59488d08cba430620ee, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 713f11cbec51bea4a93b0e2c43d2996b, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 8496bd8987d6ea0479fe32e80a13317e, type: 2}
+  weighted_motions:
+  - key: rest_motions
+    elems:
+    - weight: 1
+      motion: Para_Stand
+      duration: {x: 3, y: 3}
+      _clipObj: {fileID: 7400000, guid: fa593fbcf94e57d479126a1381ef7932, type: 2}
+    - weight: 1
+      motion: Para_Idle
+      duration: {x: 3.7, y: 3.7}
+      _clipObj: {fileID: 7400000, guid: 021f3629e28954e448490bc0d13e916b, type: 2}
+    - weight: 0.2
+      motion: Para_Alert
+      duration: {x: 6, y: 6}
+      _clipObj: {fileID: 7400000, guid: b2341df8338303f47b16c17b57ccf677, type: 2}
+    - weight: 1
+      motion: Para_Eat
+      duration: {x: 8, y: 8}
+      _clipObj: {fileID: 7400000, guid: 7a8f65acc6efe2e4abfb81d4aaf814db, type: 2}
+  weighted_3states:
+  - key: seq_rest_motions
+    elems:
+    - weight: 1
+      begin: Para_Sit_Begin
+      loopings:
+      - weight: 0.7
+        motion: Para_Sit_Looping_A
+        duration: {x: 3, y: 10}
+        _clipObj: {fileID: 7400000, guid: bde834a260d0448459b9353856c47fb7, type: 2}
+      - weight: 0.3
+        motion: Para_Sit_Looping_B
+        duration: {x: 8.6, y: 8.6}
+        _clipObj: {fileID: 7400000, guid: 3cc7a91b8d683754ab66fcebc286cd17, type: 2}
+      end: Para_Sit_End
+      _clipObjBegin: {fileID: 7400000, guid: 956f006a2ad67d64fa5c36b68c78dfe9, type: 2}
+      _clipObjEnd: {fileID: 7400000, guid: 64fa5f3bbf01aff4ea0458923b188047, type: 2}
+  move_sets:
+  - key: move_motion_sets
+    elems:
+    - name: parasaurolophus_move_set
+      motions:
+      - motion: Para_Limp
+        rot_motion_cw: Para_Rotate_CW
+        rot_motion_ccw: Para_Rotate_CCW
+        turn_reverse_motion: Para_Turn
+        conditions:
+          flag: leg_injury
+          enemy_distance_with_bound:
+        base_move_speed: 424.13794
+        rot_speed: 140
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 2872a011eea814f46858796cadebd3d0, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 5b8e61a47b1c42b448c83a6d03cda52c, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: b1d9b5fe8d226a14ebc8642027655f9f, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: fb37fe9e3524a004a9a63614f7349223, type: 2}
+      - motion: Para_Walk
+        rot_motion_cw: Para_Rotate_CW
+        rot_motion_ccw: Para_Rotate_CCW
+        turn_reverse_motion: Para_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound: '<500'
+        base_move_speed: 367.5862
+        rot_speed: 140
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 08d988441a8eb2243931fdf1c546a15d, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 5b8e61a47b1c42b448c83a6d03cda52c, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: b1d9b5fe8d226a14ebc8642027655f9f, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: fb37fe9e3524a004a9a63614f7349223, type: 2}
+      - motion: Para_Run
+        rot_motion_cw: Para_Rotate_CW
+        rot_motion_ccw: Para_Rotate_CCW
+        turn_reverse_motion: Para_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 689.65515
+        rot_speed: 140
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 6621a639e4cec274d808c5ddf69e2ee5, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 5b8e61a47b1c42b448c83a6d03cda52c, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: b1d9b5fe8d226a14ebc8642027655f9f, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: fb37fe9e3524a004a9a63614f7349223, type: 2}
+    - name: parasaurolophus_pet_move_set
+      motions:
+      - motion: Para_Run_Pet
+        rot_motion_cw: Para_Rotate_CW
+        rot_motion_ccw: Para_Rotate_CCW
+        turn_reverse_motion: Para_Turn
+        conditions:
+          flag:
+          enemy_distance_with_bound:
+        base_move_speed: 600
+        rot_speed: 140
+        playback_rate: 1
+        rot_playback_rate: 1
+        _clipObjMove: {fileID: 7400000, guid: 4cf3fd75e46ddd442852d55c3fad1d69, type: 2}
+        _clipObjRotateCW: {fileID: 7400000, guid: 5b8e61a47b1c42b448c83a6d03cda52c, type: 2}
+        _clipObjRotateCCW: {fileID: 7400000, guid: b1d9b5fe8d226a14ebc8642027655f9f, type: 2}
+        _clipObjTurnReverse: {fileID: 7400000, guid: fb37fe9e3524a004a9a63614f7349223, type: 2}
+  comabt_motions:
+  - key: battle_idle
+    motion: Para_Battle_Idle
+    _clipObj: {fileID: 7400000, guid: f63faf5a5cc08a248b3ec0cf057bac3e, type: 2}
+  - key: battle_stand
+    motion: Para_BattleStand
+    _clipObj: {fileID: 7400000, guid: 2d31f7d1ca1b2a64598324d315652a7a, type: 2}
+  - key: evade
+    motion: Para_Evade
+    _clipObj: {fileID: 7400000, guid: fc45c37b3122df1428a49ed93692ad13, type: 2}
+  - key: groggy
+    motion: Para_Groggy
+    _clipObj: {fileID: 7400000, guid: b7b6acf40c69c0940b2d01ffad94cd61, type: 2}
+  - key: blow
+    motion: Para_Damage_Blow_Begin
+    _clipObj: {fileID: 7400000, guid: cdbf54b36c1111b48a7b3025f0ecbabb, type: 2}
+  combat_directions:
+  - key: knock_back_motion_map
+    front: Para_Damage_S
+    back: Para_Damage_N
+    left: Para_Damage_E
+    right: Para_Damage_W
+    _clipObjFront: {fileID: 7400000, guid: ca3ff2a218c888d4090bc7b92792ba67, type: 2}
+    _clipObjBack: {fileID: 7400000, guid: e9926e30986af0940af6e9e32649178f, type: 2}
+    _clipObjLeft: {fileID: 7400000, guid: a90c5c6c3cbe11d40b898a402a21bc52, type: 2}
+    _clipObjRight: {fileID: 7400000, guid: 5a69de524625ed243aeaecceba079c0b, type: 2}
+  combat_3states:
+  - key: knock_down_motions
+    begin: Para_Damage_Blow_Begin
+    during: Para_Damage_Blow_Looping
+    end: Para_Damage_Blow_End
+    _clipObjBegin: {fileID: 7400000, guid: cdbf54b36c1111b48a7b3025f0ecbabb, type: 2}
+    _clipObjLooping: {fileID: 7400000, guid: 038adf484637aa6489dcf2a334b13be1, type: 2}
+    _clipObjEnd: {fileID: 7400000, guid: 7cba01727cea89443adb1ac6e5dd4fb6, type: 2}
+  combat_attacks:
+  - key: para_stamp
+    meta:
+      motion: Para_Attack_Stamp
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: fc253fd9b6ca6b942834d93b76ec4af8, type: 2}
+    attack_info:
+    - frame: 21
+      sub_action_id: para_stamp_0
+      damage_type: 1
+      radius: 600
+      radius_min: 0
+      angles: {x: -80, y: 80}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -50}
+      damage_angle: 0
+      use_target_origin: 0
+    - frame: 36
+      sub_action_id: para_stamp_1
+      damage_type: 1
+      radius: 550
+      radius_min: 0
+      angles: {x: -100, y: 60}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: -100}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: para_tail
+    meta:
+      motion: Para_Attack_Tail
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: db23c42c2885d67429f2d4f4611a953a, type: 2}
+    attack_info:
+    - frame: 28
+      sub_action_id: para_tail_0
+      damage_type: 1
+      radius: 700
+      radius_min: 0
+      angles: {x: 120, y: 220}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 0, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  - key: para_spit
+    meta:
+      motion: Para_Attack_Spit
+      bound_enemy: 0
+      rot_speed: 0
+      _clipObj: {fileID: 7400000, guid: 773713a2979e7cc42a982397e40039e1, type: 2}
+    attack_info:
+    - frame: 73
+      sub_action_id: para_spit_0
+      damage_type: 1
+      radius: 1500
+      radius_min: 0
+      angles: {x: -25, y: 25}
+      rect_half_size: {x: 0, y: 0}
+      offset: {x: 50, y: 0}
+      damage_angle: 0
+      use_target_origin: 0
+    SameAbove: 0
+  active_skills:
+  - key: active_default
+    motion: Para_Active_Default
+    _clipObj: {fileID: 7400000, guid: 3dc17398e55a9114fbee503bf524b5f2, type: 2}
+  etc_motions:
+  - key: para_run_pet
+    motion: Para_Run_Pet
+    _clipObj: {fileID: 7400000, guid: 4cf3fd75e46ddd442852d55c3fad1d69, type: 2}
+  - key: para_run_stop
+    motion: Para_Run_Stop
+    _clipObj: {fileID: 7400000, guid: 87926d4eeb366d84c87f3500fb7a238a, type: 2}

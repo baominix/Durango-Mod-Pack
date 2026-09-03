@@ -6,6 +6,101 @@ using HarmonyLib;
 
 namespace BaoX.DurangoOriginal.SelectCharacterMod
 {
+    internal static class LastCharacterSelection
+    {
+        private const string LastClusterKey = "last_selected_cluster_key";
+        private const string CharacterKeyPrefix = "baox_last_selected_character_";
+        private const string SlotKeyPrefix = "baox_last_selected_character_slot_";
+        private static readonly HashSet<Account> RestoredAccounts = new HashSet<Account>();
+
+        internal static string GetModeKey()
+        {
+            string mode = Preferences.GetString(LastClusterKey, "free_offline", Preferences.Level.Device);
+            return mode == "single_multi_offline" ? "single_multi_offline" : "free_offline";
+        }
+
+        internal static void Save(string playerEntityId, int slotIndex)
+        {
+            if (string.IsNullOrEmpty(playerEntityId))
+            {
+                return;
+            }
+            string mode = GetModeKey();
+            Preferences.SetString(CharacterKeyPrefix + mode, playerEntityId, Preferences.Level.Device);
+            Preferences.SetInt(SlotKeyPrefix + mode, Math.Max(0, slotIndex), Preferences.Level.Device);
+            SelectCharacterPlugin.Log.LogInfo("Remembered character " + playerEntityId + " for " + mode + ".");
+        }
+
+        internal static void Restore(Account account)
+        {
+            if (account == null || account.Players == null || account.Players.Count == 0)
+            {
+                return;
+            }
+            // Restore a saved character only when this account is first loaded.
+            // The title UI deliberately caches an empty player id when the user
+            // selects an empty slot. Restoring on every GetRecommendedPlayer()
+            // call overwrote that empty id and prevented new-character creation.
+            if (!RestoredAccounts.Add(account))
+            {
+                return;
+            }
+            string mode = GetModeKey();
+            string playerEntityId = Preferences.GetString(CharacterKeyPrefix + mode, string.Empty, Preferences.Level.Device);
+            if (string.IsNullOrEmpty(playerEntityId))
+            {
+                return;
+            }
+            for (int i = 0; i < account.Players.Count; i++)
+            {
+                if (account.Players[i] != null && account.Players[i].PlayerEntityId == playerEntityId)
+                {
+                    account.ApplyRecommendedPlayer(new Pair<string, int>(playerEntityId, i));
+                    return;
+                }
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Account), "ApplyRecommendedPlayer")]
+    internal static class Account_ApplyRecommendedPlayer_Patch
+    {
+        private static void Postfix(Pair<string, int> idToSlot)
+        {
+            LastCharacterSelection.Save(idToSlot.Item1, idToSlot.Item2);
+        }
+    }
+
+    [HarmonyPatch(typeof(Account), "GetRecommendedPlayer")]
+    internal static class Account_GetRecommendedPlayer_Patch
+    {
+        private static void Prefix(Account __instance)
+        {
+            LastCharacterSelection.Restore(__instance);
+        }
+    }
+
+    [HarmonyPatch(typeof(PlayerSelectionSystem), "ChangePlayer")]
+    internal static class PlayerSelectionSystem_ChangePlayer_Patch
+    {
+        private static void Prefix(PlayerSelectionSystem __instance, string playerEntityId)
+        {
+            LastCharacterSelection.Save(playerEntityId, GetPlayerIndex(__instance, playerEntityId));
+        }
+
+        private static int GetPlayerIndex(PlayerSelectionSystem system, string playerEntityId)
+        {
+            FieldInfo field = AccessTools.Field(typeof(PlayerSelectionSystem), "_players");
+            List<PlayerInfo> players = field == null ? null : field.GetValue(system) as List<PlayerInfo>;
+            if (players == null) return 0;
+            for (int i = 0; i < players.Count; i++)
+            {
+                if (players[i] != null && players[i].PlayerEntityId == playerEntityId) return i;
+            }
+            return 0;
+        }
+    }
+
     [HarmonyPatch(typeof(PlayerSelectionSystem), "UpdateAccounts")]
     internal static class PlayerSelectionSystem_UpdateAccounts_Patch
     {
@@ -41,6 +136,8 @@ namespace BaoX.DurangoOriginal.SelectCharacterMod
                 {
                     return;
                 }
+
+                LastCharacterSelection.Restore(account);
 
                 // this._players = account.Players;
                 AccessTools.Field(typeof(PlayerSelectionSystem), "_players").SetValue(__instance, account.Players);
