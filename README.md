@@ -15,11 +15,11 @@
 - Windows x64
 - BepInEx 5.x
 - แนะนำ **BepInEx_win_x64_5.4.23.5**
-- .NET Framework 3.5 C# compiler สำหรับ build source ชุดนี้
 
 BepInEx:
 https://github.com/BepInEx/BepInEx/releases/tag/v5.4.23.5
 
+.NET Framework 3.5 C# compiler สำหรับ build source ชุดนี้
 Compiler default ที่ build scripts ใช้:
 
 ```text
