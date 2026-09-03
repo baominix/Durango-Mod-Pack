@@ -27,6 +27,9 @@ Command	ใช้งาน	            รายละเอียด
 BepInEx:  
 https://github.com/BepInEx/BepInEx/releases/tag/v5.4.23.5
 
+Durango Mod Pack:
+https://github.com/baominix/Durango-Mod-Pack/releases/tag/Durango-Mod-Pack-V1.1
+
 .NET Framework 3.5 C# compiler สำหรับ build source ชุดนี้
 
 Compiler default ที่ build scripts ใช้:
