@@ -9,4 +9,3 @@ obj/
 *.log
 BepInEx/
 LogOutput.log
-*.md
